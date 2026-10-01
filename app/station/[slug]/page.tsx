@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MapView } from "@/components/map/map-view";
 import { SiteHeader } from "@/components/navigation/site-header";
+import {
+  buildBreadcrumbSchema,
+  buildFAQSchema,
+  buildStationSchema,
+  JsonLd,
+} from "@/components/seo/json-ld";
 import { StationCard } from "@/components/stations/station-card";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { PowerBadge } from "@/components/ui/power-badge";
@@ -13,10 +20,41 @@ import {
   getMockStationBySlug,
   getMockStations,
 } from "@/lib/mock";
+import { absoluteUrl } from "@/lib/seo/config";
 import { routeUrls } from "@/lib/utils/url";
 
 interface StationPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: StationPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const station = getMockStationBySlug(slug) ?? getMockStations()[0];
+
+  if (!station) {
+    return {
+      title: "Charging Station Not Found | FastCharger",
+      description: "Charging station not found.",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = `${station.name} | FastCharger`;
+  const description = `${station.name} is a verified ${station.fastestPowerKw}kW EV charging station operated by ${station.operator.name} in ${station.city.name}, ${station.state.name}. View real-time speeds, connector compatibility, and GPS directions.`;
+  const canonicalPath = routeUrls.station(station.slug);
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: absoluteUrl(canonicalPath),
+    },
+    openGraph: {
+      title,
+      description,
+      url: absoluteUrl(canonicalPath),
+    },
+  };
 }
 
 export default async function StationPage({ params }: StationPageProps) {
@@ -32,8 +70,45 @@ export default async function StationPage({ params }: StationPageProps) {
     .filter((s) => s.id !== station.id)
     .slice(0, 3);
 
+  const breadcrumbsSchema = buildBreadcrumbSchema([
+    { name: "India", path: routeUrls.india() },
+    { name: station.state.name, path: routeUrls.state(station.state.slug) },
+    {
+      name: station.city.name,
+      path: routeUrls.city(station.state.slug, station.city.slug),
+    },
+    { name: station.name, path: routeUrls.station(station.slug) },
+  ]);
+
+  const stationSchema = buildStationSchema(station, routeUrls.station(station.slug));
+
+  const stationFaqs = [
+    {
+      question: `Where is ${station.name} located?`,
+      answer: `${station.name} is located at ${station.address} (${station.city.name}, ${station.state.name}) at GPS coordinates ${station.latitude}, ${station.longitude}.`,
+    },
+    {
+      question: `What is the maximum charging speed at ${station.name}?`,
+      answer: `The fastest charging point at this location delivers up to ${station.fastestPowerKw} kW.`,
+    },
+    {
+      question: `Which charging connectors are available at ${station.name}?`,
+      answer:
+        station.connectors.length > 0
+          ? `Available connectors include: ${station.connectors
+              .map((c) => `${c.type} (${c.powerKw} kW)`)
+              .join(", ")}.`
+          : "Standard Indian public charging connectors are supported.",
+    },
+    {
+      question: `Who operates ${station.name} and what is its operational status?`,
+      answer: `This station is operated by ${station.operator.name} with listed status "${station.status}".`,
+    },
+  ];
+
   return (
     <>
+      <JsonLd schema={[breadcrumbsSchema, stationSchema, buildFAQSchema(stationFaqs)]} />
       <SiteHeader />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-12 space-y-8">
         {/* Breadcrumb Navigation */}
@@ -239,6 +314,86 @@ export default async function StationPage({ params }: StationPageProps) {
             </div>
           </section>
         )}
+
+        {/* GEO / AI MACHINE-READABLE SPECIFICATIONS */}
+        <section className="rounded-2xl border border-[var(--color-border)] bg-white p-6 sm:p-8 space-y-4">
+          <div className="border-b border-[var(--color-border)] pb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
+              Authoritative Data Record
+            </span>
+            <h2 className="text-lg sm:text-xl font-bold text-[var(--color-dark-green)] mt-0.5">
+              Machine-Readable Specifications for {station.name}
+            </h2>
+            <p className="text-xs text-[var(--color-muted)] mt-1">
+              Structured parameters formatted for AI agents, generative engines, and EV search discovery.
+            </p>
+          </div>
+
+          <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3.5 text-xs sm:text-sm">
+            <div>
+              <dt className="text-xs font-semibold text-[var(--color-muted)]">Station Name</dt>
+              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">{station.name}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-[var(--color-muted)]">Network / Operator</dt>
+              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">{station.operator.name}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-[var(--color-muted)]">Operational Status</dt>
+              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">{station.status}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-[var(--color-muted)]">Max Charging Speed</dt>
+              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">{station.fastestPowerKw} kW DC</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-[var(--color-muted)]">Connector Standards</dt>
+              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">
+                {station.connectors.map((c) => c.type).join(", ") || "Standard Connectors"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-[var(--color-muted)]">Postal Code / PIN</dt>
+              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">{station.pincode || "Cataloged"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-[var(--color-muted)]">City & State</dt>
+              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">{station.city.name}, {station.state.name}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-[var(--color-muted)]">GPS Coordinates</dt>
+              <dd className="font-mono text-xs font-bold text-[var(--color-dark-green)] mt-0.5">
+                {station.latitude.toFixed(5)}, {station.longitude.toFixed(5)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-[var(--color-muted)]">Telemetry / Update Status</dt>
+              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">{station.lastUpdated}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* AEO FREQUENTLY ASKED QUESTIONS */}
+        <section className="space-y-4 pt-6 border-t border-[var(--color-border)]">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-dark-green)]">
+            Frequently Asked Questions about {station.name}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {stationFaqs.map((faq, idx) => (
+              <div
+                key={idx}
+                className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-xs"
+              >
+                <h3 className="text-sm font-bold text-[var(--color-dark-green)] mb-2">
+                  {faq.question}
+                </h3>
+                <p className="text-xs sm:text-sm text-[var(--color-muted)] leading-relaxed">
+                  {faq.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     </>
   );

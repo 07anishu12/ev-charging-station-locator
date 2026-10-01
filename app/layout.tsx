@@ -2,12 +2,35 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME, SITE_URL } from "@/lib/seo/config";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "FastCharger | Find your next charging stop.",
-    template: "%s | FastCharger",
+    default: DEFAULT_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: "Find EV charging stations across India.",
+  description: DEFAULT_DESCRIPTION,
+  alternates: {
+    canonical: "./",
+  },
+  openGraph: {
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 import { MobileBottomNav } from "@/components/navigation/mobile-bottom-nav";

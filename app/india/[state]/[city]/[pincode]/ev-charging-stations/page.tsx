@@ -3,9 +3,16 @@ import Link from "next/link";
 
 import { MapView } from "@/components/map/map-view";
 import { SiteHeader } from "@/components/navigation/site-header";
+import {
+  buildBreadcrumbSchema,
+  buildCollectionPageSchema,
+  buildFAQSchema,
+  JsonLd,
+} from "@/components/seo/json-ld";
 import { NearbyPincodeChips } from "@/components/stations/nearby-pincode-chips";
 import { PincodeStationBrowser } from "@/components/stations/pincode-station-browser";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { absoluteUrl } from "@/lib/seo/config";
 import { routeUrls } from "@/lib/utils/url";
 import { getPincodeStationData, resolvePincode } from "@/services/pincodes/pincode-service";
 
@@ -20,6 +27,7 @@ export async function generateMetadata({ params }: PincodePageProps): Promise<Me
     return {
       title: `Invalid PIN Code | FastCharger`,
       description: "Invalid 6-digit Indian PIN code.",
+      robots: { index: false, follow: false },
     };
   }
 
@@ -36,10 +44,19 @@ export async function generateMetadata({ params }: PincodePageProps): Promise<Me
       .split("-")
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
+  const canonicalPath = routeUrls.pincode(stateSlug, citySlug, pincode);
 
   return {
     title: `EV Charging Stations in ${pincode}, ${cityName}, ${stateName} | FastCharger`,
     description: `Discover public EV charging stations in and near PIN ${pincode}, ${cityName}, ${stateName}. Compare fast charging speeds, nearby PIN codes, verified connector types, and GPS directions.`,
+    alternates: {
+      canonical: absoluteUrl(canonicalPath),
+    },
+    openGraph: {
+      title: `EV Charging Stations in ${pincode}, ${cityName}, ${stateName} | FastCharger`,
+      description: `Discover public EV charging stations in and near PIN ${pincode}, ${cityName}, ${stateName}.`,
+      url: absoluteUrl(canonicalPath),
+    },
   };
 }
 
@@ -102,8 +119,45 @@ export default async function PincodePage({ params }: PincodePageProps) {
         ? { lat: data.stations[0].latitude, lng: data.stations[0].longitude }
         : { lat: 28.6139, lng: 77.209 };
 
+  const breadcrumbsSchema = buildBreadcrumbSchema([
+    { name: "India", path: routeUrls.india() },
+    { name: stateName, path: routeUrls.state(stateSlug) },
+    { name: cityName, path: routeUrls.city(stateSlug, citySlug) },
+    { name: `PIN ${pincode}`, path: routeUrls.pincode(stateSlug, citySlug, pincode) },
+  ]);
+
+  const collectionSchema = buildCollectionPageSchema({
+    title: `EV Charging Stations near PIN ${pincode}, ${cityName}`,
+    description: `Discover verified public EV charging stations in and near postal code ${pincode} (${cityName}, ${stateName}).`,
+    url: routeUrls.pincode(stateSlug, citySlug, pincode),
+    itemCount: data.total,
+  });
+
+  const pincodeFaqs = [
+    {
+      question: `Are there charging stations located directly in PIN ${pincode}?`,
+      answer: hasExactStations
+        ? `Yes, there are ${data.exactPincodeCount} verified charging station(s) located directly within postal code ${pincode}.`
+        : `Currently, no public charging stations are registered directly with postal code ${pincode}. However, there are ${data.total} stations located in adjacent PIN codes within ${data.radiusKm} km.`,
+    },
+    {
+      question: `How many chargers are available within ${data.radiusKm} km of PIN ${pincode}?`,
+      answer: `There are ${data.total} public charging station(s) within a ${data.radiusKm} km radius of PIN ${pincode} in ${cityName}, ${stateName}.`,
+    },
+    {
+      question: `Which nearby PIN codes offer EV charging facilities?`,
+      answer:
+        data.nearbyPincodes.length > 0
+          ? `Nearby areas with public chargers include PIN(s): ${data.nearbyPincodes
+              .map((p) => `${p.pincode} (${p.city || p.district} - ${p.distanceKm} km)`)
+              .join(", ")}.`
+          : `Check adjacent areas in ${cityName} for active charging points.`,
+    },
+  ];
+
   return (
     <>
+      <JsonLd schema={[breadcrumbsSchema, collectionSchema, buildFAQSchema(pincodeFaqs)]} />
       <SiteHeader />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-12 space-y-8">
         {/* Breadcrumb & Header */}
@@ -207,6 +261,28 @@ export default async function PincodePage({ params }: PincodePageProps) {
           cityName={cityName}
           stateName={stateName}
         />
+
+        {/* AEO Frequently Asked Questions */}
+        <section className="space-y-4 pt-6 border-t border-[var(--color-border)]">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-dark-green)]">
+            Frequently Asked Questions for PIN {pincode}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {pincodeFaqs.map((faq, idx) => (
+              <div
+                key={idx}
+                className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-xs"
+              >
+                <h3 className="text-sm font-bold text-[var(--color-dark-green)] mb-2">
+                  {faq.question}
+                </h3>
+                <p className="text-xs sm:text-sm text-[var(--color-muted)] leading-relaxed">
+                  {faq.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     </>
   );

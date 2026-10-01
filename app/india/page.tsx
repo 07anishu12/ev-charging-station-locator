@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CityCard } from "@/components/cards/city-card";
 import { StateCard } from "@/components/cards/state-card";
 import { MapView } from "@/components/map/map-view";
 import { SiteHeader } from "@/components/navigation/site-header";
+import { buildBreadcrumbSchema, buildCollectionPageSchema, JsonLd } from "@/components/seo/json-ld";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { StatsCards } from "@/components/ui/stats-cards";
 import {
@@ -12,7 +14,23 @@ import {
   getMockStations,
   getMockStats,
 } from "@/lib/mock";
+import { absoluteUrl } from "@/lib/seo/config";
 import { routeUrls } from "@/lib/utils/url";
+
+export const metadata: Metadata = {
+  title: "EV Charging Stations Across India | FastCharger",
+  description:
+    "Explore public electric vehicle charging infrastructure across 28 states and union territories in India. Locate verified fast DC chargers, highway corridors, and operator coverage.",
+  alternates: {
+    canonical: absoluteUrl("/india"),
+  },
+  openGraph: {
+    title: "EV Charging Stations Across India | FastCharger",
+    description:
+      "Explore public electric vehicle charging infrastructure across 28 states and union territories in India.",
+    url: absoluteUrl("/india"),
+  },
+};
 
 export default function IndiaPage() {
   const stats = getMockStats();
@@ -20,8 +38,17 @@ export default function IndiaPage() {
   const popularCities = getMockCities().slice(0, 8);
   const sampleStations = getMockStations().slice(0, 8);
 
+  const breadcrumbsSchema = buildBreadcrumbSchema([{ name: "India", path: "/india" }]);
+  const collectionSchema = buildCollectionPageSchema({
+    title: "EV Charging Infrastructure in India",
+    description: "National public EV charging network across Indian states, cities, and corridors.",
+    url: "/india",
+    itemCount: stats.totalStations,
+  });
+
   return (
     <>
+      <JsonLd schema={[breadcrumbsSchema, collectionSchema]} />
       <SiteHeader />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-12 space-y-10">
         {/* Breadcrumb & Header */}

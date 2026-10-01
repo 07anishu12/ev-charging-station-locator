@@ -5,10 +5,17 @@ import { CityCard } from "@/components/cards/city-card";
 import { MapView } from "@/components/map/map-view";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { CityStationBrowser } from "@/components/stations/city-station-browser";
+import {
+  buildBreadcrumbSchema,
+  buildCollectionPageSchema,
+  buildFAQSchema,
+  JsonLd,
+} from "@/components/seo/json-ld";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { StatsCards } from "@/components/ui/stats-cards";
 import { getMockCities, getMockOperators } from "@/lib/mock";
+import { absoluteUrl } from "@/lib/seo/config";
 import { routeUrls } from "@/lib/utils/url";
 import { getCityStationData } from "@/services/stations/station-service";
 
@@ -17,14 +24,26 @@ interface CityPageProps {
 }
 
 export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
-  const { city: citySlug } = await params;
+  const { state: stateSlug, city: citySlug } = await params;
   const cityData = await getCityStationData(citySlug, { page: 1, pageSize: 1 });
   const cityName = cityData.city.name;
   const stateName = cityData.city.stateName;
+  const canonicalPath = routeUrls.city(stateSlug, citySlug);
+
+  const title = `EV Charging Stations in ${cityName}, ${stateName} (${cityData.pagination.total} Stations) | FastCharger`;
+  const description = `Discover ${cityData.pagination.total} public EV charging stations in ${cityName}, ${stateName}. Find fast DC chargers, connector types (CCS2, Type 2), operators, and GPS directions.`;
 
   return {
-    title: `EV Charging Stations in ${cityName}, ${stateName} (${cityData.pagination.total} Stations) | FastCharger`,
-    description: `Discover ${cityData.pagination.total} public EV charging stations in ${cityName}, ${stateName}. Find fast DC chargers, connector types (CCS2, Type 2), operators, and GPS directions.`,
+    title,
+    description,
+    alternates: {
+      canonical: absoluteUrl(canonicalPath),
+    },
+    openGraph: {
+      title,
+      description,
+      url: absoluteUrl(canonicalPath),
+    },
   };
 }
 
@@ -49,8 +68,37 @@ export default async function CityPage({ params }: CityPageProps) {
       ? cityData.operators
       : getMockOperators().slice(0, 4);
 
+  const breadcrumbsSchema = buildBreadcrumbSchema([
+    { name: "India", path: routeUrls.india() },
+    { name: stateName, path: routeUrls.state(stateSlug) },
+    { name: cityName, path: routeUrls.city(stateSlug, citySlug) },
+  ]);
+
+  const collectionSchema = buildCollectionPageSchema({
+    title: `EV Charging Stations in ${cityName}, ${stateName}`,
+    description: `Discover verified public EV charging stations in ${cityName}, ${stateName}.`,
+    url: routeUrls.city(stateSlug, citySlug),
+    itemCount: totalStations,
+  });
+
+  const cityFaqs = [
+    {
+      question: `How many EV charging stations are in ${cityName}?`,
+      answer: `There are currently ${totalStations} public EV charging stations cataloged in ${cityName}, ${stateName}, including fast DC corridors and AC destination chargers.`,
+    },
+    {
+      question: `What are the common charging connectors available in ${cityName}?`,
+      answer: `Public EV chargers in ${cityName} widely offer CCS (Type 2) DC fast charging connectors along with Type 2 AC chargers compatible with modern electric four-wheelers.`,
+    },
+    {
+      question: `Which charging networks operate in ${cityName}?`,
+      answer: `Major EV charging networks in ${cityName} include ${operators.map((op) => op.name).join(", ")}.`,
+    },
+  ];
+
   return (
     <>
+      <JsonLd schema={[breadcrumbsSchema, collectionSchema, buildFAQSchema(cityFaqs)]} />
       <SiteHeader />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-12 space-y-10">
         {/* Breadcrumb & Header */}
@@ -203,6 +251,28 @@ export default async function CityPage({ params }: CityPageProps) {
               <h3 className="font-semibold text-[var(--color-dark-green)] mb-1">💳 Payment & Access</h3>
               <p>Public stations support app-based start/stop and UPI payments across major networks including Tata Power, Statiq, and Jio-bp pulse.</p>
             </div>
+          </div>
+        </section>
+
+        {/* AEO Frequently Asked Questions */}
+        <section className="space-y-4 pt-6 border-t border-[var(--color-border)]">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-dark-green)]">
+            Frequently Asked Questions about EV Charging in {cityName}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {cityFaqs.map((faq, idx) => (
+              <div
+                key={idx}
+                className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-xs"
+              >
+                <h3 className="text-sm font-bold text-[var(--color-dark-green)] mb-2">
+                  {faq.question}
+                </h3>
+                <p className="text-xs sm:text-sm text-[var(--color-muted)] leading-relaxed">
+                  {faq.answer}
+                </p>
+              </div>
+            ))}
           </div>
         </section>
       </main>

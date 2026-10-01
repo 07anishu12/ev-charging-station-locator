@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CityCard } from "@/components/cards/city-card";
 import { StateCard } from "@/components/cards/state-card";
 import { MapView } from "@/components/map/map-view";
 import { SiteHeader } from "@/components/navigation/site-header";
+import {
+  buildBreadcrumbSchema,
+  buildCollectionPageSchema,
+  buildFAQSchema,
+  JsonLd,
+} from "@/components/seo/json-ld";
 import { StationList } from "@/components/stations/station-list";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { StatsCards } from "@/components/ui/stats-cards";
@@ -13,10 +20,39 @@ import {
   getMockStates,
   getMockStationsByState,
 } from "@/lib/mock";
+import { absoluteUrl } from "@/lib/seo/config";
 import { routeUrls } from "@/lib/utils/url";
 
 interface StatePageProps {
   params: Promise<{ state: string }>;
+}
+
+export async function generateMetadata({ params }: StatePageProps): Promise<Metadata> {
+  const { state: stateSlug } = await params;
+  const state = getMockStateBySlug(stateSlug);
+  const stateName =
+    state?.name ??
+    stateSlug
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+  const title = `EV Charging Stations in ${stateName} | FastCharger`;
+  const description = `Find verified public EV charging stations across ${stateName}. Compare fast DC chargers, connector types (CCS2, Type 2), operators, and highway routes.`;
+  const canonicalPath = routeUrls.state(stateSlug);
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: absoluteUrl(canonicalPath),
+    },
+    openGraph: {
+      title,
+      description,
+      url: absoluteUrl(canonicalPath),
+    },
+  };
 }
 
 export default async function StatePage({ params }: StatePageProps) {
@@ -40,8 +76,36 @@ export default async function StatePage({ params }: StatePageProps) {
   const totalStations = state?.stationCount ?? (stationsInState.length > 0 ? stationsInState.length : 45);
   const totalCities = citiesInState.length > 0 ? citiesInState.length : 1;
 
+  const breadcrumbsSchema = buildBreadcrumbSchema([
+    { name: "India", path: routeUrls.india() },
+    { name: stateName, path: routeUrls.state(stateSlug) },
+  ]);
+
+  const collectionSchema = buildCollectionPageSchema({
+    title: `EV Charging Stations in ${stateName}`,
+    description: `Public electric vehicle charging network across ${stateName}.`,
+    url: routeUrls.state(stateSlug),
+    itemCount: totalStations,
+  });
+
+  const faqs = [
+    {
+      question: `How many EV charging stations are available in ${stateName}?`,
+      answer: `There are approximately ${totalStations} public EV charging stations cataloged across ${stateName}, covering major cities, state highways, and expressways.`,
+    },
+    {
+      question: `Which charging operators operate in ${stateName}?`,
+      answer: `Major networks operating in ${stateName} include Tata Power, Statiq, Jio-bp pulse, and other interoperable public networks.`,
+    },
+    {
+      question: `What charging connectors are supported in ${stateName}?`,
+      answer: `Stations in ${stateName} primarily support CCS2 for fast DC charging, alongside Type 2 AC connectors for overnight and workplace charging.`,
+    },
+  ];
+
   return (
     <>
+      <JsonLd schema={[breadcrumbsSchema, collectionSchema, buildFAQSchema(faqs)]} />
       <SiteHeader />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-12 space-y-10">
         {/* Breadcrumb & Header */}

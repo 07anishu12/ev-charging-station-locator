@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CityCard } from "@/components/cards/city-card";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { SearchBar } from "@/components/search/search-bar";
+import { buildWebSiteSchema, JsonLd } from "@/components/seo/json-ld";
 import { StationCard } from "@/components/stations/station-card";
 import { StatsCards } from "@/components/ui/stats-cards";
 import {
@@ -10,7 +12,21 @@ import {
   getMockStations,
   getMockStats,
 } from "@/lib/mock";
+import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_TITLE } from "@/lib/seo/config";
 import { routeUrls } from "@/lib/utils/url";
+
+export const metadata: Metadata = {
+  title: DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  alternates: {
+    canonical: absoluteUrl("/"),
+  },
+  openGraph: {
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    url: absoluteUrl("/"),
+  },
+};
 
 export default function HomePage() {
   const stats = getMockStats();
@@ -21,6 +37,7 @@ export default function HomePage() {
 
   return (
     <>
+      <JsonLd schema={buildWebSiteSchema()} />
       <SiteHeader />
       <main className="flex-1 flex flex-col">
         {/* Hero Section */}
