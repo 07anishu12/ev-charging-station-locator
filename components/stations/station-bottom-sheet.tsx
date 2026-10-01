@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import React from "react";
 
 import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { PowerBadge } from "@/components/ui/power-badge";
@@ -22,12 +23,15 @@ export function StationBottomSheet({ station, onClose, className = "" }: Station
 
   return (
     <div
-      className={`fixed bottom-16 inset-x-0 z-40 p-4 md:hidden animate-bottom-sheet-in ${className}`}
+      className={`fixed bottom-16 inset-x-0 z-40 p-3 sm:p-4 md:hidden animate-bottom-sheet-in ${className}`}
     >
       <div className="relative rounded-3xl border border-[var(--color-border)] bg-white p-5 shadow-2xl">
-        {/* Drag handle / close */}
+        {/* Native drag handle bar matching Screen 2 */}
+        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3 opacity-70" />
+
+        {/* Header row: Operator + Distance + Save + Close */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
               {station.operator.name}
             </span>
@@ -37,40 +41,53 @@ export function StationBottomSheet({ station, onClose, className = "" }: Station
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <SavedButton stationSlug={station.slug} stationName={station.name} compact />
             <button
               type="button"
               onClick={onClose}
               aria-label="Close station preview"
-              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-900"
+              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-[var(--color-dark-green)] leading-snug mb-1">
-          {station.name}
-        </h3>
-        <p className="text-xs text-[var(--color-muted)] line-clamp-1 mb-3">{station.address}</p>
+        {/* Station Name with Operator Monogram / Thumbnail */}
+        <div className="flex items-start gap-3 mb-2">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-[var(--color-primary)] font-black text-sm flex items-center justify-center shrink-0 shadow-2xs">
+            ⚡
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base sm:text-lg font-bold text-[var(--color-dark-green)] leading-tight truncate">
+              {station.name}
+            </h3>
+            <p className="text-xs text-[var(--color-muted)] truncate mt-0.5">{station.address}</p>
+          </div>
+        </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 mb-4">
+        {/* Badges row: Status + 24/7 + Power + Connectors */}
+        <div className="flex flex-wrap items-center gap-1.5 my-3">
           <StatusBadge status={station.status} size="sm" />
+          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-[var(--color-secondary-green)]">
+            🕒 24/7
+          </span>
           <PowerBadge powerKw={station.fastestPowerKw} />
           {station.connectors.map((c) => (
             <ConnectorBadge key={c.id} type={c.type} />
           ))}
         </div>
 
+        {/* Action buttons: Directions & View Station */}
         <div className="flex items-center gap-2 pt-3 border-t border-[var(--color-border)]">
           <a
             href={directionsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white font-semibold text-sm text-[var(--color-dark-green)] hover:bg-[var(--color-light-green)] transition-colors"
+            className="flex-1 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white font-semibold text-sm text-[var(--color-dark-green)] hover:bg-[var(--color-light-green)] hover:border-[var(--color-primary)] transition-colors"
           >
             <svg
               className="w-4 h-4 text-[var(--color-primary)]"

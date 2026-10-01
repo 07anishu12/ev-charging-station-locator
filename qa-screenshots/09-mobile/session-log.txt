@@ -1,6 +1,6 @@
 [0.7s] Mobile homepage loaded
 [0.7s] Viewport: 390x844
-[0.7s] Hero text: "Find your next charging stop."
+[0.7s] Hero text: "Find EV Charging Stations Near You"
 [0.7s] Near Me CTA visible without scrolling: true
 [0.7s] Hamburger menu: false
 [0.7s] Horizontal overflow: false (body: 390, viewport: 390)

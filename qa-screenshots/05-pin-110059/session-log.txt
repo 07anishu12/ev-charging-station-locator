@@ -1,7 +1,7 @@
 [0.7s] Homepage loaded
 [0.8s] Search page loaded: http://localhost:3000/search
 [0.8s] Search input visible: true
-[1.3s] Typed 110059
+[1.4s] Typed 110059
 [4.4s] URL after search: http://localhost:3000/search?q=110059
 [4.4s] Station links found: 7
 [4.4s] "No results" message: false

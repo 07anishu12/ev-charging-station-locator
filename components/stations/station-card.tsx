@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import React from "react";
 
 import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { PowerBadge } from "@/components/ui/power-badge";
@@ -34,39 +35,35 @@ export function StationCard({
           : "border-[var(--color-border)] hover:border-[var(--color-primary)]/60 hover:shadow-md hover:-translate-y-0.5"
       } ${onSelect ? "cursor-pointer" : ""} ${className}`}
     >
-      <div className="flex items-start justify-between gap-3 mb-2">
+      <div className="flex items-start gap-3 mb-2">
+        {/* Left: Station Monogram / Thumbnail matching Screen 2 */}
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 text-[var(--color-primary)] font-black text-base flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs mt-0.5">
+          ⚡
+        </div>
+
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-secondary-green)]">
-              {station.operator.name}
-            </span>
-            {station.distanceKm !== undefined && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-[var(--color-secondary-green)]">
-                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>{station.distanceKm} km</span>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
+                {station.operator.name}
               </span>
-            )}
-            {station.matchType === "exact_pincode" && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100/80 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
-                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9" strokeWidth="2" />
-                  <circle cx="12" cy="12" r="3" strokeWidth="2" />
-                </svg>
-                <span>Exact PIN</span>
-              </span>
-            )}
-            {station.matchType === "nearby_pincode" && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-800">
-                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                </svg>
-                <span>PIN {station.stationPincode || station.pincode}</span>
-              </span>
-            )}
+              {station.distanceKm !== undefined && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-[var(--color-secondary-green)]">
+                  <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{station.distanceKm} km</span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <StatusBadge status={station.status} size="sm" />
+              <SavedButton stationSlug={station.slug} stationName={station.name} compact />
+            </div>
           </div>
+
           <h3 className="text-base sm:text-lg font-bold tracking-tight text-[var(--color-dark-green)] truncate">
             {onSelect ? (
               <span className="hover:text-[var(--color-primary)] transition-colors">
@@ -81,29 +78,25 @@ export function StationCard({
               </Link>
             )}
           </h3>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <StatusBadge status={station.status} size="sm" />
-          <SavedButton stationSlug={station.slug} stationName={station.name} compact />
-        </div>
-      </div>
 
-      <p className="text-xs sm:text-sm text-[var(--color-muted)] line-clamp-1 mb-3">
-        {station.address}
-        {station.pincode ? ` · PIN ${station.pincode}` : ""}
-      </p>
+          <p className="text-xs text-[var(--color-muted)] line-clamp-1 mt-0.5 mb-2.5">
+            {station.address}
+            {station.pincode ? ` · PIN ${station.pincode}` : ""}
+          </p>
 
-      {/* Connectors & Power */}
-      <div className="flex flex-wrap items-center gap-1.5 mb-4">
-        <PowerBadge powerKw={station.fastestPowerKw} />
-        {station.connectors.map((c) => (
-          <ConnectorBadge key={c.id} type={c.type} quantity={c.quantity} />
-        ))}
+          {/* Connectors & Power Row */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-2">
+            <PowerBadge powerKw={station.fastestPowerKw} />
+            {station.connectors.map((c) => (
+              <ConnectorBadge key={c.id} type={c.type} quantity={c.quantity} />
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Footer Actions */}
-      <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between gap-2 text-xs text-[var(--color-muted)]">
-        <span className="truncate">Updated {station.lastUpdated}</span>
+      <div className="pt-3 border-t border-[var(--color-border)]/70 flex items-center justify-between gap-2 text-xs text-[var(--color-muted)]">
+        <span className="truncate text-[11px] font-medium">🕒 Open 24/7</span>
         <div className="flex items-center gap-2 shrink-0">
           <a
             href={directionsUrl}
@@ -130,7 +123,7 @@ export function StationCard({
           </a>
           <Link
             href={routeUrls.station(station.slug)}
-            className="inline-flex min-h-9 items-center justify-center rounded-xl bg-[var(--color-primary)] px-3 font-semibold text-white shadow-xs hover:bg-[var(--color-secondary-green)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
+            className="inline-flex min-h-9 items-center justify-center rounded-xl bg-[var(--color-primary)] px-3.5 font-semibold text-white shadow-xs hover:bg-[var(--color-secondary-green)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
           >
             Details
           </Link>

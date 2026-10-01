@@ -10,10 +10,13 @@ import {
   buildStationSchema,
   JsonLd,
 } from "@/components/seo/json-ld";
+import { StationAboutCard } from "@/components/stations/station-about-card";
+import { StationActionBar } from "@/components/stations/station-action-bar";
 import { StationCard } from "@/components/stations/station-card";
+import { StationConnectorsCard } from "@/components/stations/station-connectors-card";
+import { StationHeroBanner } from "@/components/stations/station-hero-banner";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { PowerBadge } from "@/components/ui/power-badge";
-import { SavedButton } from "@/components/ui/saved-button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
   getMockNearbyStations,
@@ -110,7 +113,7 @@ export default async function StationPage({ params }: StationPageProps) {
     <>
       <JsonLd schema={[breadcrumbsSchema, stationSchema, buildFAQSchema(stationFaqs)]} />
       <SiteHeader />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-12 space-y-8">
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6 sm:py-8 space-y-6">
         {/* Breadcrumb Navigation */}
         <Breadcrumbs
           items={[
@@ -124,53 +127,70 @@ export default async function StationPage({ params }: StationPageProps) {
           ]}
         />
 
-        {/* Station Header */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-[var(--color-border)] pb-6">
-          <div className="space-y-2 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
-                {station.operator.name}
-              </span>
-              <span className="text-[var(--color-border)]">·</span>
-              <StatusBadge status={station.status} />
-              <PowerBadge powerKw={station.fastestPowerKw} />
-            </div>
+        {/* Top Canopy Hero Banner matching Screen 3 */}
+        <StationHeroBanner
+          stationName={station.name}
+          stationSlug={station.slug}
+          operatorName={station.operator.name}
+        />
 
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[var(--color-dark-green)]">
-              {station.name}
-            </h1>
-
-            <p className="text-xs sm:text-sm text-[var(--color-muted)] flex items-center gap-1.5">
-              <span>📍 {station.address}</span>
-            </p>
+        {/* Station Title & Status Header matching Screen 3 */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
+              {station.operator.name}
+            </span>
+            <span className="text-[var(--color-border)]">·</span>
+            <span className="text-xs font-semibold text-[var(--color-muted)]">
+              ★ 4.8 (Verified Hub)
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <SavedButton stationSlug={station.slug} stationName={station.name} />
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 text-sm font-bold text-white shadow-xs hover:bg-[var(--color-secondary-green)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              <span>Get Directions</span>
-            </a>
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-[var(--color-dark-green)]">
+            {station.name}
+          </h1>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-[var(--color-muted)]">
+            <span>📍 {station.address}</span>
+            {station.pincode && <span>· PIN {station.pincode}</span>}
+          </div>
+
+          {/* Status Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <StatusBadge status={station.status} />
+            <PowerBadge powerKw={station.fastestPowerKw} />
+            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-[var(--color-secondary-green)]">
+              <span>🕒 Open 24/7</span>
+            </span>
           </div>
         </div>
 
-        {/* MAP SECTION */}
-        <section className="space-y-2">
+        {/* 4 Action Buttons Row: Directions, Share, Save, Contact (Screen 3 Reference) */}
+        <StationActionBar
+          stationSlug={station.slug}
+          stationName={station.name}
+          directionsUrl={directionsUrl}
+          operatorWebsite={station.operator.website}
+        />
+
+        {/* Available Connectors Card matching Screen 3 */}
+        <StationConnectorsCard connectors={station.connectors} />
+
+        {/* About this Station Metadata Card matching Screen 3 */}
+        <StationAboutCard station={station} />
+
+        {/* Location Map Section */}
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-[var(--color-dark-green)]">Station Location</h2>
-            <span className="text-xs text-[var(--color-muted)]">
+            <h2 className="text-base sm:text-lg font-bold text-[var(--color-dark-green)]">
+              Station Location & Map
+            </h2>
+            <span className="text-xs text-[var(--color-muted)] font-mono">
               GPS: {station.latitude.toFixed(4)}, {station.longitude.toFixed(4)}
             </span>
           </div>
 
-          <div className="h-[280px] sm:h-[360px] rounded-2xl overflow-hidden border border-[var(--color-border)] shadow-xs">
+          <div className="h-[280px] sm:h-[360px] rounded-3xl overflow-hidden border border-[var(--color-border)] shadow-xs">
             <MapView
               stations={[station]}
               initialCenter={{ lat: station.latitude, lng: station.longitude }}
@@ -179,145 +199,38 @@ export default async function StationPage({ params }: StationPageProps) {
           </div>
         </section>
 
-        {/* ADDRESS & ACCESS */}
-        <section className="rounded-2xl border border-[var(--color-border)] bg-white p-5 sm:p-6 shadow-xs">
-          <h2 className="text-base font-bold text-[var(--color-dark-green)] mb-3">
-            Address & Location Details
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
-            <div>
-              <span className="text-[var(--color-muted)] block mb-1">Full Address:</span>
-              <p className="font-medium text-[var(--color-dark-green)]">{station.address}</p>
-            </div>
-            <div>
-              <span className="text-[var(--color-muted)] block mb-1">Postal Code & Area:</span>
-              <p className="font-medium text-[var(--color-dark-green)]">
-                PIN {station.pincode}, {station.district}, {station.city.name}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* CHARGING CONNECTORS */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-[var(--color-dark-green)]">
-                Available Connectors ({station.connectors.length})
-              </h2>
-              <p className="text-xs text-[var(--color-muted)]">
-                Check port compatibility and maximum output capacity
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {station.connectors.map((connector) => (
-              <div
-                key={connector.id}
-                className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-xs flex flex-col justify-between"
-              >
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div>
-                    <h3 className="text-base font-bold text-[var(--color-dark-green)]">
-                      {connector.type}
-                    </h3>
-                    <span className="text-xs text-[var(--color-muted)] uppercase tracking-wider font-semibold">
-                      {connector.normalizedType.toUpperCase()}
-                    </span>
-                  </div>
-                  <PowerBadge powerKw={connector.powerKw} />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 py-3 border-y border-[var(--color-border)] text-xs text-center my-2">
-                  <div>
-                    <span className="text-[var(--color-muted)] block">Voltage</span>
-                    <strong className="text-[var(--color-dark-green)]">
-                      {connector.voltage ? `${connector.voltage}V` : "Standard"}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-[var(--color-muted)] block">Current</span>
-                    <strong className="text-[var(--color-dark-green)]">
-                      {connector.amps ? `${connector.amps}A` : "Auto"}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-[var(--color-muted)] block">Plugs</span>
-                    <strong className="text-[var(--color-dark-green)]">{connector.quantity}</strong>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-xs text-[var(--color-muted)]">Port Status:</span>
-                  <StatusBadge status={connector.status} size="sm" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* STATION INFORMATION */}
-        <section className="rounded-2xl border border-[var(--color-border)] bg-white p-6 shadow-xs space-y-4">
-          <h2 className="text-lg font-bold text-[var(--color-dark-green)]">Station Information</h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
-            <div>
-              <span className="text-[var(--color-muted)] block mb-1">Access & Usage:</span>
-              <strong className="text-[var(--color-dark-green)]">{station.usageType}</strong>
-            </div>
-            <div>
-              <span className="text-[var(--color-muted)] block mb-1">Data Provider:</span>
-              <strong className="text-[var(--color-dark-green)]">{station.dataProvider}</strong>
-            </div>
-            <div>
-              <span className="text-[var(--color-muted)] block mb-1">Last Verified:</span>
-              <strong className="text-[var(--color-dark-green)]">{station.lastUpdated}</strong>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-[var(--color-muted)] leading-relaxed">
-            <p>
-              <strong>Note on Availability:</strong> Operational status is maintained via public station records and community telemetry. It indicates whether the equipment is operational, not real-time parking spot occupancy. Last updated {station.lastUpdated}.
-            </p>
-          </div>
-        </section>
-
-        {/* ACTION BUTTONS */}
-        <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-[var(--color-border)]">
-          <a
-            href={directionsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 sm:flex-none inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 font-bold text-white shadow-xs hover:bg-[var(--color-secondary-green)] transition-all"
-          >
-            <span>⚡ Open in Google Maps</span>
-          </a>
-          <Link
-            href={routeUrls.map({ lat: station.latitude, lng: station.longitude, nearby: true })}
-            className="flex-1 sm:flex-none inline-flex min-h-12 items-center justify-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-6 font-semibold text-[var(--color-dark-green)] hover:border-[var(--color-primary)] hover:bg-[var(--color-light-green)] transition-all"
-          >
-            Find Nearby Chargers
-          </Link>
-        </div>
-
-        {/* NEARBY CHARGERS */}
+        {/* Nearby Stations Section */}
         {nearbyStations.length > 0 && (
           <section className="space-y-4 pt-6 border-t border-[var(--color-border)]">
-            <h2 className="text-xl font-bold tracking-tight text-[var(--color-dark-green)]">
-              More Charging Stations Nearby
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {nearbyStations.map((s) => (
-                <StationCard key={s.id} station={s} />
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-[var(--color-dark-green)]">
+                  Nearby Stations in {station.city.name}
+                </h2>
+                <p className="text-xs text-[var(--color-muted)]">
+                  Alternative charging points within 25 km
+                </p>
+              </div>
+              <Link
+                href={routeUrls.city(station.state.slug, station.city.slug)}
+                className="text-xs sm:text-sm font-semibold text-[var(--color-secondary-green)] hover:underline inline-flex items-center gap-1"
+              >
+                <span>View all</span>
+                <span>→</span>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {nearbyStations.map((nearby) => (
+                <StationCard key={nearby.id} station={nearby} />
               ))}
             </div>
           </section>
         )}
 
         {/* GEO / AI MACHINE-READABLE SPECIFICATIONS */}
-        <section className="rounded-2xl border border-[var(--color-border)] bg-white p-6 sm:p-8 space-y-4">
-          <div className="border-b border-[var(--color-border)] pb-3">
+        <section className="rounded-3xl border border-[var(--color-border)] bg-white p-6 sm:p-8 space-y-4 shadow-xs">
+          <div className="border-b border-[var(--color-border)]/60 pb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
               Authoritative Data Record
             </span>

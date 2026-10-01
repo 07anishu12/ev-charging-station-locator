@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CityCard } from "@/components/cards/city-card";
+import { CityHeroBanner } from "@/components/cities/city-hero-banner";
 import { MapView } from "@/components/map/map-view";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { CityStationBrowser } from "@/components/stations/city-station-browser";
@@ -12,7 +13,6 @@ import {
   JsonLd,
 } from "@/components/seo/json-ld";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { StatsCards } from "@/components/ui/stats-cards";
 import { getMockCities, getMockOperators } from "@/lib/mock";
 import { absoluteUrl } from "@/lib/seo/config";
@@ -100,43 +100,66 @@ export default async function CityPage({ params }: CityPageProps) {
     <>
       <JsonLd schema={[breadcrumbsSchema, collectionSchema, buildFAQSchema(cityFaqs)]} />
       <SiteHeader />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-12 space-y-10">
-        {/* Breadcrumb & Header */}
-        <div>
-          <Breadcrumbs
-            items={[
-              { label: "India", href: routeUrls.india() },
-              { label: stateName, href: routeUrls.state(stateSlug) },
-              { label: cityName },
-            ]}
-            className="mb-4"
-          />
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
-                City Charging Network
-              </span>
-              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[var(--color-dark-green)] mt-1">
-                EV Charging Stations in {cityName}
-              </h1>
-              <p className="mt-2 text-sm sm:text-base text-[var(--color-muted)] max-w-2xl">
-                Explore {totalStations} public charging stations in {cityName}, {stateName}. Compare fast DC charging speeds, verify connector compatibility, and get instant GPS directions.
-              </p>
-            </div>
-            <Link
-              href={routeUrls.map({
-                lat: cityData.city.latitude,
-                lng: cityData.city.longitude,
-                nearby: true,
-              })}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 font-bold text-sm sm:text-base text-white shadow-xs hover:bg-[var(--color-secondary-green)] transition-all shrink-0"
-            >
-              <span>⚡ Find Chargers Near Me</span>
-            </Link>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-10 space-y-8">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumbs
+          items={[
+            { label: "India", href: routeUrls.india() },
+            { label: stateName, href: routeUrls.state(stateSlug) },
+            { label: cityName },
+          ]}
+        />
+
+        {/* City Hero Landmark Banner matching Screen 4 */}
+        <CityHeroBanner
+          cityName={cityName}
+          citySlug={citySlug}
+          stateName={stateName}
+          totalStations={totalStations}
+        />
+
+        {/* City Title & Statistics Header matching Screen 4 */}
+        <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--color-dark-green)]">
+              {cityName}
+            </h1>
+            <span className="text-base sm:text-xl font-bold text-[var(--color-primary)]">
+              {totalStations}+ EV Charging Stations
+            </span>
           </div>
+
+          <p className="text-xs sm:text-sm text-[var(--color-muted)] max-w-2xl leading-relaxed">
+            Discover EV charging stations across {cityName}. Find nearby chargers, check availability and get directions.
+          </p>
         </div>
 
-        {/* Statistics */}
+        {/* City Navigation Tabs matching Screen 4 */}
+        <div className="flex items-center gap-2 border-b border-[var(--color-border)] pb-2 overflow-x-auto no-scrollbar text-sm font-bold">
+          <span className="text-[var(--color-primary)] border-b-2 border-[var(--color-primary)] pb-2 px-3">
+            Stations ({totalStations})
+          </span>
+          <Link
+            href={routeUrls.india()}
+            className="text-[var(--color-muted)] hover:text-[var(--color-dark-green)] pb-2 px-3 transition-colors"
+          >
+            Areas
+          </Link>
+          <Link
+            href={routeUrls.search()}
+            className="text-[var(--color-muted)] hover:text-[var(--color-dark-green)] pb-2 px-3 transition-colors"
+          >
+            PIN Codes
+          </Link>
+          <a
+            href="#about-city"
+            className="text-[var(--color-muted)] hover:text-[var(--color-dark-green)] pb-2 px-3 transition-colors"
+          >
+            About
+          </a>
+        </div>
+
+        {/* Real Network Statistics */}
         <StatsCards
           totalStations={totalStations}
           totalOperators={operators.length}
@@ -163,7 +186,7 @@ export default async function CityPage({ params }: CityPageProps) {
             </Link>
           </div>
 
-          <div className="h-[360px] sm:h-[420px] rounded-2xl overflow-hidden border border-[var(--color-border)] shadow-xs">
+          <div className="h-[340px] sm:h-[400px] rounded-3xl overflow-hidden border border-[var(--color-border)] shadow-xs">
             <MapView
               stations={stationsInCity}
               initialCenter={
@@ -187,7 +210,7 @@ export default async function CityPage({ params }: CityPageProps) {
         />
 
         {/* Charging Networks in this City */}
-        <section className="space-y-4">
+        <section id="about-city" className="space-y-4 pt-6 border-t border-[var(--color-border)]">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-dark-green)]">
             Charging Networks in {cityName}
           </h2>
@@ -201,65 +224,32 @@ export default async function CityPage({ params }: CityPageProps) {
                   ⚡
                 </div>
                 <h3 className="text-sm font-bold text-[var(--color-dark-green)]">{op.name}</h3>
-                <p className="text-xs text-[var(--color-muted)] mt-1">{op.stationCount}+ points</p>
+                <span className="text-xs text-[var(--color-muted)]">Verified Operator</span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Popular Connector Types */}
-        <section className="space-y-4">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-dark-green)]">
-            Popular Connectors in {cityName}
-          </h2>
-          <div className="flex flex-wrap gap-2.5">
-            <ConnectorBadge type="CCS (Type 2) DC Fast" />
-            <ConnectorBadge type="Type 2 AC (7.4kW - 22kW)" />
-            <ConnectorBadge type="CHAdeMO DC" />
-            <ConnectorBadge type="GB/T DC" />
-            <ConnectorBadge type="16A 3-Pin Socket" />
-          </div>
-        </section>
-
-        {/* Nearby Cities */}
-        <section className="space-y-4 pt-6 border-t border-[var(--color-border)]">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-dark-green)]">
-            Nearby Cities
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            {nearbyCities.map((nc) => (
-              <CityCard key={nc.id} city={nc} />
-            ))}
-          </div>
-        </section>
-
-        {/* Concise Informational Section */}
-        <section className="rounded-2xl border border-[var(--color-border)] bg-white p-6 sm:p-8 space-y-4">
-          <h2 className="text-lg sm:text-xl font-bold text-[var(--color-dark-green)]">
-            Charging Guide for {cityName}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm text-[var(--color-muted)] leading-relaxed">
-            <div>
-              <h3 className="font-semibold text-[var(--color-dark-green)] mb-1">⚡ Fast Charging Corridor</h3>
-              <p>Most rapid 60kW and 120kW DC stations are situated along ring roads, highway bypasses, and tech parks.</p>
+        {/* Nearby Cities in Region */}
+        {nearbyCities.length > 0 && (
+          <section className="space-y-4 pt-6 border-t border-[var(--color-border)]">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-dark-green)]">
+              Other Cities in {stateName} & Region
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {nearbyCities.map((c) => (
+                <CityCard key={c.id} city={c} />
+              ))}
             </div>
-            <div>
-              <h3 className="font-semibold text-[var(--color-dark-green)] mb-1">🕒 Peak Hours</h3>
-              <p>Commercial mall hubs experience higher occupancy between 5:00 PM and 9:00 PM on weekends. Check operational status before departure.</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-[var(--color-dark-green)] mb-1">💳 Payment & Access</h3>
-              <p>Public stations support app-based start/stop and UPI payments across major networks including Tata Power, Statiq, and Jio-bp pulse.</p>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* AEO Frequently Asked Questions */}
+        {/* AEO FREQUENTLY ASKED QUESTIONS */}
         <section className="space-y-4 pt-6 border-t border-[var(--color-border)]">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-dark-green)]">
             Frequently Asked Questions about EV Charging in {cityName}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {cityFaqs.map((faq, idx) => (
               <div
                 key={idx}
