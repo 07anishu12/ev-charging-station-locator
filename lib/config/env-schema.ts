@@ -10,9 +10,21 @@ const optionalUrl = z.preprocess(
   z.string().url().optional(),
 );
 
+const optionalDatabaseUrl = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z
+    .string()
+    .url()
+    .refine(
+      (val) => val.startsWith("postgres://") || val.startsWith("postgresql://"),
+      { message: "DATABASE_URL must start with postgres:// or postgresql://" },
+    )
+    .optional(),
+);
+
 export const environmentSchema = z
   .object({
-    DATABASE_URL: optionalUrl,
+    DATABASE_URL: optionalDatabaseUrl,
     OPENCHARGEMAP_API_KEY: optionalString,
     NEXT_PUBLIC_SITE_URL: optionalUrl,
   })

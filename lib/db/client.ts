@@ -16,3 +16,13 @@ export function getDb() {
   pool ??= new Pool({ connectionString: appConfig.database.url });
   return drizzle(pool, { schema });
 }
+
+export async function closeDb(): Promise<void> {
+  if (pool) {
+    await pool.end();
+    pool = undefined;
+  }
+}
+
+export { checkDatabaseHealth, type DatabaseHealth } from "@/lib/db/health";
+
