@@ -1,8 +1,8 @@
 [0.0s] Navigating to homepage
-[1.1s] Page title: "FastCharger | Find your next charging stop."
-[1.1s] Body text length: 4173 chars
-[1.1s] Found 61 clickable elements
-[1.8s] Visible CTAs:
+[1.3s] Page title: "FastCharger | Find your next charging stop."
+[1.3s] Body text length: 4173 chars
+[1.3s] Found 61 clickable elements
+[2.2s] Visible CTAs:
 "FastCharger" (→/)
 "Explore" (→/explore)
 "Map" (→/map)
@@ -115,26 +115,26 @@ Open Interactive Map" (→/map?nearby=true)
 "Map" (→/map)
 "Search" (→/search)
 "Saved" (→/saved)
-[2.2s] Website mentions charging/EV: true
-[2.2s] "Find Chargers Near Me" CTA visible: true
-[2.2s] Search input visible: true
-[2.2s] Explore link visible: true
-[2.2s] Map link visible: true
-[2.2s] === ATTEMPTING MOST OBVIOUS ACTION ===
-[2.2s] Clicking primary CTA: "⚡
+[2.5s] Website mentions charging/EV: true
+[2.5s] "Find Chargers Near Me" CTA visible: true
+[2.5s] Search input visible: true
+[2.5s] Explore link visible: true
+[2.5s] Map link visible: true
+[2.5s] === ATTEMPTING MOST OBVIOUS ACTION ===
+[2.5s] Clicking primary CTA: "⚡
 Find Chargers Near Me"
-[2.7s] URL after click: http://localhost:3000/map?nearby=true
-[2.7s] Time to first action: 2.7s
-[2.7s] Station-like results found: 0
-[2.7s] Map visible: true
-[2.8s] No results yet, trying search...
-[2.8s] Found search box, typing "Delhi"
-[5.1s] Results after searching "Delhi": 0
-[5.1s] Time to first useful result: 5.1s
-[5.1s] ⚠ Could not find a station to select
+[2.8s] URL after click: http://localhost:3000/map?nearby=true
+[2.8s] Time to first action: 2.8s
+[2.9s] Station-like results found: 0
+[2.9s] Map visible: true
+[3.2s] No results yet, trying search...
+[3.2s] Found search box, typing "Delhi"
+[5.5s] Results after searching "Delhi": 0
+[5.5s] Time to first useful result: 5.5s
+[5.5s] ⚠ Could not find a station to select
 
 ========== SESSION 1 ASSESSMENT ==========
-Total time: 5.1s
+Total time: 5.5s
 Clicks: 2
 Wrong clicks: 0
 Confusion events: 2
