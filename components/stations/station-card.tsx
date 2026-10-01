@@ -28,10 +28,10 @@ export function StationCard({
     <article
       id={`station-card-${station.id}`}
       onClick={() => onSelect?.(station)}
-      className={`relative rounded-2xl border bg-white p-4 sm:p-5 shadow-xs transition-all ${
+      className={`relative rounded-2xl border bg-white p-4 sm:p-5 shadow-xs transition-all duration-200 ${
         selected
           ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/30 shadow-md bg-emerald-50/30"
-          : "border-[var(--color-border)] hover:border-[var(--color-primary)]/60 hover:shadow-md"
+          : "border-[var(--color-border)] hover:border-[var(--color-primary)]/60 hover:shadow-md hover:-translate-y-0.5"
       } ${onSelect ? "cursor-pointer" : ""} ${className}`}
     >
       <div className="flex items-start justify-between gap-3 mb-2">
@@ -42,17 +42,28 @@ export function StationCard({
             </span>
             {station.distanceKm !== undefined && (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-[var(--color-secondary-green)]">
-                📍 {station.distanceKm} km
+                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>{station.distanceKm} km</span>
               </span>
             )}
             {station.matchType === "exact_pincode" && (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100/80 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
-                🎯 Exact PIN
+                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" strokeWidth="2" />
+                  <circle cx="12" cy="12" r="3" strokeWidth="2" />
+                </svg>
+                <span>Exact PIN</span>
               </span>
             )}
             {station.matchType === "nearby_pincode" && (
               <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-800">
-                📍 PIN {station.stationPincode || station.pincode}
+                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                </svg>
+                <span>PIN {station.stationPincode || station.pincode}</span>
               </span>
             )}
           </div>

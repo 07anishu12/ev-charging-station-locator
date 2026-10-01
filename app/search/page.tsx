@@ -265,9 +265,13 @@ function SearchPageContent() {
                       Stations near {pincodeData.pincode} ({pincodeData.results.length})
                     </h3>
                     <div className="space-y-2">
-                      {pincodeData.results.map((st) => (
+                      {pincodeData.results.map((st, i) => (
                         <div
                           key={st.id}
+                          style={{
+                            animation: "search-stagger-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                            animationDelay: `${Math.min(i, 8) * 35}ms`,
+                          }}
                           className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-[var(--color-border)] bg-white p-4 hover:border-[var(--color-primary)] hover:shadow-xs transition-all gap-4"
                         >
                           <div className="flex items-start gap-3.5 min-w-0 flex-1">
@@ -396,6 +400,10 @@ function SearchPageContent() {
                         <Link
                           key={i}
                           href={res.href}
+                          style={{
+                            animation: "search-stagger-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                            animationDelay: `${Math.min(i, 8) * 35}ms`,
+                          }}
                           className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-white p-3.5 hover:border-[var(--color-primary)] hover:shadow-xs transition-all"
                         >
                           <div className="flex items-center gap-3">
@@ -462,6 +470,10 @@ function SearchPageContent() {
                         <Link
                           key={i}
                           href={res.href}
+                          style={{
+                            animation: "search-stagger-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                            animationDelay: `${Math.min(i, 8) * 35}ms`,
+                          }}
                           className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-white p-3.5 hover:border-[var(--color-primary)] hover:shadow-xs transition-all"
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">

@@ -42,10 +42,10 @@ export function SiteHeader() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`inline-flex min-h-10 items-center rounded-xl px-3.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
+                  className={`inline-flex min-h-10 items-center rounded-xl px-3.5 text-sm font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
                     isActive
-                      ? "text-[var(--color-primary)] bg-[var(--color-light-green)]"
-                      : "text-[var(--color-dark-green)] hover:text-[var(--color-primary)] hover:bg-gray-50"
+                      ? "text-[var(--color-primary)] bg-[var(--color-light-green)] shadow-2xs"
+                      : "text-[var(--color-dark-green)] hover:text-[var(--color-primary)] hover:bg-emerald-50/40 hover:-translate-y-0.5"
                   }`}
                 >
                   {link.label}
@@ -59,9 +59,9 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <Link
             href={routeUrls.map({ nearby: true })}
-            className="inline-flex min-h-10 sm:min-h-11 items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-3.5 sm:px-5 text-xs sm:text-sm font-semibold text-white shadow-xs transition-colors hover:bg-[var(--color-secondary-green)] focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
+            className="group inline-flex min-h-10 sm:min-h-11 items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-3.5 sm:px-5 text-xs sm:text-sm font-semibold text-white shadow-xs transition-all duration-200 hover:bg-[var(--color-secondary-green)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
           >
-            <span>⚡</span>
+            <span className="transition-transform duration-200 group-hover:scale-110">⚡</span>
             <span className="hidden sm:inline">Find Chargers Near Me</span>
             <span className="sm:hidden">Near Me</span>
           </Link>

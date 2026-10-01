@@ -224,22 +224,37 @@ export function MapView({
           ? `
             <div style="
               position: relative;
-              width: 44px;
-              height: 44px;
-              background-color: ${color};
-              border: 3px solid #ffffff;
-              border-radius: 50%;
-              box-shadow: 0 0 0 3px #16C784, 0 8px 24px rgba(7, 59, 42, 0.45);
+              width: 48px;
+              height: 48px;
               display: flex;
               align-items: center;
               justify-content: center;
-              color: white;
-              font-size: 16px;
-              font-weight: bold;
-              transform: scale(1.1);
-              transition: transform 0.2s ease;
             ">
-              ⚡
+              <div style="
+                position: absolute;
+                inset: 0px;
+                border-radius: 50%;
+                background: rgba(22, 199, 132, 0.22);
+                border: 2px solid #16C784;
+                animation: marker-halo-pulse 900ms cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+              "></div>
+              <div style="
+                position: relative;
+                width: 38px;
+                height: 38px;
+                background-color: ${color};
+                border: 2.5px solid #ffffff;
+                border-radius: 50%;
+                box-shadow: 0 0 0 3px #16C784, 0 6px 18px rgba(7, 59, 42, 0.4);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+              ">
+                ⚡
+              </div>
             </div>
           `
           : `
@@ -266,8 +281,8 @@ export function MapView({
         const icon = L.divIcon({
           html: iconHtml,
           className: "custom-charger-pin",
-          iconSize: isSelected ? [44, 44] : [32, 32],
-          iconAnchor: isSelected ? [22, 22] : [16, 16],
+          iconSize: isSelected ? [48, 48] : [32, 32],
+          iconAnchor: isSelected ? [24, 24] : [16, 16],
         });
 
         const marker = L.marker([station.latitude, station.longitude], {

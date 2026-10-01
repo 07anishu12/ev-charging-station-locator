@@ -63,36 +63,36 @@ export function FilterChips({
       <button
         type="button"
         onClick={() => toggleMinPower(50)}
-        className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
+        className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.minPowerKw === 50
-            ? "bg-[var(--color-primary)] text-white shadow-xs"
-            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)]"
+            ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-filter-pulse"
+            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
         }`}
       >
-        <span>⚡ Fast (50kW+)</span>
+        <span className="transition-transform duration-200">⚡ Fast (50kW+)</span>
       </button>
 
       {/* 100kW+ Ultra Fast */}
       <button
         type="button"
         onClick={() => toggleMinPower(100)}
-        className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
+        className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.minPowerKw === 100
-            ? "bg-[var(--color-primary)] text-white shadow-xs"
-            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)]"
+            ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-filter-pulse"
+            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
         }`}
       >
-        <span>⚡ 100kW+ Ultra</span>
+        <span className="transition-transform duration-200">⚡ 100kW+ Ultra</span>
       </button>
 
       {/* CCS2 */}
       <button
         type="button"
         onClick={() => toggleConnector("ccs2")}
-        className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
+        className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.connectorType === "ccs2"
-            ? "bg-[var(--color-primary)] text-white shadow-xs"
-            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)]"
+            ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-filter-pulse"
+            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
         }`}
       >
         <span>CCS2</span>
@@ -102,10 +102,10 @@ export function FilterChips({
       <button
         type="button"
         onClick={() => toggleConnector("type2")}
-        className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
+        className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.connectorType === "type2"
-            ? "bg-[var(--color-primary)] text-white shadow-xs"
-            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)]"
+            ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-filter-pulse"
+            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
         }`}
       >
         <span>Type 2</span>
@@ -115,13 +115,13 @@ export function FilterChips({
       <button
         type="button"
         onClick={toggleOperational}
-        className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
+        className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.operationalOnly
-            ? "bg-[var(--color-dark-green)] text-white shadow-xs"
-            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)]"
+            ? "bg-[var(--color-dark-green)] text-white shadow-xs animate-filter-pulse"
+            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
         }`}
       >
-        <span className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
+        <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] animate-status-pulse-once" />
         <span>Operational</span>
       </button>
 
@@ -130,10 +130,10 @@ export function FilterChips({
         type="button"
         onClick={toggleNearby}
         disabled={isLoadingLocation}
-        className={`inline-flex shrink-0 min-h-9 items-center gap-1 rounded-full px-3.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
+        className={`inline-flex shrink-0 min-h-9 items-center gap-1 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.nearby
-            ? "bg-[var(--color-secondary-green)] text-white shadow-xs"
-            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)]"
+            ? "bg-[var(--color-secondary-green)] text-white shadow-xs animate-filter-pulse"
+            : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
         } ${isLoadingLocation ? "opacity-80 cursor-wait" : ""}`}
       >
         {isLoadingLocation ? (
@@ -185,7 +185,7 @@ export function FilterChips({
         <button
           type="button"
           onClick={resetFilters}
-          className="inline-flex shrink-0 min-h-9 items-center rounded-full px-3 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
+          className="inline-flex shrink-0 min-h-9 items-center rounded-full px-3 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer active:scale-95"
         >
           Reset
         </button>

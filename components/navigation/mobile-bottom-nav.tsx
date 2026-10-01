@@ -66,9 +66,9 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-0 inset-x-0 z-30 border-t border-[var(--color-border)] bg-white/95 backdrop-blur-md md:hidden safe-area-pb"
+      className="fixed bottom-0 inset-x-0 z-30 border-t border-[var(--color-border)] bg-white/95 backdrop-blur-md md:hidden safe-area-pb shadow-xs"
     >
-      <div className="grid grid-cols-4 h-16 max-w-md mx-auto">
+      <div className="grid grid-cols-4 h-16 max-w-md mx-auto px-2">
         {items.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
@@ -78,22 +78,28 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center min-h-[48px] py-1 transition-colors select-none focus-visible:outline-none ${
-                isActive
-                  ? "text-[var(--color-primary)] font-semibold"
-                  : "text-[var(--color-muted)] hover:text-[var(--color-dark-green)]"
-              }`}
+              className="flex flex-col items-center justify-center min-h-[48px] py-1 select-none focus-visible:outline-none group relative"
             >
-              <svg
-                className={`w-5 h-5 transition-transform ${isActive ? "scale-110" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
+              <div
+                className={`flex flex-col items-center justify-center px-3 py-1 rounded-xl transition-all duration-150 ${
+                  isActive
+                    ? "bg-[var(--color-light-green)] text-[var(--color-primary)] font-semibold shadow-2xs"
+                    : "text-[var(--color-muted)] hover:text-[var(--color-dark-green)]"
+                }`}
               >
-                {item.icon}
-              </svg>
-              <span className="text-[11px] mt-1">{item.label}</span>
+                <svg
+                  className={`w-5 h-5 transition-transform duration-150 ${
+                    isActive ? "scale-105 text-[var(--color-primary)]" : "group-hover:scale-105"
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  {item.icon}
+                </svg>
+                <span className="text-[11px] mt-0.5 tracking-tight">{item.label}</span>
+              </div>
             </Link>
           );
         })}

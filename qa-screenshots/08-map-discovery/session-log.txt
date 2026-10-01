@@ -1,0 +1,13 @@
+[4.1s] Map loaded
+[4.1s] Map container visible: true
+[4.2s] Initial markers: 44
+[7.3s] Markers after zoom: 44
+[9.5s] Popup visible after marker click: false
+[9.5s] No popup — checking if list item was highlighted
+[9.5s] Active/selected card visible: false
+[9.5s] Station links in list: 46
+[9.5s] Clicking list station: "Details"
+
+========== SESSION 8 ASSESSMENT ==========
+Clicks: 4, Confusion events: 0
+Map markers discoverable: YES

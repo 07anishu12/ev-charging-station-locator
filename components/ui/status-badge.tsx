@@ -14,7 +14,7 @@ export function StatusBadge({ status, className = "", size = "md" }: StatusBadge
   if (normalized === "operational" || normalized === "available") {
     label = "Operational";
     bgClass = "bg-[var(--color-light-green)] text-[var(--color-secondary-green)] border-[var(--color-primary)]/30";
-    dotClass = "bg-[var(--color-primary)] animate-pulse";
+    dotClass = "bg-[var(--color-primary)]";
   } else if (normalized === "busy") {
     label = "In Use";
     bgClass = "bg-amber-50 text-amber-800 border-amber-300";
@@ -26,6 +26,7 @@ export function StatusBadge({ status, className = "", size = "md" }: StatusBadge
   }
 
   const sizeClass = size === "sm" ? "px-2 py-0.5 text-xs gap-1.5" : "px-2.5 py-1 text-xs sm:text-sm gap-2";
+  const isOperational = normalized === "operational" || normalized === "available";
 
   return (
     <span
@@ -33,7 +34,12 @@ export function StatusBadge({ status, className = "", size = "md" }: StatusBadge
       role="status"
       aria-label={`Station status: ${label}`}
     >
-      <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} aria-hidden="true" />
+      <span className="relative flex h-2 w-2 items-center justify-center shrink-0" aria-hidden="true">
+        {isOperational && (
+          <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary)] animate-status-pulse-once" />
+        )}
+        <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} />
+      </span>
       <span>{label}</span>
     </span>
   );

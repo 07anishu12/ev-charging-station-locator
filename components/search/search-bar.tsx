@@ -39,10 +39,13 @@ export function SearchBar({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`relative flex items-center w-full ${className}`}>
-      <div className="absolute left-3.5 text-[var(--color-muted)] pointer-events-none flex items-center justify-center">
+    <form
+      onSubmit={handleSubmit}
+      className={`group relative flex items-center w-full transition-all duration-200 ${className}`}
+    >
+      <div className="absolute left-3.5 text-[var(--color-muted)] pointer-events-none flex items-center justify-center transition-transform duration-200 group-focus-within:scale-110 group-focus-within:text-[var(--color-primary)]">
         <svg
-          className="w-5 h-5 text-[var(--color-primary)]"
+          className="w-5 h-5 transition-colors duration-200 text-[var(--color-primary)]"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -65,14 +68,14 @@ export function SearchBar({
         }}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className="w-full min-h-12 rounded-2xl border border-[var(--color-border)] bg-white pl-11 pr-10 text-sm sm:text-base text-[var(--color-dark-green)] placeholder-[var(--color-muted)] shadow-xs transition-all focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:outline-none"
+        className="w-full min-h-12 rounded-2xl border border-[var(--color-border)] bg-white pl-11 pr-10 text-sm sm:text-base text-[var(--color-dark-green)] placeholder-[var(--color-muted)] shadow-xs transition-all duration-200 focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary)]/15 focus:outline-none"
       />
       {query && (
         <button
           type="button"
           onClick={handleClear}
           aria-label="Clear search input"
-          className="absolute right-3 p-1 rounded-full text-gray-400 hover:text-gray-600 focus-visible:outline-none"
+          className="absolute right-3 p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all duration-150 active:scale-90 focus-visible:outline-none cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

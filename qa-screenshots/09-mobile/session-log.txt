@@ -1,0 +1,16 @@
+[0.7s] Mobile homepage loaded
+[0.7s] Viewport: 390x844
+[0.7s] Hero text: "Find your next charging stop."
+[0.7s] Near Me CTA visible without scrolling: true
+[0.7s] Hamburger menu: false
+[0.7s] Horizontal overflow: false (body: 390, viewport: 390)
+[3.8s] Nearby page on mobile
+[3.8s] Map visible on mobile: true
+[3.8s] Station links visible: 36
+[3.8s] List container visible: true
+[3.8s] CCS2 filter visible on mobile: true
+[6.4s] Navigation visible after scroll: true
+
+========== SESSION 9 ASSESSMENT ==========
+Clicks: 2, Confusion events: 0
+Mobile usable: YES

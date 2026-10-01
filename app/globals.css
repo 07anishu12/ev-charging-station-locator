@@ -15,6 +15,11 @@
   --color-unknown: #8a9490;
   --background: var(--color-background);
   --foreground: var(--color-text);
+
+  /* Motion Tokens */
+  --motion-fast: 150ms;
+  --motion-normal: 250ms;
+  --motion-slow: 500ms;
 }
 
 @theme inline {
@@ -48,15 +53,19 @@ body {
   margin: 0;
 }
 
+/* ==========================================================
+   Motion System & Environmental Micro-Animations (GPU only)
+   ========================================================== */
+
 @keyframes charging-pulse {
   0%,
   100% {
-    opacity: 0.65;
+    opacity: 0.75;
     transform: scale(0.98);
   }
   50% {
     opacity: 1;
-    transform: scale(1.03);
+    transform: scale(1.02);
   }
 }
 
@@ -90,6 +99,146 @@ body {
   }
 }
 
+/* Subtle Apple-style Environmental Leaf Sway (4-8s period) */
+@keyframes leaf-sway-slow {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(3px, -2px, 0) rotate(2.5deg);
+  }
+}
+
+@keyframes leaf-sway-reverse {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(-3px, 2px, 0) rotate(-2deg);
+  }
+}
+
+@keyframes tree-leaf-sway {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes tree-leaf-sway-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-3.5deg);
+  }
+}
+
+/* Upward subtle energy motes for bottom CTA */
+@keyframes particle-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(0, -55px, 0) scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* Travelling electric pulse through cable */
+@keyframes cable-pulse {
+  0% {
+    stroke-dashoffset: 80;
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+  80%, 100% {
+    stroke-dashoffset: -80;
+    opacity: 0;
+  }
+}
+
+/* Battery meter gentle charge block pulse */
+@keyframes battery-pulse {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scale(0.96);
+  }
+}
+
+/* Operational 1-second pulse on render then stop */
+@keyframes status-pulse-once {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* Filter activation micro-bounce */
+@keyframes filter-activate-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Search results stagger animation */
+@keyframes search-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Selected marker halo animation */
+@keyframes marker-halo-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 199, 132, 0.6);
+  }
+  70% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 8px rgba(22, 199, 132, 0);
+  }
+  100% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 0 rgba(22, 199, 132, 0);
+  }
+}
+
+/* Utility classes */
 @utility animate-charging-pulse {
   animation: charging-pulse 1.8s ease-in-out infinite;
 }
@@ -106,6 +255,48 @@ body {
   animation: bottom-sheet-in 220ms ease-out both;
 }
 
+@utility animate-leaf-sway-slow {
+  animation: leaf-sway-slow 7s ease-in-out infinite alternate;
+}
+
+@utility animate-leaf-sway-reverse {
+  animation: leaf-sway-reverse 8.5s ease-in-out infinite alternate;
+}
+
+@utility animate-tree-leaf-sway {
+  animation: tree-leaf-sway 6s ease-in-out infinite alternate;
+}
+
+@utility animate-tree-leaf-sway-slow {
+  animation: tree-leaf-sway-slow 8s ease-in-out infinite alternate;
+}
+
+@utility animate-particle-rise {
+  animation: particle-rise 3s ease-out infinite;
+}
+
+@utility animate-cable-pulse {
+  stroke-dasharray: 40;
+  animation: cable-pulse 2s ease-in-out infinite;
+}
+
+@utility animate-battery-pulse {
+  animation: battery-pulse 1.8s ease-in-out infinite;
+}
+
+@utility animate-status-pulse-once {
+  animation: status-pulse-once 1s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+@utility animate-filter-pulse {
+  animation: filter-activate-pulse 200ms ease-out 1;
+}
+
+@utility animate-marker-halo {
+  animation: marker-halo-pulse 900ms cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+}
+
+/* Respect user preference for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -116,3 +307,4 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+

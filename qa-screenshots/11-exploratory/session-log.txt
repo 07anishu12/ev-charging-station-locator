@@ -1,0 +1,33 @@
+[0.7s] Homepage loaded
+[0.7s] First heading: "Find your next charging stop."
+[4.4s] Near Me activated: http://localhost:3000/map?nearby=true
+[4.4s] Nearby stations: 36
+[5.0s] Search page loaded
+[5.0s] Search input visible: true
+[8.1s] Results for "charger": 0
+[8.6s] Saved page: http://localhost:3000/saved
+[8.6s] Saved page content preview: "FastCharger
+⚡
+Near Me
+Saved Chargers
+
+Quick access to your favorite and frequently visited charging points.
+
+No saved chargers yet.
+
+Save your regular charging stops to quickly check their status, con"
+[9.2s] Clicking station: "Tata Power - Aerocity Rapid Charging Hub"
+[11.4s] Station detail URL: http://localhost:3000/station/tata-power-aerocity-fast-charging-hub-delhi
+[11.4s] Save button on detail page: false
+[11.4s] Directions link: true
+[11.4s] Map on detail page: true
+[11.4s] Has address: true
+[11.4s] Has power: true
+[11.4s] Has connectors: true
+[11.4s] Has status: true
+[11.4s] Has operator: true
+
+========== SESSION 11: CONFUSION POINTS ==========
+  ❓ Searching "charger" on a charger-finding website returns 0 results
+Total confusion points: 1
+Total clicks: 5

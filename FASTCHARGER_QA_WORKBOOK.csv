@@ -1,0 +1,25 @@
+Session ID,Persona,Task,Completed,Time (s),Clicks,Searches,Wrong Actions,Backtracks,Resets,Dead Ends,Confusion Events,Friction Events,Unexpected UI Changes,Times User Guessed,Times User Recovered,Failure Classification,Severity,Evidence,Defect ID
+01,First-time EV owner,Find an EV charging station near me,PARTIAL,3.5,2,1,0,0,0,1,2,1,0,0,0,COMPREHENSION,LOW,Session 1 log + screenshots,
+02,Driver with low battery,Find a fast charger near me,YES,8.4,3,0,0,0,0,0,0,0,0,0,0,,,,
+03,CCS2 car owner,Find a CCS2 charger near me,YES,8.8,2,0,0,0,0,0,0,0,0,0,0,,,,
+04,Experienced EV user,Find a 100kW+ charger,YES,10.9,3,0,0,1,0,0,1,0,0,1,0,FEEDBACK,MEDIUM,Power not visible in card text,UX-004a
+05,PIN-only user,Find chargers around PIN 110059,YES,4.4,2,1,0,0,0,0,0,0,0,0,0,,,,
+06,Mistake-maker,Recover from search mistakes,YES,15.7,7,2,0,0,1,0,0,0,0,0,0,,,,
+07,Indecisive user,Change filters repeatedly,YES,18.3,6,0,0,0,1,0,0,0,0,0,0,,,,
+08,Map explorer,Find a charger using the map,YES,9.4,4,0,0,0,0,0,0,0,0,0,0,,,,
+09,Phone user,Find a charger on mobile,YES,6.4,2,0,0,0,0,0,0,0,0,0,0,,,,
+10,Returning user,Access saved stations and search,YES,4.9,3,1,0,0,0,0,1,0,0,0,0,DISCOVERABILITY,LOW,Saved link not found initially,UX-007
+11,Confused user,Explore everything and find confusion,YES,11.3,5,1,0,0,0,0,1,0,0,0,0,COMPREHENSION,HIGH,Search 'charger' returns 0 results,UX-001
+
+UX Defect Register
+Defect ID,Description,Classification,Severity,Session(s),Reproduction Steps
+UX-001,"Searching 'charger' on a charger-finding website returns 0 results",COMPREHENSION,HIGH,11,"1. Go to /search 2. Type 'charger' 3. Press Enter 4. Observe 0 results"
+UX-002,"Error message 'Search request failed' for invalid PIN 999999",FEEDBACK / TRUST,HIGH,6,"1. Go to /search 2. Type '999999' 3. Press Enter 4. See 'Search Error: Search request failed'"
+UX-003,"Map markers drop to 0 after Fast filter while list shows 16 stations",STATE,HIGH,2,"1. Go to /map?nearby=true 2. Click 'Fast (50kW+)' 3. Observe list=16, markers=0"
+UX-004,"'Explore' navigation link goes to homepage (/)",NAVIGATION,MEDIUM,11,"1. Click 'Explore' in nav from any page 2. Observe URL is /"
+UX-005,"Map marker click popup may not be detected by standard Leaflet selectors",INTERACTION,MEDIUM,8,"1. Go to /map 2. Click a marker 3. Popup uses custom component"
+UX-006,"Reset button only appears after a filter is active",DISCOVERABILITY,MEDIUM,7,"1. Go to /map 2. Observe no Reset button 3. Apply filter 4. Reset appears"
+UX-007,"'Saved' link in nav not immediately discoverable",DISCOVERABILITY,MEDIUM,10,"1. Open homepage 2. Look for Saved in nav 3. Not found by selector"
+UX-008,"+1 marker count vs station count (user location marker)",FEEDBACK,LOW,7,"1. Go to /map?nearby=true 2. Observe 36 stations but 37 markers"
+UX-009,"After Reset count (44) differs from initial Nearby count (36)",COMPREHENSION,LOW,7,"1. Go to /map?nearby=true (36) 2. Apply filters 3. Reset 4. Count is 44"
+UX-010,"No hamburger menu on mobile (uses bottom tab bar - actually good)",N/A,INFO,9,"Bottom tab bar is correct mobile pattern"

@@ -1,0 +1,144 @@
+[0.0s] Navigating to homepage
+[0.8s] Page title: "FastCharger | Find your next charging stop."
+[0.8s] Body text length: 4173 chars
+[0.8s] Found 61 clickable elements
+[1.1s] Visible CTAs:
+"FastCharger" (→/)
+"Explore" (→/)
+"Map" (→/map)
+"India" (→/india)
+"Search" (→/search)
+"Saved" (→/saved)
+"⚡
+Find Chargers Near Me" (→/map?nearby=true)
+"⚡
+Find Chargers Near Me" (→/map?nearby=true)
+"Explore India" (→/india)
+"All cities
+→" (→/india)
+"Delhi
+
+Delhi
+
+35 stations
+·
+⚡
+26 Fast DC" (→/india/delhi/delhi/ev-charging-stations)
+"Mumbai
+
+Maharashtra
+
+390 stations
+·
+⚡
+240 Fast DC" (→/india/maharashtra/mumbai/ev-charging-stations)
+"Bengaluru
+
+Karnataka
+
+380 stations
+·
+⚡
+260 Fast DC" (→/india/karnataka/bengaluru/ev-charging-stations)
+"Gurugram
+
+Haryana
+
+210 stations
+·
+⚡
+150 Fast DC" (→/india/haryana/gurugram/ev-charging-stations)
+"Hyderabad
+
+Telangana
+
+260 stations
+·
+⚡
+180 Fast DC" (→/india/telangana/hyderabad/ev-charging-stations)
+"Pune
+
+Maharashtra
+
+190 stations
+·
+⚡
+120 Fast DC" (→/india/maharashtra/pune/ev-charging-stations)
+"Chandigarh
+
+Punjab
+
+110 stations
+·
+⚡
+75 Fast DC" (→/india/punjab/chandigarh/ev-charging-stations)
+"View on map
+→" (→/map)
+"Tata Power - Aerocity Rapid Charging Hub" (→/station/tata-power-aerocity-fast-charging-hub-delhi)
+"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5501,77.1219)
+"Details" (→/station/tata-power-aerocity-fast-charging-hub-delhi)
+"Statiq - Connaught Place Outer Circle" (→/station/statiq-connaught-place-supercharger-delhi)
+"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.6289,77.2185)
+"Details" (→/station/statiq-connaught-place-supercharger-delhi)
+"Jio-bp pulse - Select CITYWALK Saket" (→/station/jio-bp-pulse-select-citywalk-saket-delhi)
+"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5284,77.2185)
+"Details" (→/station/jio-bp-pulse-select-citywalk-saket-delhi)
+"Tata Power - Nehru Place Commercial Hub" (→/station/tata-power-nehru-place-metro-hub-delhi)
+"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5492,77.2526)
+"Details" (→/station/tata-power-nehru-place-metro-hub-delhi)
+"Explore all →" (→/map)
+"Tata Power - Aerocity Rapid Charging Hub" (→/station/tata-power-aerocity-fast-charging-hub-delhi)
+"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5501,77.1219)
+"Details" (→/station/tata-power-aerocity-fast-charging-hub-delhi)
+"Statiq - Connaught Place Outer Circle" (→/station/statiq-connaught-place-supercharger-delhi)
+"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.6289,77.2185)
+"Details" (→/station/statiq-connaught-place-supercharger-delhi)
+"Jio-bp pulse - Select CITYWALK Saket" (→/station/jio-bp-pulse-select-citywalk-saket-delhi)
+"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5284,77.2185)
+"Details" (→/station/jio-bp-pulse-select-citywalk-saket-delhi)
+"Tata Power - Nehru Place Commercial Hub" (→/station/tata-power-nehru-place-metro-hub-delhi)
+"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5492,77.2526)
+"Details" (→/station/tata-power-nehru-place-metro-hub-delhi)
+"States & UTs
+
+Explore charging hubs across 28 states and union territories." (→/india)
+"Major Cities
+
+Metropolitan hubs, fast-charger counts, and local operator coverage." (→/india)
+"Interactive Map
+
+Pan, zoom, filter by connector, and preview station details live." (→/map)
+"⚡
+Open Interactive Map" (→/map?nearby=true)
+"Search by City or PIN" (→/search)
+"Explore" (→/)
+"Map" (→/map)
+"Search" (→/search)
+"Saved" (→/saved)
+[1.2s] Website mentions charging/EV: true
+[1.2s] "Find Chargers Near Me" CTA visible: true
+[1.2s] Search input visible: true
+[1.2s] Explore link visible: true
+[1.2s] Map link visible: true
+[1.2s] === ATTEMPTING MOST OBVIOUS ACTION ===
+[1.2s] Clicking primary CTA: "⚡
+Find Chargers Near Me"
+[1.4s] URL after click: http://localhost:3000/map?nearby=true
+[1.4s] Time to first action: 1.4s
+[1.4s] Station-like results found: 0
+[1.5s] Map visible: true
+[1.5s] No results yet, trying search...
+[1.5s] Found search box, typing "Delhi"
+[3.6s] Results after searching "Delhi": 0
+[3.6s] Time to first useful result: 3.6s
+[3.6s] ⚠ Could not find a station to select
+
+========== SESSION 1 ASSESSMENT ==========
+Total time: 3.6s
+Clicks: 2
+Wrong clicks: 0
+Confusion events: 2
+Hesitations: None
+Dead ends: No selectable station
+Task completed: NO
+Could a first-time user complete this without help: PARTIALLY

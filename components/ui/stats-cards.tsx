@@ -100,21 +100,23 @@ export function StatsCards({
       {stats.map((stat, idx) => (
         <div
           key={idx}
-          className="rounded-2xl border border-[var(--color-border)] bg-white p-4 sm:p-5 shadow-xs transition-shadow hover:shadow-sm"
+          className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white p-4 sm:p-5 shadow-xs transition-all duration-200 hover:border-[var(--color-primary)]/40 hover:-translate-y-0.5 hover:shadow-sm"
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-[var(--color-muted)]">{stat.label}</span>
-            <svg
-              className="w-5 h-5 text-[var(--color-primary)] shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              {stat.icon}
-            </svg>
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-light-green)] flex items-center justify-center text-[var(--color-primary)] transition-transform duration-200 group-hover:scale-110">
+              <svg
+                className="w-4 h-4 text-[var(--color-primary)] shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                {stat.icon}
+              </svg>
+            </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-dark-green)]">
+          <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-dark-green)] group-hover:text-[var(--color-secondary-green)] transition-colors">
             {stat.value}
           </div>
         </div>

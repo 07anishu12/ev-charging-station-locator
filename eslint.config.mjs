@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "graphify-out/**",
     ".codex/**",
+    "qa-tests/**",
   ]),
 ]);
 
