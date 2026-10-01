@@ -22,7 +22,7 @@ export function StationBottomSheet({ station, onClose, className = "" }: Station
 
   return (
     <div
-      className={`fixed bottom-16 inset-x-0 z-40 p-4 sm:hidden animate-bottom-sheet-in ${className}`}
+      className={`fixed bottom-16 inset-x-0 z-40 p-4 md:hidden animate-bottom-sheet-in ${className}`}
     >
       <div className="relative rounded-3xl border border-[var(--color-border)] bg-white p-5 shadow-2xl">
         {/* Drag handle / close */}

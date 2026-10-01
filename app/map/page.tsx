@@ -90,12 +90,12 @@ function MapPageContent() {
   }, [searchQuery, filters, userLocation]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-background)]">
+    <div className="flex flex-col h-[calc(100dvh-4rem)] md:h-[100dvh] overflow-hidden bg-[var(--color-background)]">
       <SiteHeader />
 
       {/* Top Search & Filter Bar */}
-      <section className="sticky top-16 z-20 border-b border-[var(--color-border)] bg-white px-4 py-2.5 sm:px-6">
-        <div className="mx-auto max-w-7xl flex flex-col gap-2">
+      <section className="shrink-0 z-20 border-b border-[var(--color-border)] bg-white px-4 py-2.5 sm:px-6">
+        <div className="w-full flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <SearchBar
               initialQuery={searchQuery}
@@ -109,11 +109,11 @@ function MapPageContent() {
       </section>
 
       {/* Main Map / List Discovery View */}
-      <main className="flex-1 relative flex flex-col lg:flex-row h-[calc(100vh-130px)]">
+      <main className="flex-1 min-h-0 w-full grid grid-cols-1 md:grid-cols-[minmax(360px,440px)_minmax(0,1fr)] lg:grid-cols-[minmax(380px,460px)_minmax(0,1fr)]">
         {/* Left Side: Station List (Desktop or Mobile List Mode) */}
         <section
-          className={`flex-1 lg:max-w-md xl:max-w-lg overflow-y-auto p-4 sm:p-5 bg-[var(--color-background)] border-r border-[var(--color-border)] ${
-            mobileView === "list" ? "block" : "hidden lg:block"
+          className={`h-full min-h-0 overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-background)] p-4 sm:p-5 ${
+            mobileView === "list" ? "block" : "hidden md:block"
           }`}
           aria-label="Stations List"
         >
@@ -128,27 +128,39 @@ function MapPageContent() {
             )}
           </div>
 
-          <StationList
-            stations={stations}
-            selectedStationId={selectedStation?.id}
-            onSelectStation={(s) => {
-              setSelectedStation(s);
-              setMobileView("map");
-            }}
-          />
+          <div className="pb-24 md:pb-6">
+            <StationList
+              stations={stations}
+              selectedStationId={selectedStation?.id}
+              onSelectStation={(s) => {
+                setSelectedStation(s);
+                setMobileView("map");
+              }}
+            />
+          </div>
         </section>
 
         {/* Right Side: Interactive Map (Desktop or Mobile Map Mode) */}
         <section
-          className={`flex-1 h-full relative ${mobileView === "map" ? "block" : "hidden lg:block"}`}
+          className={`h-full min-h-0 relative overflow-hidden bg-gray-50 ${
+            mobileView === "map" ? "block" : "hidden md:block"
+          }`}
           aria-label="Interactive Map"
         >
-          <MapView
-            stations={stations}
-            selectedStationId={selectedStation?.id}
-            onSelectStation={(station) => setSelectedStation(station)}
-            className="h-full w-full rounded-none border-none"
-          />
+          <div className="absolute inset-0">
+            <MapView
+              stations={stations}
+              selectedStationId={selectedStation?.id}
+              onSelectStation={(station) => {
+                setSelectedStation(station);
+                const card = document.getElementById(`station-card-${station.id}`);
+                if (card) {
+                  card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+              }}
+              className="h-full w-full rounded-none border-none"
+            />
+          </div>
 
           {/* Mobile Bottom Sheet Preview when station selected */}
           <StationBottomSheet
@@ -159,7 +171,7 @@ function MapPageContent() {
       </main>
 
       {/* Mobile Map / List Toggle */}
-      <MapListToggle view={mobileView} onChange={setMobileView} />
+      <MapListToggle view={mobileView} onChange={setMobileView} className="md:hidden" />
     </div>
   );
 }

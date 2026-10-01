@@ -26,6 +26,7 @@ export function StationCard({
 
   return (
     <article
+      id={`station-card-${station.id}`}
       onClick={() => onSelect?.(station)}
       className={`relative rounded-2xl border bg-white p-4 sm:p-5 shadow-xs transition-all ${
         selected

@@ -26,10 +26,12 @@ export function MapView({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const markersRef = useRef<{ [id: string]: Marker }>({});
+  const initialStationsRef = useRef(stations);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
+    let resizeObserver: ResizeObserver | null = null;
 
     async function initMap() {
       if (!containerRef.current) return;
@@ -46,7 +48,7 @@ export function MapView({
         document.head.appendChild(link);
       }
 
-      if (!isMounted) return;
+      if (!isMounted || !containerRef.current) return;
 
       // Clean up existing map if any
       if (mapInstanceRef.current) {
@@ -59,10 +61,10 @@ export function MapView({
       let centerLng = initialCenter.lng;
       let zoom = initialZoom;
 
-      if (stations.length > 0 && initialZoom === 5) {
-        centerLat = stations[0].latitude;
-        centerLng = stations[0].longitude;
-        zoom = stations.length === 1 ? 14 : 11;
+      if (initialStationsRef.current.length > 0 && initialZoom === 5) {
+        centerLat = initialStationsRef.current[0].latitude;
+        centerLng = initialStationsRef.current[0].longitude;
+        zoom = initialStationsRef.current.length === 1 ? 14 : 11;
       }
 
       const map = L.map(containerRef.current, {
@@ -80,18 +82,38 @@ export function MapView({
 
       mapInstanceRef.current = map;
       setIsLoaded(true);
+
+      // Force size invalidation right after mount
+      requestAnimationFrame(() => {
+        if (isMounted && mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      });
+
+      // Observe container size changes (e.g. window resize, split pane resize, tab switch)
+      if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          if (isMounted && mapInstanceRef.current) {
+            mapInstanceRef.current.invalidateSize();
+          }
+        });
+        resizeObserver.observe(containerRef.current);
+      }
     }
 
     initMap();
 
     return () => {
       isMounted = false;
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, [initialCenter.lat, initialCenter.lng, initialZoom, stations]);
+  }, [initialCenter.lat, initialCenter.lng, initialZoom]);
 
   // Update markers when stations change or selection changes
   useEffect(() => {
@@ -145,15 +167,36 @@ export function MapView({
         const icon = L.divIcon({
           html: iconHtml,
           className: "custom-charger-pin",
-          iconSize: [isSelected ? 38 : 30, isSelected ? 38 : 30],
+          iconSize: [isSelected ? 38 : 30, selectedStationId ? 38 : 30],
           iconAnchor: [isSelected ? 19 : 15, isSelected ? 19 : 15],
         });
 
         const marker = L.marker([station.latitude, station.longitude], { icon }).addTo(map);
 
+        const popupHtml = `
+          <div style="font-family: inherit; padding: 2px; min-width: 170px;">
+            <div style="font-weight: 700; color: #073b2a; font-size: 13px; line-height: 1.3; margin-bottom: 2px;">
+              ${station.name}
+            </div>
+            <div style="color: #68756f; font-size: 11px; margin-bottom: 6px;">
+              ${station.operator.name} · ${station.fastestPowerKw}kW
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="font-size: 10px; font-weight: 700; color: ${color}; background: ${color}18; padding: 2px 6px; border-radius: 4px;">
+                ${station.status}
+              </span>
+              <a href="/station/${station.slug}" style="font-size: 11px; font-weight: 700; color: #16c784; text-decoration: none;">
+                Details →
+              </a>
+            </div>
+          </div>
+        `;
+        marker.bindPopup(popupHtml, { offset: [0, -12] });
+
         marker.on("click", () => {
           onSelectStation?.(station);
           map.panTo([station.latitude, station.longitude], { animate: true });
+          marker.openPopup();
         });
 
         markersRef.current[station.id] = marker;
@@ -165,14 +208,17 @@ export function MapView({
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
       } else if (selectedStationId && markersRef.current[selectedStationId]) {
         const sel = stations.find((s) => s.id === selectedStationId);
-        if (sel) map.panTo([sel.latitude, sel.longitude], { animate: true });
+        if (sel) {
+          map.panTo([sel.latitude, sel.longitude], { animate: true });
+          markersRef.current[selectedStationId].openPopup();
+        }
       }
     });
   }, [stations, selectedStationId, isLoaded, onSelectStation]);
 
   return (
-    <div className={`relative w-full h-full min-h-[360px] rounded-2xl overflow-hidden border border-[var(--color-border)] shadow-xs ${className}`}>
-      <div ref={containerRef} className="w-full h-full min-h-[360px]" />
+    <div className={`relative w-full h-full min-h-0 rounded-2xl overflow-hidden border border-[var(--color-border)] shadow-xs ${className}`}>
+      <div ref={containerRef} className="absolute inset-0 w-full h-full" />
       {!isLoaded && (
         <div className="absolute inset-0 z-10">
           <MapSkeleton />

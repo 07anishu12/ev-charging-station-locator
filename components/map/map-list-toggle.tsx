@@ -9,7 +9,7 @@ interface MapListToggleProps {
 export function MapListToggle({ view, onChange, className = "" }: MapListToggleProps) {
   return (
     <div
-      className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-30 lg:hidden shadow-lg ${className}`}
+      className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-30 md:hidden shadow-lg ${className}`}
     >
       <div className="flex items-center rounded-full bg-[var(--color-dark-green)] p-1 text-white border border-white/20 backdrop-blur-md">
         <button
