@@ -29,7 +29,7 @@ export function StationCard({
     <article
       id={`station-card-${station.id}`}
       onClick={() => onSelect?.(station)}
-      className={`relative rounded-2xl border bg-white p-4 sm:p-5 shadow-xs transition-all duration-200 ${
+      className={`relative rounded-2xl border bg-white p-4 sm:p-5 shadow-xs transition-all duration-200 active:scale-[0.99] active:-translate-y-0.5 active:border-emerald-400 ${
         selected
           ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/30 shadow-md bg-emerald-50/30"
           : "border-[var(--color-border)] hover:border-[var(--color-primary)]/60 hover:shadow-md hover:-translate-y-0.5"
@@ -37,7 +37,7 @@ export function StationCard({
     >
       <div className="flex items-start gap-3 mb-2">
         {/* Left: Station Monogram / Thumbnail matching Screen 2 */}
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 text-[var(--color-primary)] font-black text-base flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs mt-0.5">
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 text-[var(--color-primary)] font-black text-base flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs mt-0.5 transition-transform duration-200 group-hover:scale-105">
           ⚡
         </div>
 
@@ -59,7 +59,7 @@ export function StationCard({
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
-              <StatusBadge status={station.status} size="sm" />
+              <StatusBadge status={station.status} size="sm" pulse={selected} />
               <SavedButton stationSlug={station.slug} stationName={station.name} compact />
             </div>
           </div>

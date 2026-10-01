@@ -68,7 +68,7 @@ export function SearchBar({
         }}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className="w-full min-h-12 rounded-2xl border border-[var(--color-border)] bg-white pl-11 pr-10 text-sm sm:text-base text-[var(--color-dark-green)] placeholder-[var(--color-muted)] shadow-xs transition-all duration-200 focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary)]/15 focus:outline-none"
+        className="w-full min-h-12 rounded-2xl border border-[var(--color-border)] bg-white pl-11 pr-10 text-sm sm:text-base text-[var(--color-dark-green)] placeholder-[var(--color-muted)] shadow-xs transition-all duration-250 focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:shadow-[0_0_12px_rgba(22,199,132,0.18)] focus:outline-none"
       />
       {query && (
         <button

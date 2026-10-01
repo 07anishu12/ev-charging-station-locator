@@ -52,6 +52,11 @@ export function FilterBottomSheet({
         aria-labelledby="filter-sheet-title"
         className="relative z-10 w-full max-w-lg rounded-t-3xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-bottom-sheet-in"
       >
+        {/* Subtle energy beam illuminating across the top border once on open */}
+        <div aria-hidden="true" className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden pointer-events-none">
+          <div className="h-full w-full bg-gradient-to-r from-transparent via-[var(--color-primary)] to-transparent animate-sheet-energy" />
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4 shrink-0 bg-white">
           <button

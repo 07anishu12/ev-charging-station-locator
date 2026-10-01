@@ -20,6 +20,7 @@ import { ChargingPulse } from "@/components/ui/charging-pulse";
 import { EnergyParticles } from "@/components/ui/energy-particles";
 import { EnergyTree } from "@/components/ui/energy-tree";
 import { OrganicBackground } from "@/components/ui/organic-background";
+import { SectionReveal } from "@/components/ui/section-reveal";
 import {
   getMockCities,
   getMockStations,
@@ -197,14 +198,14 @@ export default function HomePage() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href={routeUrls.map({ nearby: true })}
-                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 font-bold text-sm sm:text-base text-white shadow-md hover:shadow-lg hover:bg-[var(--color-secondary-green)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
+                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 font-bold text-sm sm:text-base text-white shadow-md hover:shadow-lg hover:bg-[var(--color-secondary-green)] hover:-translate-y-0.5 active:scale-[0.97] active:shadow-[0_0_16px_rgba(22,199,132,0.45)] transition-all duration-150 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
               >
-                <span className="transition-transform duration-200 group-hover:scale-110">⚡</span>
+                <span className="transition-transform duration-200 group-hover:scale-110 group-active:scale-95">⚡</span>
                 <span>Find Chargers Near Me</span>
               </Link>
               <Link
                 href={routeUrls.india()}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-border)] bg-white px-6 font-semibold text-sm sm:text-base text-[var(--color-dark-green)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-border)] bg-white px-6 font-semibold text-sm sm:text-base text-[var(--color-dark-green)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-150 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
               >
                 Explore India
               </Link>
@@ -228,107 +229,113 @@ export default function HomePage() {
         {/* =================================================================
             2. POPULAR CITIES CAROUSEL (Matches Screen 1 of Showcase)
             ================================================================= */}
-        <section className="px-4 py-12 sm:px-6 mx-auto w-full max-w-7xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
-                Metropolitan EV Corridors
-              </span>
-              <h2 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--color-dark-green)] mt-1">
-                Popular Cities
-              </h2>
-              <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-0.5">
-                Find chargers in major urban charging corridors
-              </p>
+        <SectionReveal energyAccent={true} className="w-full">
+          <section className="px-4 py-12 sm:px-6 mx-auto w-full max-w-7xl">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
+                  Metropolitan EV Corridors
+                </span>
+                <h2 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--color-dark-green)] mt-1">
+                  Popular Cities
+                </h2>
+                <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-0.5">
+                  Find chargers in major urban charging corridors
+                </p>
+              </div>
+              <Link
+                href={routeUrls.india()}
+                className="text-xs sm:text-sm font-bold text-[var(--color-secondary-green)] hover:underline inline-flex items-center gap-1 group"
+              >
+                <span>View All</span>
+                <span className="transition-transform duration-150 group-hover:translate-x-0.5">→</span>
+              </Link>
             </div>
-            <Link
-              href={routeUrls.india()}
-              className="text-xs sm:text-sm font-bold text-[var(--color-secondary-green)] hover:underline inline-flex items-center gap-1 group"
-            >
-              <span>View All</span>
-              <span className="transition-transform duration-150 group-hover:translate-x-0.5">→</span>
-            </Link>
-          </div>
 
-          {/* City Stories Horizontal Snap Carousel */}
-          <div className="flex gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 pt-1">
-            {popularCities.map((city) => (
-              <CityStoryCard key={city.id} city={city} />
-            ))}
-          </div>
-        </section>
+            {/* City Stories Horizontal Snap Carousel */}
+            <div className="flex gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 pt-1">
+              {popularCities.map((city) => (
+                <CityStoryCard key={city.id} city={city} />
+              ))}
+            </div>
+          </section>
+        </SectionReveal>
 
         {/* =================================================================
             3. CHOOSE YOUR CHARGING STORY STRIP
             ================================================================= */}
-        <section className="py-10 bg-[#f4faf6] border-y border-emerald-100/70 overflow-hidden">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
-                  Speed & Compatibility Modes
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[var(--color-dark-green)] mt-1">
-                  Choose Your Charging Experience
-                </h2>
-                <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-1">
-                  Swipe through charging profiles tailored to your EV battery and travel schedule
-                </p>
-              </div>
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--color-muted)] font-medium">
-                <span>Swipe to explore</span>
-                <span>→</span>
+        <SectionReveal energyAccent={true} className="w-full">
+          <section className="py-10 bg-[#f4faf6] border-y border-emerald-100/70 overflow-hidden">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
+                    Speed & Compatibility Modes
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[var(--color-dark-green)] mt-1">
+                    Choose Your Charging Experience
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-1">
+                    Swipe through charging profiles tailored to your EV battery and travel schedule
+                  </p>
+                </div>
+                <div className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--color-muted)] font-medium">
+                  <span>Swipe to explore</span>
+                  <span>→</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 pt-1">
-              {chargingStories.map((story) => (
-                <StoryCard key={story.id} item={story} />
-              ))}
+            <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 pt-1">
+                {chargingStories.map((story) => (
+                  <StoryCard key={story.id} item={story} />
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </SectionReveal>
 
         {/* =================================================================
             4. FAST CHARGERS SECTION
             ================================================================= */}
-        <section className="px-4 py-12 sm:px-6 mx-auto w-full max-w-7xl">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-amber-500 text-lg">⚡</span>
-                <h2 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--color-dark-green)]">
-                  Fast Chargers (60kW+)
-                </h2>
+        <SectionReveal energyAccent={true} className="w-full">
+          <section className="px-4 py-12 sm:px-6 mx-auto w-full max-w-7xl">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-500 text-lg">⚡</span>
+                  <h2 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--color-dark-green)]">
+                    Fast Chargers (60kW+)
+                  </h2>
+                </div>
+                <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-1">
+                  High-power DC rapid chargers ready for highway and corridor stops
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-1">
-                High-power DC rapid chargers ready for highway and corridor stops
-              </p>
+              <Link
+                href={routeUrls.map()}
+                className="text-xs sm:text-sm font-semibold text-[var(--color-secondary-green)] hover:underline inline-flex items-center gap-1 group"
+              >
+                <span>View on map</span>
+                <span className="transition-transform duration-150 group-hover:translate-x-0.5">→</span>
+              </Link>
             </div>
-            <Link
-              href={routeUrls.map()}
-              className="text-xs sm:text-sm font-semibold text-[var(--color-secondary-green)] hover:underline inline-flex items-center gap-1 group"
-            >
-              <span>View on map</span>
-              <span className="transition-transform duration-150 group-hover:translate-x-0.5">→</span>
-            </Link>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-            {fastChargers[0] && (
-              <div className="lg:col-span-7">
-                <FeaturedStationCard station={fastChargers[0]} className="h-full" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+              {fastChargers[0] && (
+                <div className="lg:col-span-7">
+                  <FeaturedStationCard station={fastChargers[0]} className="h-full" />
+                </div>
+              )}
+              <div className="lg:col-span-5 flex flex-col justify-between gap-3">
+                {fastChargers.slice(1, 4).map((station) => (
+                  <CompactStationCard key={station.id} station={station} />
+                ))}
               </div>
-            )}
-            <div className="lg:col-span-5 flex flex-col justify-between gap-3">
-              {fastChargers.slice(1, 4).map((station) => (
-                <CompactStationCard key={station.id} station={station} />
-              ))}
             </div>
-          </div>
-        </section>
+          </section>
+        </SectionReveal>
 
         {/* =================================================================
             5. CLEAN ENERGY MANIFESTO
@@ -338,36 +345,38 @@ export default function HomePage() {
         {/* =================================================================
             6. RECENTLY UPDATED LIVE FEED
             ================================================================= */}
-        <section className="bg-[#f8faf9] py-12 px-4 sm:px-6 border-y border-[var(--color-border)]">
-          <div className="mx-auto w-full max-w-7xl">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
-                  Live Verification
-                </span>
-                <h2 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--color-dark-green)] mt-1">
-                  Recently Updated
-                </h2>
-                <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-0.5">
-                  Verified charging points with updated status and connector availability
-                </p>
+        <SectionReveal energyAccent={true} className="w-full">
+          <section className="bg-[#f8faf9] py-12 px-4 sm:px-6 border-y border-[var(--color-border)]">
+            <div className="mx-auto w-full max-w-7xl">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
+                    Live Verification
+                  </span>
+                  <h2 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--color-dark-green)] mt-1">
+                    Recently Updated
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-0.5">
+                    Verified charging points with updated status and connector availability
+                  </p>
+                </div>
+                <Link
+                  href={routeUrls.map()}
+                  className="text-xs sm:text-sm font-semibold text-[var(--color-secondary-green)] hover:underline inline-flex items-center gap-1 group"
+                >
+                  <span>Explore all</span>
+                  <span className="transition-transform duration-150 group-hover:translate-x-0.5">→</span>
+                </Link>
               </div>
-              <Link
-                href={routeUrls.map()}
-                className="text-xs sm:text-sm font-semibold text-[var(--color-secondary-green)] hover:underline inline-flex items-center gap-1 group"
-              >
-                <span>Explore all</span>
-                <span className="transition-transform duration-150 group-hover:translate-x-0.5">→</span>
-              </Link>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {recentStations.map((station) => (
-                <StationCard key={station.id} station={station} />
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {recentStations.map((station) => (
+                  <StationCard key={station.id} station={station} />
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </SectionReveal>
 
         {/* =================================================================
             7. INTERACTIVE MAP DISCOVERY PREVIEW
@@ -404,14 +413,14 @@ export default function HomePage() {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href={routeUrls.map({ nearby: true })}
-                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-7 font-bold text-white shadow-lg hover:bg-emerald-400 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-7 font-bold text-white shadow-lg hover:bg-emerald-400 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.97] active:shadow-[0_0_16px_rgba(22,199,132,0.45)] transition-all duration-150"
               >
-                <span className="transition-transform duration-200 group-hover:scale-110">⚡</span>
+                <span className="transition-transform duration-200 group-hover:scale-110 group-active:scale-95">⚡</span>
                 <span>Open Interactive Map</span>
               </Link>
               <Link
                 href={routeUrls.search()}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-6 font-semibold text-white hover:bg-white/20 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-6 font-semibold text-white hover:bg-white/20 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-150"
               >
                 Search by City or PIN
               </Link>

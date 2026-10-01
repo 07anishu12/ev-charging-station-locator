@@ -96,7 +96,7 @@ export function FilterChips({
           onClick={() => toggleConnector("ccs2")}
           className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
             filters.connectorType === "ccs2"
-              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-filter-pulse"
+              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-chip-charge"
               : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
           }`}
         >
@@ -112,7 +112,7 @@ export function FilterChips({
           onClick={() => toggleConnector("type2")}
           className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
             filters.connectorType === "type2"
-              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-filter-pulse"
+              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-chip-charge"
               : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
           }`}
         >
@@ -128,7 +128,7 @@ export function FilterChips({
           onClick={() => toggleConnector("chademo")}
           className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
             filters.connectorType === "chademo"
-              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-filter-pulse"
+              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-chip-charge"
               : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
           }`}
         >
@@ -144,7 +144,7 @@ export function FilterChips({
           onClick={() => toggleMinPower(50)}
           className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
             filters.minPowerKw === 50
-              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-filter-pulse"
+              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-chip-charge"
               : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
           }`}
         >
@@ -160,7 +160,7 @@ export function FilterChips({
           onClick={() => toggleMinPower(100)}
           className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
             filters.minPowerKw === 100
-              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-filter-pulse"
+              ? "bg-[var(--color-primary)] text-white shadow-[0_2px_10px_rgba(22,199,132,0.35)] animate-chip-charge"
               : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
           }`}
         >
@@ -176,7 +176,7 @@ export function FilterChips({
           onClick={toggleOperational}
           className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
             filters.operationalOnly
-              ? "bg-[var(--color-dark-green)] text-white shadow-xs animate-filter-pulse"
+              ? "bg-[var(--color-dark-green)] text-white shadow-xs animate-chip-charge"
               : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
           }`}
         >
@@ -194,7 +194,7 @@ export function FilterChips({
           disabled={isLoadingLocation}
           className={`inline-flex shrink-0 min-h-9 items-center gap-1 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
             filters.nearby
-              ? "bg-[var(--color-secondary-green)] text-white shadow-xs animate-filter-pulse"
+              ? "bg-[var(--color-secondary-green)] text-white shadow-xs animate-chip-charge"
               : "bg-white text-[var(--color-dark-green)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-emerald-50/30"
           } ${isLoadingLocation ? "opacity-80 cursor-wait" : ""}`}
         >

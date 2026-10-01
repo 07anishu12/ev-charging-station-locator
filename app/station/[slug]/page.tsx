@@ -157,7 +157,7 @@ export default async function StationPage({ params }: StationPageProps) {
 
           {/* Status Pills */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <StatusBadge status={station.status} />
+            <StatusBadge status={station.status} pulse={true} />
             <PowerBadge powerKw={station.fastestPowerKw} />
             <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-[var(--color-secondary-green)]">
               <span>🕒 Open 24/7</span>

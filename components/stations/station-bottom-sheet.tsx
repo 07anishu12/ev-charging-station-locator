@@ -25,7 +25,12 @@ export function StationBottomSheet({ station, onClose, className = "" }: Station
     <div
       className={`fixed bottom-16 inset-x-0 z-40 p-3 sm:p-4 md:hidden animate-bottom-sheet-in ${className}`}
     >
-      <div className="relative rounded-3xl border border-[var(--color-border)] bg-white p-5 shadow-2xl">
+      <div className="relative rounded-3xl border border-[var(--color-border)] bg-white p-5 shadow-2xl overflow-hidden">
+        {/* Subtle energy beam illuminating across the top border once on open */}
+        <div aria-hidden="true" className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden pointer-events-none">
+          <div className="h-full w-full bg-gradient-to-r from-transparent via-[var(--color-primary)] to-transparent animate-sheet-energy" />
+        </div>
+
         {/* Native drag handle bar matching Screen 2 */}
         <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3 opacity-70" />
 
@@ -71,7 +76,7 @@ export function StationBottomSheet({ station, onClose, className = "" }: Station
 
         {/* Badges row: Status + 24/7 + Power + Connectors */}
         <div className="flex flex-wrap items-center gap-1.5 my-3">
-          <StatusBadge status={station.status} size="sm" />
+          <StatusBadge status={station.status} size="sm" pulse={true} />
           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-[var(--color-secondary-green)]">
             🕒 24/7
           </span>

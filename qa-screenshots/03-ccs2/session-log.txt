@@ -1,11 +1,11 @@
 [4.6s] Map page loaded
 [4.6s] Initial - stations: 36, markers: 37
 [4.6s] CCS2 mentioned on page: true
-[4.6s] CCS2 filter element visible: true
+[4.7s] CCS2 filter element visible: true
 [4.7s] CCS2 filter text: "CCS2"
 [6.8s] Filter appears active (visual): true
 [6.8s] After CCS2 - stations: 34, markers: 35
-[9.0s] Station details mention CCS2: true
+[8.9s] Station details mention CCS2: true
 
 ========== SESSION 3 ASSESSMENT ==========
 Clicks: 2

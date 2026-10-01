@@ -1,7 +1,7 @@
 [0.7s] Homepage loaded
 [0.8s] Search page loaded: http://localhost:3000/search
 [0.8s] Search input visible: true
-[1.4s] Typed 110059
+[1.3s] Typed 110059
 [4.4s] URL after search: http://localhost:3000/search?q=110059
 [4.4s] Station links found: 7
 [4.4s] "No results" message: false
@@ -10,8 +10,8 @@
 
 --- Direct URL test ---
 [8.2s] Direct URL loaded: http://localhost:3000/india/delhi/delhi/110059/ev-charging-stations
-[8.2s] Stations via direct URL: 6
-[8.2s] Nearby stations mentioned: true
+[8.3s] Stations via direct URL: 6
+[8.3s] Nearby stations mentioned: true
 
 ========== SESSION 5 ASSESSMENT ==========
 Clicks: 2, Confusion events: 0

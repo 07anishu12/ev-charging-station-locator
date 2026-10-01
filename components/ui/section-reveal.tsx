@@ -7,11 +7,13 @@ interface SectionRevealProps {
   className?: string;
   delayMs?: number;
   direction?: "up" | "none";
+  energyAccent?: boolean;
 }
 
 /**
  * SectionReveal — Ultra-lightweight scroll-entrance container using IntersectionObserver.
- * - Animates once when entering viewport: opacity 0 -> 1, translateY 10px -> 0.
+ * - Animates once when entering viewport: opacity 0 -> 1, translateY 8px -> 0 (500ms).
+ * - Optional subtle energy beam line illuminates left -> right when entering.
  * - Stays visible permanently once revealed.
  * - Immediately visible if JS / IntersectionObserver is not available or if reduced motion is requested.
  */
@@ -20,6 +22,7 @@ export function SectionReveal({
   className = "",
   delayMs = 0,
   direction = "up",
+  energyAccent = false,
 }: SectionRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -55,18 +58,26 @@ export function SectionReveal({
     <div
       ref={ref}
       style={{
-        transitionDuration: "400ms",
+        transitionDuration: "500ms",
         transitionDelay: `${delayMs}ms`,
         transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
       }}
-      className={`transition-all ${
+      className={`relative transition-all ${
         isVisible
           ? "opacity-100 translate-y-0"
           : direction === "up"
-          ? "opacity-0 translate-y-3"
+          ? "opacity-0 translate-y-2"
           : "opacity-0"
       } ${className}`}
     >
+      {energyAccent && isVisible && (
+        <div
+          aria-hidden="true"
+          className="absolute top-0 left-0 right-0 h-[1.5px] overflow-hidden pointer-events-none z-10"
+        >
+          <div className="h-full w-1/3 bg-gradient-to-r from-transparent via-[var(--color-primary)] to-transparent animate-energy-beam" />
+        </div>
+      )}
       {children}
     </div>
   );

@@ -2,13 +2,13 @@
 [3.7s] Error/empty state shown: false
 [3.7s] URL: http://localhost:3000/search?q=999999
 [6.8s] Delhi results: 15
-[7.0s] Navigated to Explore: http://localhost:3000/search?q=Delhi
-[11.2s] Map page loaded
-[11.2s] Filter buttons found: 6
-[11.3s] Applying filter: "CCS2"
-[13.4s] Reset button visible: true
-[15.6s] Filters reset
-[16.3s] Search box value on return: ""
+[6.9s] Navigated to Explore: http://localhost:3000/search?q=Delhi
+[10.7s] Map page loaded
+[10.8s] Filter buttons found: 6
+[10.8s] Applying filter: "CCS2"
+[12.9s] Reset button visible: true
+[15.1s] Filters reset
+[15.7s] Search box value on return: ""
 
 ========== SESSION 6 ASSESSMENT ==========
 Clicks: 7, Confusion events: 0

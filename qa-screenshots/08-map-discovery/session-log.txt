@@ -2,10 +2,10 @@
 [4.2s] Map container visible: true
 [4.2s] Initial markers: 44
 [7.4s] Markers after zoom: 44
-[9.6s] Popup visible after marker click: false
-[9.6s] No popup — checking if list item was highlighted
-[9.6s] Active/selected card visible: false
-[9.6s] Station links in list: 46
+[9.5s] Popup visible after marker click: false
+[9.5s] No popup — checking if list item was highlighted
+[9.5s] Active/selected card visible: false
+[9.5s] Station links in list: 46
 [9.6s] Clicking list station: "Details"
 
 ========== SESSION 8 ASSESSMENT ==========

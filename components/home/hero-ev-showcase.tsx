@@ -100,7 +100,7 @@ export function HeroEvShowcase({ className = "" }: HeroEvShowcaseProps) {
         <line x1="40" y1="250" x2="600" y2="250" stroke="#dce8e1" strokeWidth="2" strokeDasharray="8 8" />
 
         {/* --- ELECTRIC VEHICLE (Car) --- */}
-        <g id="ev-car" transform="translate(15, 5)">
+        <g id="ev-car" transform="translate(15, 5)" className="animate-car-float">
           {/* Car Shadow */}
           <ellipse cx="250" cy="248" rx="160" ry="14" fill="#073b2a" opacity="0.12" />
 

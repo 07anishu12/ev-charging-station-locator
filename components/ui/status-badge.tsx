@@ -2,9 +2,10 @@ interface StatusBadgeProps {
   status: "Operational" | "Not Operational" | "Unknown" | "available" | "busy" | "unavailable" | "unknown";
   className?: string;
   size?: "sm" | "md";
+  pulse?: boolean;
 }
 
-export function StatusBadge({ status, className = "", size = "md" }: StatusBadgeProps) {
+export function StatusBadge({ status, className = "", size = "md", pulse = false }: StatusBadgeProps) {
   const normalized = status.toLowerCase();
 
   let label = "Unknown";
@@ -35,10 +36,14 @@ export function StatusBadge({ status, className = "", size = "md" }: StatusBadge
       aria-label={`Station status: ${label}`}
     >
       <span className="relative flex h-2 w-2 items-center justify-center shrink-0" aria-hidden="true">
-        {isOperational && (
-          <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary)] animate-status-pulse-once" />
+        {isOperational && pulse && (
+          <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary)] opacity-40 animate-operational-dot" />
         )}
-        <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} />
+        <span
+          className={`h-2 w-2 rounded-full shrink-0 ${dotClass} ${
+            isOperational && pulse ? "animate-operational-dot" : ""
+          }`}
+        />
       </span>
       <span>{label}</span>
     </span>

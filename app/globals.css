@@ -261,6 +261,77 @@ body {
   100% { transform: translateX(106px); opacity: 0; }
 }
 
+/* Subtle Energy Beam across sections (650ms) */
+@keyframes energy-beam {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(350%);
+    opacity: 0;
+  }
+}
+
+/* Chip selection subtle energy accent (no geometric bounce) */
+@keyframes chip-charge-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(22, 199, 132, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 3.5px rgba(22, 199, 132, 0.2);
+  }
+  100% {
+    box-shadow: 0 2px 8px rgba(22, 199, 132, 0.25);
+  }
+}
+
+/* Operational dot subtle breathing (selected / detail page only) */
+@keyframes operational-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* Car subtle float (1.5px max) */
+@keyframes car-subtle-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+/* Bottom sheet top edge energy pulse (550ms once) */
+@keyframes sheet-energy-accent {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  75% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
 /* Utility classes */
 @utility animate-charging-pulse {
   animation: charging-pulse 1.8s ease-in-out infinite;
@@ -331,6 +402,33 @@ body {
   animation: battery-bar-fill-3 2s ease-in-out infinite;
 }
 
+@utility animate-energy-beam {
+  animation: energy-beam 750ms cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+}
+
+@utility animate-chip-charge {
+  animation: chip-charge-pulse 300ms ease-out 1 forwards;
+}
+
+@utility animate-operational-dot {
+  animation: operational-dot 2s ease-in-out infinite;
+}
+
+@utility animate-car-float {
+  animation: car-subtle-float 4s ease-in-out infinite;
+}
+
+@utility animate-sheet-energy {
+  animation: sheet-energy-accent 600ms cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+}
+
+/* Desktop hover enhancements (hover: hover and pointer: fine) */
+@media (hover: hover) and (pointer: fine) {
+  .custom-charger-pin:hover > div {
+    transform: scale(1.12);
+  }
+}
+
 /* Respect user preference for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -340,6 +438,7 @@ body {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    transform: none !important;
   }
 }
 
