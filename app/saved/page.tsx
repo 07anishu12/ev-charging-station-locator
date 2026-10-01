@@ -68,7 +68,7 @@ export default function SavedPage() {
         {savedStations.length === 0 ? (
           <EmptyState
             title="No saved chargers yet."
-            description="Save your regular charging stops to quickly check their status, connectors, and get instant directions."
+            description="Save your regular charging stops to quickly check their status, connectors, and get instant directions. Tap the bookmark icon on any station card or details page to add it here."
             actionHref={routeUrls.map()}
             actionLabel="Explore charging stations"
           />

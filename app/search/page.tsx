@@ -12,6 +12,7 @@ import type { FindStationsNearPincodeResult } from "@/lib/geo/pincode-discovery"
 import {
   getMockCities,
   getMockOperators,
+  isGenericChargingIntent,
   searchMockEntities,
   type SearchEntityResult,
 } from "@/lib/mock";
@@ -32,6 +33,9 @@ function SearchPageContent() {
 
   // Geographic PIN Search effect
   useEffect(() => {
+    setPincodeError(null);
+    setPincodeData(null);
+
     if (!isPincode) return;
 
     let ignore = false;
@@ -43,7 +47,10 @@ function SearchPageContent() {
         const res = await fetch(`/api/search?q=${encodeURIComponent(cleanQuery)}`, {
           signal: abortController.signal,
         });
-        if (!res.ok) throw new Error("Search request failed");
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => null);
+          throw new Error(errJson?.error?.message || "Search request failed");
+        }
         const json = await res.json();
         if (!ignore) {
           if (json.data && json.data.searchType === "pincode") {
@@ -329,14 +336,26 @@ function SearchPageContent() {
                   </div>
                 ) : (
                   <EmptyState
-                    title={`No charging stations found within ${pincodeData.radiusKm} km`}
-                    description={`We couldn't locate any EV chargers within ${pincodeData.radiusKm} km of PIN ${pincodeData.pincode} (${pincodeData.origin.city || "India"}). Browse all chargers in ${pincodeData.origin.city || "the state"} or explore the interactive map.`}
+                    title={
+                      pincodeData.origin.hasCoordinates
+                        ? `No charging stations found within ${pincodeData.radiusKm} km`
+                        : `No charging stations found near PIN ${pincodeData.pincode}`
+                    }
+                    description={
+                      pincodeData.origin.hasCoordinates
+                        ? `We couldn't locate any EV chargers within ${pincodeData.radiusKm} km of PIN ${pincodeData.pincode} (${pincodeData.origin.city || "India"}). Browse all chargers in ${pincodeData.origin.city || "the state"} or explore the interactive map.`
+                        : `We couldn't find any registered EV charging stations near PIN code ${pincodeData.pincode}. Try searching with a nearby PIN (e.g. 110001, 560001), searching by city name, or exploring the interactive map.`
+                    }
                     actionHref={
                       pincodeData.origin.stateSlug && pincodeData.origin.citySlug
                         ? routeUrls.city(pincodeData.origin.stateSlug, pincodeData.origin.citySlug)
                         : "/map"
                     }
-                    actionLabel={`Browse ${pincodeData.origin.city || "Interactive"} Map`}
+                    actionLabel={
+                      pincodeData.origin.city
+                        ? `Browse ${pincodeData.origin.city} Map`
+                        : "Explore Interactive Map"
+                    }
                   />
                 )}
 
@@ -380,10 +399,33 @@ function SearchPageContent() {
         {/* GENERAL TEXT SEARCH VIEW (CITIES, OPERATORS, STATIONS, PIN CODES) */}
         {cleanQuery && !isPincode && (
           <div className="space-y-6 mt-6">
+            {/* Generic Charging Intent Acknowledgment Banner */}
+            {isGenericChargingIntent(cleanQuery) && results.length > 0 && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl shrink-0">⚡</span>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-bold text-[var(--color-dark-green)]">
+                      Showing featured EV charging hubs & networks across India
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-[var(--color-muted)] mt-0.5">
+                      Explore top 50kW+ Fast DC hubs, verified operators, and major city charging corridors.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/map?nearby=true"
+                  className="inline-flex items-center justify-center shrink-0 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-xs font-bold text-white hover:bg-[var(--color-secondary-green)] transition-all shadow-2xs"
+                >
+                  Find Near Me →
+                </Link>
+              </div>
+            )}
+
             {results.length === 0 ? (
               <EmptyState
                 title="No results found"
-                description={`We couldn't find any cities, PIN codes, stations, or operators matching "${query}".`}
+                description={`We couldn't find any cities, PIN codes, stations, or operators matching "${query}". Try searching by city name, PIN code, or charging network.`}
                 actionHref="/map"
                 actionLabel="Explore Interactive Map"
               />

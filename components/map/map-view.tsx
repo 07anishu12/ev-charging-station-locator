@@ -44,6 +44,7 @@ export function MapView({
   const stationLayerRef = useRef<LayerGroup | null>(null);
   const userLayerRef = useRef<LayerGroup | null>(null);
   const markersRef = useRef<{ [id: string]: Marker }>({});
+  const leafletRef = useRef<typeof import("leaflet") | null>(null);
   const initialStationsRef = useRef(stations);
   const initialUserLocationRef = useRef(userLocation);
   const initialNearbyActiveRef = useRef(isNearbyActive);
@@ -127,6 +128,7 @@ export function MapView({
       stationLayerRef.current = L.layerGroup().addTo(map);
       userLayerRef.current = L.layerGroup().addTo(map);
 
+      leafletRef.current = L;
       mapInstanceRef.current = map;
       setIsLoaded(true);
 
@@ -170,8 +172,7 @@ export function MapView({
       return;
     }
 
-    import("leaflet").then((module) => {
-      const L = module.default;
+    const syncMarkers = (L: typeof import("leaflet")) => {
       const map = mapInstanceRef.current;
       const stationLayer = stationLayerRef.current;
       const userLayer = userLayerRef.current;
@@ -326,7 +327,13 @@ export function MapView({
             </div>
           </div>
         `;
-        marker.bindPopup(popupHtml, { offset: [0, -12] });
+        marker.bindPopup(popupHtml, {
+          offset: [0, -12],
+          closeButton: true,
+          autoClose: true,
+          closeOnClick: true,
+          className: "custom-leaflet-popup",
+        });
 
         marker.on("click", () => {
           onSelectStation?.(station);
@@ -351,7 +358,16 @@ export function MapView({
           markersRef.current[selectedStationId].openPopup();
         }
       }
-    });
+    };
+
+    if (leafletRef.current) {
+      syncMarkers(leafletRef.current);
+    } else {
+      import("leaflet").then((module) => {
+        leafletRef.current = module.default;
+        syncMarkers(module.default);
+      });
+    }
   }, [stations, selectedStationId, isLoaded, userLocation, isNearbyActive, onSelectStation]);
 
   // 3. Handle intentional camera transitions independently without disrupting pan/zoom on filter changes

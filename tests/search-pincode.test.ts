@@ -156,6 +156,68 @@ describe("Search API Endpoint (GET /api/search)", () => {
     expect(data.categorized.cities.some((c: { title: string }) => c.title.toLowerCase().includes("delhi"))).toBe(true);
   });
 
+  it("handles unknown 6-digit PIN 999999 gracefully with 200 OK and zero results instead of 500", async () => {
+    const req = {
+      nextUrl: {
+        searchParams: new URLSearchParams("q=999999"),
+      },
+    } as unknown as NextRequest;
+
+    const res = await getSearchApi(req);
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    const data = json.data;
+
+    expect(data.searchType).toBe("pincode");
+    expect(data.pincode).toBe("999999");
+    expect(data.origin.hasCoordinates).toBe(false);
+    expect(data.counts.total).toBe(0);
+    expect(data.results.length).toBe(0);
+  });
+
+  it("handles generic charging search queries ('charger', 'chargers', 'charging station') with intentional results", async () => {
+    const genericTerms = ["charger", "chargers", "charging station", "ev charger"];
+
+    for (const term of genericTerms) {
+      const req = {
+        nextUrl: {
+          searchParams: new URLSearchParams(`q=${encodeURIComponent(term)}`),
+        },
+      } as unknown as NextRequest;
+
+      const res = await getSearchApi(req);
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      const data = json.data;
+
+      expect(data.searchType).toBe("text");
+      expect(data.resultCount).toBeGreaterThan(0);
+      expect(data.categorized.stations.length).toBeGreaterThan(0);
+      expect(data.categorized.operators.length).toBeGreaterThan(0);
+      expect(data.categorized.cities.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("does not match arbitrary non-charging words and returns zero results cleanly", async () => {
+    const req = {
+      nextUrl: {
+        searchParams: new URLSearchParams("q=xyzrandomword999"),
+      },
+    } as unknown as NextRequest;
+
+    const res = await getSearchApi(req);
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    const data = json.data;
+
+    expect(data.searchType).toBe("text");
+    expect(data.resultCount).toBe(0);
+    expect(data.items.length).toBe(0);
+  });
+
   it("rejects empty search queries with 400 validation error", async () => {
     const req = {
       nextUrl: {

@@ -319,7 +319,35 @@ export async function getPincodeStationData(
   const location = await resolvePincode(pincode);
 
   if (!location) {
-    throw new Error(`Invalid PIN code format: ${pincode}. Must be a 6-digit Indian PIN code.`);
+    return {
+      pincode: pincode.trim(),
+      location: {
+        city: "",
+        citySlug: "",
+        state: "",
+        stateSlug: "",
+        stateCode: "",
+        district: "",
+        latitude: null,
+        longitude: null,
+        hasCoordinates: false,
+      },
+      stations: [],
+      total: 0,
+      exactPincodeCount: 0,
+      nearbyPincodeCount: 0,
+      radiusCount: 0,
+      nearbyPincodes: [],
+      radiusKm,
+      pagination: {
+        page,
+        limit,
+        pageSize: limit,
+        total: 0,
+        totalPages: 1,
+        hasMore: false,
+      },
+    };
   }
 
   const seenStationIds = new Set<string>();

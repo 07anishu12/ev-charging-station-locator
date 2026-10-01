@@ -62,6 +62,9 @@ export function FilterChips({
       {/* Fast (>50kW) */}
       <button
         type="button"
+        data-testid="filter-fast"
+        aria-label="Filter fast chargers 50kW and above"
+        aria-pressed={filters.minPowerKw === 50}
         onClick={() => toggleMinPower(50)}
         className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.minPowerKw === 50
@@ -75,6 +78,9 @@ export function FilterChips({
       {/* 100kW+ Ultra Fast */}
       <button
         type="button"
+        data-testid="filter-100kw"
+        aria-label="Filter ultra fast chargers 100kW and above"
+        aria-pressed={filters.minPowerKw === 100}
         onClick={() => toggleMinPower(100)}
         className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.minPowerKw === 100
@@ -88,6 +94,9 @@ export function FilterChips({
       {/* CCS2 */}
       <button
         type="button"
+        data-testid="filter-ccs2"
+        aria-label="Filter CCS2 connectors"
+        aria-pressed={filters.connectorType === "ccs2"}
         onClick={() => toggleConnector("ccs2")}
         className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.connectorType === "ccs2"
@@ -101,6 +110,9 @@ export function FilterChips({
       {/* Type 2 */}
       <button
         type="button"
+        data-testid="filter-type2"
+        aria-label="Filter Type 2 connectors"
+        aria-pressed={filters.connectorType === "type2"}
         onClick={() => toggleConnector("type2")}
         className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.connectorType === "type2"
@@ -114,6 +126,9 @@ export function FilterChips({
       {/* Operational */}
       <button
         type="button"
+        data-testid="filter-operational"
+        aria-label="Filter operational chargers only"
+        aria-pressed={Boolean(filters.operationalOnly)}
         onClick={toggleOperational}
         className={`inline-flex shrink-0 min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
           filters.operationalOnly
@@ -128,6 +143,9 @@ export function FilterChips({
       {/* Nearby */}
       <button
         type="button"
+        data-testid="filter-nearby"
+        aria-label="Filter chargers near me"
+        aria-pressed={Boolean(filters.nearby)}
         onClick={toggleNearby}
         disabled={isLoadingLocation}
         className={`inline-flex shrink-0 min-h-9 items-center gap-1 rounded-full px-3.5 text-xs font-semibold cursor-pointer transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
@@ -181,15 +199,23 @@ export function FilterChips({
         )}
       </button>
 
-      {hasActiveFilters && (
-        <button
-          type="button"
-          onClick={resetFilters}
-          className="inline-flex shrink-0 min-h-9 items-center rounded-full px-3 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer active:scale-95"
-        >
-          Reset
-        </button>
-      )}
+      {/* Reset Filters - always stably discoverable in DOM */}
+      <button
+        type="button"
+        onClick={resetFilters}
+        disabled={!hasActiveFilters}
+        aria-disabled={!hasActiveFilters}
+        aria-label="Reset filters"
+        title={hasActiveFilters ? "Reset active filters" : "No filters active to reset"}
+        data-testid="filter-reset"
+        className={`inline-flex shrink-0 min-h-9 items-center rounded-full px-3 text-xs font-semibold transition-all duration-150 ${
+          hasActiveFilters
+            ? "text-rose-600 hover:bg-rose-50 cursor-pointer active:scale-95 shadow-2xs"
+            : "text-stone-400 opacity-40 cursor-not-allowed hover:bg-transparent"
+        }`}
+      >
+        Reset
+      </button>
     </div>
   );
 }

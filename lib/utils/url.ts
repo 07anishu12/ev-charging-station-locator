@@ -4,6 +4,7 @@ function encodeSegment(value: string): string {
 
 export const routeUrls = {
   home: () => "/",
+  explore: () => "/explore",
   india: () => "/india",
   state: (state: string) => `/india/${encodeSegment(state)}`,
   city: (state: string, city: string) =>

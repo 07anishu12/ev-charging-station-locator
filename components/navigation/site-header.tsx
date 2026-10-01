@@ -10,7 +10,7 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   const navLinks = [
-    { label: "Explore", href: routeUrls.home() },
+    { label: "Explore", href: routeUrls.explore() },
     { label: "Map", href: routeUrls.map() },
     { label: "India", href: routeUrls.india() },
     { label: "Search", href: routeUrls.search() },
@@ -25,6 +25,7 @@ export function SiteHeader() {
           <Link
             href={routeUrls.home()}
             aria-label="FastCharger Home"
+            data-testid="brand-logo"
             className="inline-flex items-center focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
           >
             <Logo />
@@ -42,6 +43,8 @@ export function SiteHeader() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  data-testid={`nav-${link.label.toLowerCase()}`}
+                  aria-label={link.label === "Saved" ? "Saved stations" : link.label}
                   className={`inline-flex min-h-10 items-center rounded-xl px-3.5 text-sm font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
                     isActive
                       ? "text-[var(--color-primary)] bg-[var(--color-light-green)] shadow-2xs"

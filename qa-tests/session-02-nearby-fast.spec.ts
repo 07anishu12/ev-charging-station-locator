@@ -73,7 +73,7 @@ test.describe('Session 2: Nearby Fast Charger', () => {
     log.push(`[${elapsed(start)}] Available buttons/filters: ${filterTexts.slice(0, 30).join(' | ')}`);
 
     // Try to find power filter
-    const fastFilter = page.locator('button, [role="button"], a').filter({ hasText: /fast|50.*kw|dc|rapid/i }).first();
+    const fastFilter = page.locator('button[data-testid="filter-fast"], button:not([aria-label*="Home"]), [role="button"]:not([aria-label*="Home"])').filter({ hasText: /fast|50.*kw|dc|rapid/i }).first();
     const fastFilterVisible = await fastFilter.isVisible().catch(() => false);
     log.push(`[${elapsed(start)}] Fast filter visible: ${fastFilterVisible}`);
 

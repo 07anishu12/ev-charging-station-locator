@@ -1,10 +1,10 @@
-[4.6s] STATE "initial-nearby" — stations: 36, markers: 37, url: http://localhost:3000/map?nearby=true
-[6.7s] STATE "after-CCS2" — stations: 34, markers: 35, url: http://localhost:3000/map?nearby=true
-[8.9s] STATE "after-100kW" — stations: 11, markers: 12, url: http://localhost:3000/map?nearby=true
-[11.0s] STATE "after-Type2" — stations: 7, markers: 8, url: http://localhost:3000/map?nearby=true
-[13.1s] STATE "after-Operational" — stations: 7, markers: 8, url: http://localhost:3000/map?nearby=true
-[15.3s] STATE "after-reset" — stations: 44, markers: 44, url: http://localhost:3000/map?nearby=true
-[18.4s] STATE "nearby-again" — stations: 44, markers: 44, url: http://localhost:3000/map?nearby=true
+[4.7s] STATE "initial-nearby" — stations: 36, markers: 37, url: http://localhost:3000/map?nearby=true
+[7.0s] STATE "after-CCS2" — stations: 34, markers: 35, url: http://localhost:3000/map?nearby=true
+[9.2s] STATE "after-100kW" — stations: 11, markers: 12, url: http://localhost:3000/map?nearby=true
+[11.4s] STATE "after-Type2" — stations: 7, markers: 8, url: http://localhost:3000/map?nearby=true
+[13.6s] STATE "after-Operational" — stations: 7, markers: 8, url: http://localhost:3000/map?nearby=true
+[15.8s] STATE "after-reset" — stations: 44, markers: 44, url: http://localhost:3000/map?nearby=true
+[19.0s] STATE "nearby-again" — stations: 44, markers: 44, url: http://localhost:3000/map?nearby=true
 
 --- STATE HISTORY ---
   initial-nearby: stations=36, markers=37

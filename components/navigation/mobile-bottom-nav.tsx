@@ -11,7 +11,7 @@ export function MobileBottomNav() {
   const items = [
     {
       label: "Explore",
-      href: routeUrls.home(),
+      href: routeUrls.explore(),
       exact: true,
       icon: (
         <path
@@ -78,6 +78,8 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label === "Saved" ? "Saved stations" : item.label}
+              data-testid={`mobile-nav-${item.label.toLowerCase()}`}
               className="flex flex-col items-center justify-center min-h-[48px] py-1 select-none focus-visible:outline-none group relative"
             >
               <div

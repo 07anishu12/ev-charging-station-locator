@@ -177,18 +177,94 @@ export interface SearchEntityResult {
   badge?: string;
 }
 
+export const GENERIC_CHARGING_WORDS = new Set([
+  "charger",
+  "chargers",
+  "charging",
+  "charge",
+  "station",
+  "stations",
+  "ev",
+  "fast",
+  "electric",
+  "point",
+  "points",
+  "hub",
+  "hubs",
+  "locator",
+  "find",
+]);
+
+export function isGenericChargingIntent(query: string): boolean {
+  const normalized = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return false;
+  return tokens.every((token) => GENERIC_CHARGING_WORDS.has(token));
+}
+
 export function searchMockEntities(rawQuery: string): SearchEntityResult[] {
   const q = rawQuery.toLowerCase().trim();
   if (!q) return [];
 
+  // Check if query is purely a generic charging intent (e.g. "charger", "chargers", "ev station", "charging station")
+  if (isGenericChargingIntent(q)) {
+    const results: SearchEntityResult[] = [];
+
+    // 1. Featured Fast DC Charging Stations (50kW+)
+    const featuredStations = MOCK_STATIONS.filter(
+      (s) => s.status === "Operational" && s.fastestPowerKw >= 50,
+    ).slice(0, 8);
+
+    for (const station of featuredStations) {
+      results.push({
+        type: "station",
+        title: station.name,
+        subtitle: `${station.address} · ⚡ ${station.fastestPowerKw}kW Fast DC`,
+        href: `/station/${station.slug}`,
+        badge: station.operator.name,
+      });
+    }
+
+    // 2. Top Charging Networks
+    for (const op of MOCK_OPERATORS.slice(0, 4)) {
+      results.push({
+        type: "operator",
+        title: op.name,
+        subtitle: `Charging network · ${op.stationCount}+ points across India`,
+        href: `/map?operator=${op.slug}`,
+        badge: "Network",
+      });
+    }
+
+    // 3. Top Charging Cities
+    for (const city of MOCK_CITIES.slice(0, 4)) {
+      results.push({
+        type: "city",
+        title: city.name,
+        subtitle: `${city.stateName} · ${city.stationCount} charging stations`,
+        href: `/india/${city.stateSlug}/${city.slug}/ev-charging-stations`,
+        badge: "City Hub",
+      });
+    }
+
+    return results;
+  }
+
+  // If query contains a mix of generic words and specific words (e.g. "delhi charger", "tata station"),
+  // also extract specific tokens for targeted search
+  const normalizedTokens = q.replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean);
+  const specificTokens = normalizedTokens.filter((token) => !GENERIC_CHARGING_WORDS.has(token));
+  const effectiveTerm = specificTokens.length > 0 ? specificTokens.join(" ") : q;
+
   const results: SearchEntityResult[] = [];
 
   // Match PIN codes
-  if (/^\d+$/.test(q)) {
+  if (/^\d+$/.test(q) || /^\d+$/.test(effectiveTerm)) {
+    const pinTerm = /^\d+$/.test(q) ? q : effectiveTerm;
     const seenPins = new Set<string>();
     for (const city of MOCK_CITIES) {
       for (const pin of city.popularPincodes) {
-        if (pin.startsWith(q) || pin === q) {
+        if (pin.startsWith(pinTerm) || pin === pinTerm) {
           seenPins.add(pin);
           results.push({
             type: "pincode",
@@ -201,7 +277,7 @@ export function searchMockEntities(rawQuery: string): SearchEntityResult[] {
       }
     }
     for (const [pin, info] of Object.entries(CANONICAL_PINCODES)) {
-      if ((pin.startsWith(q) || pin === q) && !seenPins.has(pin)) {
+      if ((pin.startsWith(pinTerm) || pin === pinTerm) && !seenPins.has(pin)) {
         seenPins.add(pin);
         results.push({
           type: "pincode",
@@ -214,9 +290,14 @@ export function searchMockEntities(rawQuery: string): SearchEntityResult[] {
     }
   }
 
-  // Match Cities
+  // Match Cities (using both full query and effective term)
   for (const city of MOCK_CITIES) {
-    if (city.name.toLowerCase().includes(q) || city.slug.includes(q)) {
+    const cityNameLower = city.name.toLowerCase();
+    if (
+      cityNameLower.includes(q) ||
+      city.slug.includes(q) ||
+      (effectiveTerm !== q && (cityNameLower.includes(effectiveTerm) || city.slug.includes(effectiveTerm)))
+    ) {
       results.push({
         type: "city",
         title: city.name,
@@ -227,32 +308,45 @@ export function searchMockEntities(rawQuery: string): SearchEntityResult[] {
     }
   }
 
-  // Match Stations
-  for (const station of MOCK_STATIONS) {
-    if (
-      station.name.toLowerCase().includes(q) ||
-      station.address.toLowerCase().includes(q) ||
-      station.pincode.includes(q)
-    ) {
-      results.push({
-        type: "station",
-        title: station.name,
-        subtitle: `${station.address} · ${station.fastestPowerKw}kW`,
-        href: `/station/${station.slug}`,
-        badge: station.operator.name,
-      });
-    }
-  }
-
   // Match Operators
   for (const op of MOCK_OPERATORS) {
-    if (op.name.toLowerCase().includes(q)) {
+    const opNameLower = op.name.toLowerCase();
+    if (
+      opNameLower.includes(q) ||
+      op.slug.includes(q) ||
+      (effectiveTerm !== q && (opNameLower.includes(effectiveTerm) || op.slug.includes(effectiveTerm)))
+    ) {
       results.push({
         type: "operator",
         title: op.name,
         subtitle: `Charging network · ${op.stationCount}+ points across India`,
         href: `/map?operator=${op.slug}`,
         badge: "Operator",
+      });
+    }
+  }
+
+  // Match Stations
+  for (const station of MOCK_STATIONS) {
+    const nameLower = station.name.toLowerCase();
+    const addressLower = station.address.toLowerCase();
+    const matchesFull =
+      nameLower.includes(q) ||
+      addressLower.includes(q) ||
+      station.pincode.includes(q);
+    const matchesEffective =
+      effectiveTerm !== q &&
+      (nameLower.includes(effectiveTerm) ||
+        addressLower.includes(effectiveTerm) ||
+        station.pincode.includes(effectiveTerm));
+
+    if (matchesFull || matchesEffective) {
+      results.push({
+        type: "station",
+        title: station.name,
+        subtitle: `${station.address} · ${station.fastestPowerKw}kW`,
+        href: `/station/${station.slug}`,
+        badge: station.operator.name,
       });
     }
   }

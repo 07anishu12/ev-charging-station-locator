@@ -1,10 +1,10 @@
 [0.0s] Navigating to homepage
-[0.8s] Page title: "FastCharger | Find your next charging stop."
-[0.8s] Body text length: 4173 chars
-[0.8s] Found 61 clickable elements
-[1.1s] Visible CTAs:
+[1.1s] Page title: "FastCharger | Find your next charging stop."
+[1.1s] Body text length: 4173 chars
+[1.1s] Found 61 clickable elements
+[1.8s] Visible CTAs:
 "FastCharger" (→/)
-"Explore" (→/)
+"Explore" (→/explore)
 "Map" (→/map)
 "India" (→/india)
 "Search" (→/search)
@@ -111,30 +111,30 @@ Pan, zoom, filter by connector, and preview station details live." (→/map)
 "⚡
 Open Interactive Map" (→/map?nearby=true)
 "Search by City or PIN" (→/search)
-"Explore" (→/)
+"Explore" (→/explore)
 "Map" (→/map)
 "Search" (→/search)
 "Saved" (→/saved)
-[1.2s] Website mentions charging/EV: true
-[1.2s] "Find Chargers Near Me" CTA visible: true
-[1.2s] Search input visible: true
-[1.2s] Explore link visible: true
-[1.2s] Map link visible: true
-[1.2s] === ATTEMPTING MOST OBVIOUS ACTION ===
-[1.2s] Clicking primary CTA: "⚡
+[2.2s] Website mentions charging/EV: true
+[2.2s] "Find Chargers Near Me" CTA visible: true
+[2.2s] Search input visible: true
+[2.2s] Explore link visible: true
+[2.2s] Map link visible: true
+[2.2s] === ATTEMPTING MOST OBVIOUS ACTION ===
+[2.2s] Clicking primary CTA: "⚡
 Find Chargers Near Me"
-[1.4s] URL after click: http://localhost:3000/map?nearby=true
-[1.4s] Time to first action: 1.4s
-[1.4s] Station-like results found: 0
-[1.5s] Map visible: true
-[1.5s] No results yet, trying search...
-[1.5s] Found search box, typing "Delhi"
-[3.6s] Results after searching "Delhi": 0
-[3.6s] Time to first useful result: 3.6s
-[3.6s] ⚠ Could not find a station to select
+[2.7s] URL after click: http://localhost:3000/map?nearby=true
+[2.7s] Time to first action: 2.7s
+[2.7s] Station-like results found: 0
+[2.7s] Map visible: true
+[2.8s] No results yet, trying search...
+[2.8s] Found search box, typing "Delhi"
+[5.1s] Results after searching "Delhi": 0
+[5.1s] Time to first useful result: 5.1s
+[5.1s] ⚠ Could not find a station to select
 
 ========== SESSION 1 ASSESSMENT ==========
-Total time: 3.6s
+Total time: 5.1s
 Clicks: 2
 Wrong clicks: 0
 Confusion events: 2
