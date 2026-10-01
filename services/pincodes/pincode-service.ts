@@ -240,6 +240,11 @@ export async function discoverNearbyPincodes(
       const db = getDb();
       const maxDistanceMeters = maxDistanceKm * 1000;
 
+      const distanceExpr = sql<number>`ST_Distance(
+        ST_SetSRID(ST_MakePoint(${pincodes.longitude}, ${pincodes.latitude}), 4326)::geography,
+        ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
+      )`;
+
       const rows = await db
         .select({
           pincode: pincodes.pincode,
@@ -247,10 +252,7 @@ export async function discoverNearbyPincodes(
           latitude: pincodes.latitude,
           longitude: pincodes.longitude,
           cityName: cities.name,
-          distanceMeters: sql<number>`ST_Distance(
-            ST_SetSRID(ST_MakePoint(${pincodes.longitude}, ${pincodes.latitude}), 4326)::geography,
-            ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
-          )`,
+          distanceMeters: distanceExpr,
         })
         .from(pincodes)
         .leftJoin(cities, eq(pincodes.cityId, cities.id))
@@ -266,7 +268,7 @@ export async function discoverNearbyPincodes(
             )`,
           ),
         )
-        .orderBy(sql`distanceMeters ASC`)
+        .orderBy(sql`${distanceExpr} ASC`)
         .limit(limit);
 
       if (rows.length > 0) {
@@ -453,6 +455,11 @@ export async function getPincodeStationData(
       // Query PostGIS geographic radius if coordinates are available
       if (location.hasCoordinates) {
         const radiusMeters = radiusKm * 1000;
+        const distanceExpr = sql<number>`ST_Distance(
+          stations.location,
+          ST_SetSRID(ST_MakePoint(${location.longitude!}, ${location.latitude!}), 4326)::geography
+        )`;
+
         const radiusRows = await db
           .select({
             id: stations.id,
@@ -477,10 +484,7 @@ export async function getPincodeStationData(
             stateName: states.name,
             stateSlug: states.slug,
             stateCode: states.code,
-            distanceMeters: sql<number>`ST_Distance(
-              stations.location,
-              ST_SetSRID(ST_MakePoint(${location.longitude!}, ${location.latitude!}), 4326)::geography
-            )`,
+            distanceMeters: distanceExpr,
           })
           .from(stations)
           .leftJoin(operators, eq(stations.operatorId, operators.id))
@@ -493,7 +497,7 @@ export async function getPincodeStationData(
               ${radiusMeters}
             )`,
           )
-          .orderBy(sql`distanceMeters ASC`)
+          .orderBy(sql`${distanceExpr} ASC`)
           .limit(100);
 
         const radiusIds = radiusRows.map((s) => s.id).filter((id) => !seenStationIds.has(id));
@@ -621,6 +625,11 @@ export async function getPincodeStationData(
       };
     } catch (err) {
       console.warn("Database PIN station search failed, using mock adapter:", err);
+      seenStationIds.clear();
+      exactStations.length = 0;
+      nearbyStations.length = 0;
+      sameCityStations.length = 0;
+      radiusStations.length = 0;
     }
   }
 
@@ -747,3 +756,115 @@ export async function getPincodeStationData(
     },
   };
 }
+
+export interface FindStationsNearPincodeParams {
+  pincode: string;
+  radiusKm?: number;
+  page?: number;
+  limit?: number;
+  progressiveFallback?: boolean;
+}
+
+export interface FindStationsNearPincodeResult {
+  searchType: "pincode";
+  pincode: string;
+  origin: {
+    latitude: number | null;
+    longitude: number | null;
+    city: string;
+    citySlug: string;
+    state: string;
+    stateSlug: string;
+    stateCode: string;
+    district: string;
+    hasCoordinates: boolean;
+  };
+  radiusKm: number;
+  radiusMeters: number;
+  resultCount: number;
+  counts: {
+    exact: number;
+    nearby: number;
+    total: number;
+  };
+  results: PincodeStationItem[];
+  nearbyPincodes: NearbyPincodeItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
+
+/**
+ * Discovers charging stations around an Indian 6-digit PIN code.
+ *
+ * Resolves the PIN code to geographic coordinates (via PostGIS database
+ * or canonical catalog) and searches within radius, returning both exact
+ * and nearby stations categorized by matchType and sorted by physical distance.
+ */
+export async function findStationsNearPincode(
+  pincode: string,
+  options: {
+    radiusKm?: number;
+    page?: number;
+    limit?: number;
+    progressiveFallback?: boolean;
+  } = {},
+): Promise<FindStationsNearPincodeResult> {
+  const initialRadius = options.radiusKm ?? 10;
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 20;
+
+  let data = await getPincodeStationData(pincode, {
+    radiusKm: initialRadius,
+    page,
+    limit,
+  });
+
+  // Progressive fallback: if initial search returned 0 stations and coordinates exist,
+  // expand search radius to 25 km
+  if (
+    options.progressiveFallback !== false &&
+    data.total === 0 &&
+    data.location.hasCoordinates &&
+    initialRadius < 25
+  ) {
+    data = await getPincodeStationData(pincode, {
+      radiusKm: 25,
+      page,
+      limit,
+    });
+  }
+
+  return {
+    searchType: "pincode",
+    pincode: data.pincode,
+    origin: {
+      latitude: data.location.latitude,
+      longitude: data.location.longitude,
+      city: data.location.city,
+      citySlug: data.location.citySlug,
+      state: data.location.state,
+      stateSlug: data.location.stateSlug,
+      stateCode: data.location.stateCode,
+      district: data.location.district,
+      hasCoordinates: data.location.hasCoordinates,
+    },
+    radiusKm: data.radiusKm,
+    radiusMeters: data.radiusKm * 1000,
+    resultCount: data.stations.length,
+    counts: {
+      exact: data.exactPincodeCount,
+      nearby: data.nearbyPincodeCount + data.radiusCount,
+      total: data.total,
+    },
+    results: data.stations,
+    nearbyPincodes: data.nearbyPincodes,
+    pagination: data.pagination,
+  };
+}
+

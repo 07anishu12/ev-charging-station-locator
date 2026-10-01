@@ -1,3 +1,4 @@
+import { CANONICAL_PINCODES } from "@/lib/geo/canonical-pincodes";
 import { distanceInKilometers } from "@/lib/geo/distance";
 import {
   MOCK_CITIES,
@@ -184,9 +185,11 @@ export function searchMockEntities(rawQuery: string): SearchEntityResult[] {
 
   // Match PIN codes
   if (/^\d+$/.test(q)) {
+    const seenPins = new Set<string>();
     for (const city of MOCK_CITIES) {
       for (const pin of city.popularPincodes) {
         if (pin.startsWith(q) || pin === q) {
+          seenPins.add(pin);
           results.push({
             type: "pincode",
             title: pin,
@@ -195,6 +198,18 @@ export function searchMockEntities(rawQuery: string): SearchEntityResult[] {
             badge: "PIN Code",
           });
         }
+      }
+    }
+    for (const [pin, info] of Object.entries(CANONICAL_PINCODES)) {
+      if ((pin.startsWith(q) || pin === q) && !seenPins.has(pin)) {
+        seenPins.add(pin);
+        results.push({
+          type: "pincode",
+          title: pin,
+          subtitle: `${info.cityName}, ${info.stateName} PIN code (${info.district})`,
+          href: `/india/${info.stateSlug}/${info.citySlug}/${pin}/ev-charging-stations`,
+          badge: "PIN Code",
+        });
       }
     }
   }
