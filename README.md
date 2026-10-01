@@ -97,3 +97,31 @@ Collection endpoints currently return empty, typed result sets. No fake charger 
 - Server-only provider/database code imports `server-only` and never crosses into client components.
 - `app/globals.css` contains FastCharger color tokens and reduced-motion-safe animation utilities.
 - The first migration in `drizzle/` enables PostGIS and creates the station location index without inserting data.
+
+## Graphify 3D Architecture Viewer
+
+Interactive 3D knowledge-graph explorer for FastCharger architecture, modules, communities, god nodes, and dependency paths using `graphify-out/graph.json`.
+
+1. Generate graph:
+   ```bash
+   graphify . --code-only
+   ```
+
+2. Generate community analysis:
+   ```bash
+   graphify cluster-only .
+   ```
+
+3. Open 3D viewer:
+   ```bash
+   npm run graph:3d
+   ```
+
+The viewer serves developer tooling at `http://localhost:3333/3d/` with zero production dependencies, reading `graphify-out/graph.json` dynamically with WebGL hardware acceleration, community isolation, real-time search, BFS path tracing, and god-node hub discovery.
+
+### SQL Parsing Note
+Graphify AST extraction reports `tree_sitter_sql not installed` when parsing SQL schemas. To enable tree-sitter SQL parsing support in your Graphify installation:
+```bash
+uv tool install "graphifyy[sql]"
+```
+

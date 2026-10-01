@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "sync:india": "tsx --conditions react-server scripts/sync/sync-india.ts"
+    "sync:india": "tsx --conditions react-server scripts/sync/sync-india.ts",
+    "discover:cities": "tsx --conditions react-server scripts/discovery/discover-cities.ts",
+    "graph:3d": "node graphify-out/3d/serve.js"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.3",

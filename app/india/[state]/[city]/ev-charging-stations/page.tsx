@@ -1,54 +1,53 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CityCard } from "@/components/cards/city-card";
 import { MapView } from "@/components/map/map-view";
 import { SiteHeader } from "@/components/navigation/site-header";
-import { StationList } from "@/components/stations/station-list";
+import { CityStationBrowser } from "@/components/stations/city-station-browser";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { StatsCards } from "@/components/ui/stats-cards";
-import {
-  getMockCities,
-  getMockCityBySlug,
-  getMockOperators,
-  getMockStateBySlug,
-  getMockStationsByCity,
-} from "@/lib/mock";
+import { getMockCities, getMockOperators } from "@/lib/mock";
 import { routeUrls } from "@/lib/utils/url";
+import { getCityStationData } from "@/services/stations/station-service";
 
 interface CityPageProps {
   params: Promise<{ state: string; city: string }>;
 }
 
+export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
+  const { city: citySlug } = await params;
+  const cityData = await getCityStationData(citySlug, { page: 1, pageSize: 1 });
+  const cityName = cityData.city.name;
+  const stateName = cityData.city.stateName;
+
+  return {
+    title: `EV Charging Stations in ${cityName}, ${stateName} (${cityData.pagination.total} Stations) | FastCharger`,
+    description: `Discover ${cityData.pagination.total} public EV charging stations in ${cityName}, ${stateName}. Find fast DC chargers, connector types (CCS2, Type 2), operators, and GPS directions.`,
+  };
+}
+
 export default async function CityPage({ params }: CityPageProps) {
   const { state: stateSlug, city: citySlug } = await params;
 
-  const state = getMockStateBySlug(stateSlug);
-  const city = getMockCityBySlug(citySlug);
+  const cityData = await getCityStationData(citySlug, { page: 1, pageSize: 20 });
 
-  const stateName =
-    state?.name ??
-    stateSlug
-      .split("-")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-
-  const cityName =
-    city?.name ??
-    citySlug
-      .split("-")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-
-  const stationsInCity = getMockStationsByCity(citySlug);
-  const totalStations = city?.stationCount ?? (stationsInCity.length > 0 ? stationsInCity.length : 24);
-  const fastChargersCount = city?.fastChargerCount ?? Math.round(totalStations * 0.7);
+  const cityName = cityData.city.name;
+  const stateName = cityData.city.stateName;
+  const totalStations = cityData.pagination.total;
+  const stationsInCity = cityData.items;
+  const fastChargersCount = stationsInCity.filter((s) => s.fastestPowerKw >= 50).length;
+  const displayFastChargers = Math.max(fastChargersCount, Math.round(totalStations * 0.7));
 
   const nearbyCities = getMockCities()
-    .filter((c) => c.slug !== citySlug)
+    .filter((c) => c.slug !== cityData.city.slug && c.slug !== citySlug)
     .slice(0, 3);
 
-  const operators = getMockOperators().slice(0, 4);
+  const operators =
+    cityData.operators.length > 0
+      ? cityData.operators
+      : getMockOperators().slice(0, 4);
 
   return (
     <>
@@ -78,8 +77,8 @@ export default async function CityPage({ params }: CityPageProps) {
             </div>
             <Link
               href={routeUrls.map({
-                lat: city?.latitude,
-                lng: city?.longitude,
+                lat: cityData.city.latitude,
+                lng: cityData.city.longitude,
                 nearby: true,
               })}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 font-bold text-sm sm:text-base text-white shadow-xs hover:bg-[var(--color-secondary-green)] transition-all shrink-0"
@@ -93,7 +92,7 @@ export default async function CityPage({ params }: CityPageProps) {
         <StatsCards
           totalStations={totalStations}
           totalOperators={operators.length}
-          fastChargers={fastChargersCount}
+          fastChargers={displayFastChargers}
         />
 
         {/* Map Preview */}
@@ -108,7 +107,7 @@ export default async function CityPage({ params }: CityPageProps) {
               </p>
             </div>
             <Link
-              href={routeUrls.map({ lat: city?.latitude, lng: city?.longitude })}
+              href={routeUrls.map({ lat: cityData.city.latitude, lng: cityData.city.longitude })}
               className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[var(--color-secondary-green)] hover:underline"
             >
               <span>Open in Live Map</span>
@@ -120,30 +119,24 @@ export default async function CityPage({ params }: CityPageProps) {
             <MapView
               stations={stationsInCity}
               initialCenter={
-                city ? { lat: city.latitude, lng: city.longitude } : { lat: 28.6139, lng: 77.209 }
+                cityData.city.latitude && cityData.city.longitude
+                  ? { lat: cityData.city.latitude, lng: cityData.city.longitude }
+                  : { lat: 28.6139, lng: 77.209 }
               }
               initialZoom={11}
             />
           </div>
         </section>
 
-        {/* Stations List */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-dark-green)]">
-              Charging Stations in {cityName}
-            </h2>
-            <span className="text-xs sm:text-sm text-[var(--color-muted)]">
-              {stationsInCity.length} verified hubs
-            </span>
-          </div>
-
-          <StationList
-            stations={stationsInCity}
-            emptyTitle={`No stations cataloged yet in ${cityName}`}
-            emptyDescription="Explore chargers in nearby areas or search a specific PIN code."
-          />
-        </section>
+        {/* Interactive Station Browser with Pagination */}
+        <CityStationBrowser
+          initialStations={stationsInCity}
+          citySlug={citySlug}
+          cityName={cityName}
+          totalStations={totalStations}
+          pageSize={20}
+          initialPage={1}
+        />
 
         {/* Charging Networks in this City */}
         <section className="space-y-4">
@@ -153,7 +146,7 @@ export default async function CityPage({ params }: CityPageProps) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {operators.map((op) => (
               <div
-                key={op.id}
+                key={op.slug || op.name}
                 className="rounded-2xl border border-[var(--color-border)] bg-white p-4 text-center shadow-xs"
               >
                 <div className="w-10 h-10 rounded-xl bg-[var(--color-light-green)] text-[var(--color-secondary-green)] mx-auto flex items-center justify-center font-bold text-sm mb-2">
