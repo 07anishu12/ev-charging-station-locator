@@ -15,6 +15,13 @@
       "when": 1790833199308,
       "tag": "0001_tired_marvel_zombies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790834349790,
+      "tag": "0002_supreme_iron_monger",
+      "breakpoints": true
     }
   ]
 }

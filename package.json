@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "sync:india": "tsx --conditions react-server scripts/sync/sync-india.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.3",

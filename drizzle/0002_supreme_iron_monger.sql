@@ -1,0 +1,1 @@
+ALTER TABLE "connectors" ADD CONSTRAINT "connectors_ocm_connection_id_unique" UNIQUE("ocm_connection_id");

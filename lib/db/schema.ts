@@ -171,7 +171,7 @@ export const connectors = pgTable(
     stationId: uuid("station_id")
       .notNull()
       .references(() => stations.id, { onDelete: "cascade" }),
-    ocmConnectionId: integer("ocm_connection_id"),
+    ocmConnectionId: integer("ocm_connection_id").unique(),
     connectionType: text("connection_type").notNull(),
     normalizedType: text("normalized_type").notNull(),
     level: text("level"),

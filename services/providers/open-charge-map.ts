@@ -16,11 +16,13 @@ export class OpenChargeMapProvider implements ChargingDataProvider {
     this.assertConfigured();
     const response = await this.request({
       ...query,
-      maxresults: query.pageSize ?? appConfig.pagination.defaultPageSize,
+      maxresults: query.maxResults ?? query.pageSize ?? appConfig.pagination.defaultPageSize,
     });
     const payload: unknown = await response.json();
     if (!Array.isArray(payload)) return [];
-    return payload.map(normalizeOpenChargeMapStation).filter((station): station is ProviderStation => station !== null);
+    return payload
+      .map(normalizeOpenChargeMapStation)
+      .filter((station): station is ProviderStation => station !== null);
   }
 
   async fetchStation(externalId: string): Promise<ProviderStation | null> {
@@ -52,7 +54,7 @@ export class OpenChargeMapProvider implements ChargingDataProvider {
     const url = new URL(`${this.baseUrl}/`);
     url.searchParams.set("output", "json");
     url.searchParams.set("countrycode", "IN");
-    url.searchParams.set("compact", "true");
+    url.searchParams.set("compact", "false");
     url.searchParams.set("verbose", "false");
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined) url.searchParams.set(key, String(value));

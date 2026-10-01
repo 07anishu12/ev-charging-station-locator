@@ -106,6 +106,7 @@ describe("database relational schema definition", () => {
     expect(connectors.id).toBeDefined();
     expect(connectors.stationId).toBeDefined();
     expect(connectors.ocmConnectionId).toBeDefined();
+    expect(connectors.ocmConnectionId.isUnique).toBe(true);
     expect(connectors.connectionType).toBeDefined();
     expect(connectors.normalizedType).toBeDefined();
     expect(connectors.powerKw).toBeDefined();
