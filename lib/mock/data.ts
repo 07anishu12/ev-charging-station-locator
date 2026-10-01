@@ -76,6 +76,11 @@ export interface MockStation {
   connectors: MockConnector[];
   fastestPowerKw: number;
   distanceKm?: number;
+  distanceMeters?: number;
+  matchType?: "exact_pincode" | "nearby_pincode" | "same_city" | "radius";
+  stationPincode?: string | null;
+  stationCity?: string;
+  stationState?: string;
 }
 
 export const MOCK_STATES: MockState[] = [

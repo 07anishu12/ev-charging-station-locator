@@ -44,6 +44,16 @@ export function StationCard({
                 📍 {station.distanceKm} km
               </span>
             )}
+            {station.matchType === "exact_pincode" && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100/80 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                🎯 Exact PIN
+              </span>
+            )}
+            {station.matchType === "nearby_pincode" && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-800">
+                📍 PIN {station.stationPincode || station.pincode}
+              </span>
+            )}
           </div>
           <h3 className="text-base sm:text-lg font-bold tracking-tight text-[var(--color-dark-green)] truncate">
             <Link
@@ -62,6 +72,7 @@ export function StationCard({
 
       <p className="text-xs sm:text-sm text-[var(--color-muted)] line-clamp-1 mb-3">
         {station.address}
+        {station.pincode ? ` · PIN ${station.pincode}` : ""}
       </p>
 
       {/* Connectors & Power */}
