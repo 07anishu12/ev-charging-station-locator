@@ -1,0 +1,29 @@
+import { z } from "zod";
+
+const optionalString = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.string().trim().min(1).optional(),
+);
+
+const optionalUrl = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.string().url().optional(),
+);
+
+export const environmentSchema = z
+  .object({
+    DATABASE_URL: optionalUrl,
+    OPENCHARGEMAP_API_KEY: optionalString,
+    NEXT_PUBLIC_SITE_URL: optionalUrl,
+  })
+  .transform((values) => ({
+    databaseUrl: values.DATABASE_URL ?? null,
+    openChargeMapApiKey: values.OPENCHARGEMAP_API_KEY ?? null,
+    siteUrl: values.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  }));
+
+export type AppEnvironment = z.output<typeof environmentSchema>;
+
+export function parseEnvironment(input: Record<string, string | undefined>): AppEnvironment {
+  return environmentSchema.parse(input);
+}

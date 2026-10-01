@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-primary: #16c784;
+  --color-dark-green: #073b2a;
+  --color-secondary-green: #0f6b45;
+  --color-light-green: #eafbf3;
+  --color-background: #f8faf9;
+  --color-text: #10201a;
+  --color-muted: #68756f;
+  --color-border: #dce8e1;
+  --color-available: #16c784;
+  --color-busy: #f5a623;
+  --color-unavailable: #e5484d;
+  --color-unknown: #8a9490;
+  --background: var(--color-background);
+  --foreground: var(--color-text);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-text);
+  --color-primary: var(--color-primary);
+  --color-dark-green: var(--color-dark-green);
+  --color-secondary-green: var(--color-secondary-green);
+  --color-light-green: var(--color-light-green);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --color-available: var(--color-available);
+  --color-busy: var(--color-busy);
+  --color-unavailable: var(--color-unavailable);
+  --color-unknown: var(--color-unknown);
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  margin: 0;
+}
+
+@keyframes charging-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes electricity-flow {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes loading {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes bottom-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-charging-pulse {
+  animation: charging-pulse 1.8s ease-in-out infinite;
+}
+
+@utility animate-electricity-flow {
+  animation: electricity-flow 2.4s linear infinite;
+}
+
+@utility animate-loading {
+  animation: loading 1.4s ease-in-out infinite;
+}
+
+@utility animate-bottom-sheet-in {
+  animation: bottom-sheet-in 220ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
