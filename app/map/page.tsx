@@ -5,14 +5,26 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 
 import { FilterChips, type FilterState } from "@/components/filters/filter-chips";
 import { MapListToggle } from "@/components/map/map-list-toggle";
-import { MapView } from "@/components/map/map-view";
+import { MapView, type MapCameraTrigger } from "@/components/map/map-view";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { SearchBar } from "@/components/search/search-bar";
 import { StationBottomSheet } from "@/components/stations/station-bottom-sheet";
 import { StationList } from "@/components/stations/station-list";
 import { PageSkeleton } from "@/components/ui/skeletons";
 import {
-  getMockNearbyStations,
+  deriveCanonicalStations,
+  NEARBY_DISCOVERY_RADIUS_KM,
+  type LocationMode,
+} from "@/lib/geo/discovery-state";
+import {
+  clearCachedUserLocation,
+  getCachedUserLocation,
+  requestUserLocation,
+  type GeolocationStatus,
+  type UserLocation,
+} from "@/lib/geo/geolocation";
+import {
+  getMockCities,
   getMockStations,
   type MockStation,
 } from "@/lib/mock";
@@ -29,65 +41,168 @@ function MapPageContent() {
     nearby: initialNearby,
     operatorSlug: initialOperator,
   });
+  const [locationMode, setLocationMode] = useState<LocationMode>(
+    initialNearby ? "user" : "none",
+  );
   const [mobileView, setMobileView] = useState<"map" | "list">("map");
   const [selectedStation, setSelectedStation] = useState<MockStation | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(
-    initialLat && initialLng ? { lat: initialLat, lng: initialLng } : null,
+
+  const cachedLoc = getCachedUserLocation();
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(
+    initialLat && initialLng
+      ? { lat: initialLat, lng: initialLng }
+      : cachedLoc ?? null,
   );
 
-  // Request user location if nearby is active
-  useEffect(() => {
-    if (filters.nearby && !userLocation && typeof window !== "undefined" && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        () => {
-          // Fallback to Delhi center if user denies location
-          setUserLocation({ lat: 28.6139, lng: 77.209 });
-        },
-        { timeout: 8000 },
-      );
-    }
-  }, [filters.nearby, userLocation]);
+  const isInitialLocating = Boolean(initialNearby && !userLocation && !initialLat && !cachedLoc);
+  const [locationStatus, setLocationStatus] = useState<GeolocationStatus>(
+    isInitialLocating
+      ? "loading"
+      : initialNearby && (initialLat || cachedLoc)
+      ? "granted"
+      : "idle",
+  );
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [cameraTrigger, setCameraTrigger] = useState<MapCameraTrigger | null>(null);
 
-  // Compute filtered stations
+  // 1. Initial location request if page was loaded with ?nearby=true
+  useEffect(() => {
+    if (initialNearby && !userLocation) {
+      let isMounted = true;
+
+      requestUserLocation().then((res) => {
+        if (!isMounted) return;
+        if (res.success) {
+          setUserLocation(res.location);
+          setLocationStatus("granted");
+          setLocationError(null);
+          setCameraTrigger({
+            type: "user",
+            lat: res.location.lat,
+            lng: res.location.lng,
+            zoom: 13,
+            timestamp: Date.now(),
+          });
+        } else {
+          setLocationStatus(res.status);
+          setLocationError(res.error);
+        }
+      });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [initialNearby, userLocation]);
+
+  // 2. Fetch all raw base stations once
+  const allRawStations = useMemo(() => getMockStations(), []);
+
+  // 3. Compute ONE canonical filtered station array
   const stations = useMemo(() => {
-    if (filters.nearby && userLocation) {
-      const nearbyList = getMockNearbyStations(userLocation.lat, userLocation.lng, 100);
-      return nearbyList.filter((s) => {
-        if (filters.minPowerKw && s.fastestPowerKw < filters.minPowerKw) return false;
-        if (filters.operationalOnly && s.status !== "Operational") return false;
-        if (
-          filters.connectorType &&
-          !s.connectors.some(
-            (c) =>
-              c.normalizedType === filters.connectorType ||
-              c.type.toLowerCase().includes(filters.connectorType!),
-          )
-        )
-          return false;
-        if (
-          searchQuery &&
-          !s.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          !s.address.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-          return false;
-        return true;
+    return deriveCanonicalStations({
+      allStations: allRawStations,
+      filters,
+      userLocation: locationMode === "user" ? userLocation : null,
+      locationMode,
+      searchQuery,
+      radiusKm: NEARBY_DISCOVERY_RADIUS_KM,
+    });
+  }, [allRawStations, filters, userLocation, locationMode, searchQuery]);
+
+  // 4. Derive active selected station strictly from current canonical results (null if filtered out)
+  const activeSelectedStation = useMemo(() => {
+    if (!selectedStation) return null;
+    return stations.find((s) => s.id === selectedStation.id) ?? null;
+  }, [stations, selectedStation]);
+
+  // 5. Handle filter changes with atomic state synchronization
+  const handleFiltersChange = async (nextFilters: FilterState) => {
+    // A. Check if Nearby was toggled ON
+    if (nextFilters.nearby && !filters.nearby) {
+      setLocationMode("user");
+      setFilters(nextFilters);
+
+      const activeLoc = userLocation || getCachedUserLocation();
+      if (activeLoc) {
+        setUserLocation(activeLoc);
+        setLocationStatus("granted");
+        setLocationError(null);
+        setCameraTrigger({
+          type: "user",
+          lat: activeLoc.lat,
+          lng: activeLoc.lng,
+          zoom: 13,
+          timestamp: Date.now(),
+        });
+        return;
+      }
+
+      // Request location from browser
+      setLocationStatus("loading");
+      setLocationError(null);
+      const res = await requestUserLocation();
+      if (res.success) {
+        setUserLocation(res.location);
+        setLocationStatus("granted");
+        setLocationError(null);
+        setCameraTrigger({
+          type: "user",
+          lat: res.location.lat,
+          lng: res.location.lng,
+          zoom: 13,
+          timestamp: Date.now(),
+        });
+      } else {
+        setLocationStatus(res.status);
+        setLocationError(res.error);
+      }
+      return;
+    }
+
+    // B. Check if Nearby was toggled OFF
+    if (!nextFilters.nearby && filters.nearby) {
+      setLocationMode("none");
+      setFilters(nextFilters);
+      return;
+    }
+
+    // C. Check if Reset was clicked
+    const isReset = Object.keys(nextFilters).length === 0;
+    if (isReset) {
+      setFilters({});
+      setLocationMode("none");
+      setSelectedStation(null);
+      setLocationError(null);
+      // Retain cached user location for future Nearby activations
+      return;
+    }
+
+    // D. Standard capability filter change (Fast, 100kW+, CCS2, Type 2, Operational)
+    setFilters(nextFilters);
+  };
+
+  // 6. Handle search query changes
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    const q = query.trim().toLowerCase();
+
+    // Check if query corresponds to a recognized city
+    const matchedCity = getMockCities().find(
+      (c) => c.name.toLowerCase() === q || c.slug === q,
+    );
+    if (matchedCity) {
+      setCameraTrigger({
+        type: "city",
+        lat: matchedCity.latitude,
+        lng: matchedCity.longitude,
+        zoom: 12,
+        timestamp: Date.now(),
       });
     }
+  };
 
-    return getMockStations({
-      query: searchQuery,
-      minPowerKw: filters.minPowerKw,
-      connectorType: filters.connectorType,
-      operationalOnly: filters.operationalOnly,
-      operatorSlug: filters.operatorSlug,
-    });
-  }, [searchQuery, filters, userLocation]);
+  const isLocating = locationMode === "user" && locationStatus === "loading";
 
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] md:h-[100dvh] overflow-hidden bg-[var(--color-background)]">
@@ -99,12 +214,16 @@ function MapPageContent() {
           <div className="flex items-center gap-2">
             <SearchBar
               initialQuery={searchQuery}
-              onSearch={setSearchQuery}
+              onSearch={handleSearchChange}
               placeholder="Filter by station name, address, or operator..."
               className="flex-1"
             />
           </div>
-          <FilterChips filters={filters} onChange={setFilters} />
+          <FilterChips
+            filters={filters}
+            onChange={handleFiltersChange}
+            isLoadingLocation={isLocating}
+          />
         </div>
       </section>
 
@@ -117,13 +236,34 @@ function MapPageContent() {
           }`}
           aria-label="Stations List"
         >
+          {/* Geolocation Error Alert */}
+          {locationError && locationMode === "user" && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900">
+              <div className="flex items-center justify-between gap-2">
+                <span>{locationError}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearCachedUserLocation();
+                    handleFiltersChange({ ...filters, nearby: true });
+                  }}
+                  className="font-bold underline text-amber-800 hover:text-amber-950 shrink-0"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-bold text-[var(--color-dark-green)]">
-              {stations.length} {stations.length === 1 ? "Station found" : "Stations found"}
+              {isLocating
+                ? "Locating chargers near you..."
+                : `${stations.length} ${stations.length === 1 ? "Station found" : "Stations found"}`}
             </span>
-            {filters.nearby && (
+            {filters.nearby && locationStatus === "granted" && (
               <span className="text-xs font-semibold text-[var(--color-secondary-green)]">
-                Sorted by distance
+                Near you (within {NEARBY_DISCOVERY_RADIUS_KM} km)
               </span>
             )}
           </div>
@@ -131,7 +271,10 @@ function MapPageContent() {
           <div className="pb-24 md:pb-6">
             <StationList
               stations={stations}
-              selectedStationId={selectedStation?.id}
+              isLoading={isLocating}
+              emptyTitle="No charging stations match the selected filters"
+              emptyDescription="Try clearing one or more filters or expanding your search."
+              selectedStationId={activeSelectedStation?.id}
               onSelectStation={(s) => {
                 setSelectedStation(s);
                 setMobileView("map");
@@ -150,7 +293,10 @@ function MapPageContent() {
           <div className="absolute inset-0">
             <MapView
               stations={stations}
-              selectedStationId={selectedStation?.id}
+              selectedStationId={activeSelectedStation?.id}
+              userLocation={userLocation}
+              isNearbyActive={filters.nearby === true && locationStatus === "granted"}
+              cameraTrigger={cameraTrigger}
               onSelectStation={(station) => {
                 setSelectedStation(station);
                 const card = document.getElementById(`station-card-${station.id}`);
@@ -164,7 +310,7 @@ function MapPageContent() {
 
           {/* Mobile Bottom Sheet Preview when station selected */}
           <StationBottomSheet
-            station={selectedStation}
+            station={activeSelectedStation}
             onClose={() => setSelectedStation(null)}
           />
         </section>
