@@ -1,14 +1,14 @@
-[0.9s] Mobile homepage loaded
-[0.9s] Viewport: 390x844
+[1.0s] Mobile homepage loaded
+[1.0s] Viewport: 390x844
 [1.0s] Hero text: "Find your next charging stop."
 [1.0s] Near Me CTA visible without scrolling: true
 [1.0s] Hamburger menu: false
-[1.1s] Horizontal overflow: false (body: 390, viewport: 390)
+[1.0s] Horizontal overflow: false (body: 390, viewport: 390)
 [4.2s] Nearby page on mobile
-[4.3s] Map visible on mobile: true
-[4.3s] Station links visible: 36
-[4.3s] List container visible: true
-[4.3s] CCS2 filter visible on mobile: true
+[4.2s] Map visible on mobile: true
+[4.2s] Station links visible: 36
+[4.2s] List container visible: true
+[4.2s] CCS2 filter visible on mobile: true
 [7.0s] Navigation visible after scroll: true
 
 ========== SESSION 9 ASSESSMENT ==========

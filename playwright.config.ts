@@ -12,7 +12,7 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     video: 'on',
     screenshot: 'on',
-    trace: 'on',
+    trace: 'retain-on-failure',
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
     viewport: { width: 1280, height: 720 },

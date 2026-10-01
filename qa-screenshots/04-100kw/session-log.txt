@@ -1,13 +1,13 @@
-[4.8s] Map loaded
-[4.8s] Initial stations: 36
-[4.8s] 100kW+ filter visible: true
-[4.8s] Power input/slider visible: false
-[7.1s] After 100kW filter - stations: 11
-[7.1s] First station card: "Details"
-[7.1s] Power info visible in card: false
-[9.2s] Station URL: http://localhost:3000/station/jio-bp-pulse-akshardham-metro-delhi
-[9.2s] Power specs visible: true
-[11.5s] Stations after going back: 36
+[4.9s] Map loaded
+[5.0s] Initial stations: 36
+[5.0s] 100kW+ filter visible: true
+[5.0s] Power input/slider visible: false
+[7.2s] After 100kW filter - stations: 11
+[7.2s] First station card: "Details"
+[7.2s] Power info visible in card: false
+[9.4s] Station URL: http://localhost:3000/station/jio-bp-pulse-akshardham-metro-delhi
+[9.4s] Power specs visible: true
+[11.6s] Stations after going back: 36
 
 ========== SESSION 4 ASSESSMENT ==========
 Clicks: 3, Confusion events: 1

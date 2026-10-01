@@ -1,11 +1,11 @@
-[4.8s] Map page loaded
-[4.8s] Initial - stations: 36, markers: 37
-[4.8s] CCS2 mentioned on page: true
-[4.8s] CCS2 filter element visible: true
-[4.8s] CCS2 filter text: "CCS2"
-[7.1s] Filter appears active (visual): true
-[7.2s] After CCS2 - stations: 34, markers: 35
-[9.4s] Station details mention CCS2: true
+[4.7s] Map page loaded
+[4.7s] Initial - stations: 36, markers: 37
+[4.7s] CCS2 mentioned on page: true
+[4.7s] CCS2 filter element visible: true
+[4.7s] CCS2 filter text: "CCS2"
+[7.0s] Filter appears active (visual): true
+[7.0s] After CCS2 - stations: 34, markers: 35
+[9.2s] Station details mention CCS2: true
 
 ========== SESSION 3 ASSESSMENT ==========
 Clicks: 2
