@@ -46,4 +46,5 @@ next-env.d.ts
 
 # local tooling
 .codex/
-graphify-out/
+graphify-out/*
+!graphify-out/3d/
