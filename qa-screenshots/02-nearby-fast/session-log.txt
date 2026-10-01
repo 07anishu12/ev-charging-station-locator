@@ -1,21 +1,21 @@
-[0.8s] Homepage loaded
-[0.8s] Near Me CTA visible: true
-[0.8s] Clicked Near Me CTA
-[4.0s] URL: http://localhost:3000/map?nearby=true
-[4.0s] Map visible: true
-[4.0s] Station links visible: 36
-[4.0s] Map markers: 37
-[5.1s] Available buttons/filters: FastCharger | Explore | Map | India | Search | Saved | ⚡
+[0.7s] Homepage loaded
+[0.7s] Near Me CTA visible: true
+[0.7s] Clicked Near Me CTA
+[3.8s] URL: http://localhost:3000/map?nearby=true
+[3.9s] Map visible: true
+[3.9s] Station links visible: 36
+[3.9s] Map markers: 37
+[4.4s] Available buttons/filters: FastCharger | Explore | Map | India | Search | Saved | ⚡
 Find Chargers Near Me | ⚡ Fast (50kW+) | ⚡ 100kW+ Ultra | CCS2 | Type 2 | Operational | Nearby | Reset | Directions | Details | Directions | Details | Directions | Details | Directions | Details | Directions | Details | Directions | Details | Directions | Details | Directions | Details
-[5.1s] Fast filter visible: true
-[7.3s] Applied fast filter
-[7.4s] After filter - stations: 34, markers: 35
-[7.4s] Selecting station: "Details"
-[9.5s] Station details URL: http://localhost:3000/station/statiq-connaught-place-supercharger-delhi
-[9.5s] Has kW info: true
-[9.5s] Has connector info: true
-[9.5s] Has address: true
-[9.5s] Has directions: true
+[4.4s] Fast filter visible: true
+[6.5s] Applied fast filter
+[6.5s] After filter - stations: 34, markers: 35
+[6.5s] Selecting station: "Details"
+[8.7s] Station details URL: http://localhost:3000/station/statiq-connaught-place-supercharger-delhi
+[8.7s] Has kW info: true
+[8.7s] Has connector info: true
+[8.7s] Has address: true
+[8.7s] Has directions: true
 
 ========== SESSION 2 ASSESSMENT ==========
 Clicks: 3

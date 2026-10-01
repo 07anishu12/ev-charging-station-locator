@@ -33,17 +33,16 @@ function SearchPageContent() {
 
   // Geographic PIN Search effect
   useEffect(() => {
-    setPincodeError(null);
-    setPincodeData(null);
-
     if (!isPincode) return;
 
     let ignore = false;
     const abortController = new AbortController();
 
     async function loadPincodeStations() {
+      setPincodeLoading(true);
+      setPincodeError(null);
+      setPincodeData(null);
       try {
-        setPincodeLoading(true);
         const res = await fetch(`/api/search?q=${encodeURIComponent(cleanQuery)}`, {
           signal: abortController.signal,
         });

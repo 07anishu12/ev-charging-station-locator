@@ -1,8 +1,8 @@
 [0.0s] Navigating to homepage
-[1.1s] Page title: "FastCharger | Find your next charging stop."
-[1.1s] Body text length: 4173 chars
-[1.1s] Found 61 clickable elements
-[1.7s] Visible CTAs:
+[1.0s] Page title: "FastCharger | Find your next charging stop."
+[1.0s] Body text length: 6307 chars
+[1.0s] Found 65 clickable elements
+[1.4s] Visible CTAs:
 "FastCharger" (→/)
 "Explore" (→/explore)
 "Map" (→/map)
@@ -11,68 +11,155 @@
 "Saved" (→/saved)
 "⚡
 Find Chargers Near Me" (→/map?nearby=true)
+"Delhi NCR" (→/search?q=delhi)
+"Bengaluru" (→/search?q=bengaluru)
+"Mumbai" (→/search?q=mumbai)
+"⚡ 100kW+ Fast" (→/search?kw=100)
 "⚡
 Find Chargers Near Me" (→/map?nearby=true)
 "Explore India" (→/india)
+"100KW+ HYPER
+Ultra-Fast DC Highway Charging
+
+Charge from 10% to 80% in ~20 minutes on major intercity corridors.
+
+PEAK ACCEPTANCE
+100–150 kW
+Find stations" (→/search?kw=100)
+"60KW FAST
+Rapid Urban Hubs & Expressways
+
+Reliable fast chargers at malls, restaurants, and highway fuel plazas.
+
+CITY POWER
+50–60 kW
+Find stations" (→/search?kw=60)
+"UNIVERSAL CCS2
+All Indian 4-Wheeler EVs
+
+Universal compatibility with Nexon, Punch, Curvv, ZS EV, XUV400 & BYD.
+
+GUN STANDARD
+Universal
+Find stations" (→/search?connector=ccs2)
+"ACTIVE ONLY
+Live Operational Status
+
+Stations checked for live power output, functional guns, and zero downtime.
+
+LIVE UPTIME
+99.2%
+Find stations" (→/search?status=operational)
+"TYPE 2 AC
+Overnight & Destination Stops
+
+Relaxed 7.4kW–22kW charging while you stay at hotels, resorts, or offices.
+
+DESTINATION
+7.4–22 kW
+Find stations" (→/search?connector=type2)
+"View on map
+→" (→/map)
+"Save" 
+"Tata Power - Aerocity Rapid Charging Hub" (→/station/tata-power-aerocity-fast-charging-hub-delhi)
+"Get Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5501,77.1219)
+"View Station" (→/station/tata-power-aerocity-fast-charging-hub-delhi)
+"60 kW DC
+STATIQ
+•
+Delhi
+Statiq - Connaught Place Outer Circle
+CCS (Type 2)
+×2
+CHAdeMO
+Operational" (→/station/statiq-connaught-place-supercharger-delhi)
+"120 kW DC
+JIO-BP PULSE
+•
+Delhi
+Jio-bp pulse - Select CITYWALK Saket
+CCS (Type 2)
+×4
+Type 2 (Socket)
+×2
+Operational" (→/station/jio-bp-pulse-select-citywalk-saket-delhi)
+"60 kW DC
+TATA POWER EZ CHARGE
+•
+Delhi
+Tata Power - Nehru Place Commercial Hub
+CCS (Type 2)
+×2
+Type 2 (Socket)
+×2
+Operational" (→/station/tata-power-nehru-place-metro-hub-delhi)
+"Find High-Speed Clean Hubs" (→/search?kw=60&status=operational)
 "All cities
 →" (→/india)
-"Delhi
+"NATIONAL CAPITAL REGION
+Delhi
 
 Delhi
 
-35 stations
-·
-⚡
-26 Fast DC" (→/india/delhi/delhi/ev-charging-stations)
-"Mumbai
+STATIONS
+35
+FAST HUBS
+26" (→/india/delhi/delhi/ev-charging-stations)
+"FINANCIAL HUB
+Mumbai
 
 Maharashtra
 
-390 stations
-·
-⚡
-240 Fast DC" (→/india/maharashtra/mumbai/ev-charging-stations)
-"Bengaluru
+STATIONS
+390
+FAST HUBS
+240" (→/india/maharashtra/mumbai/ev-charging-stations)
+"EV TECH CAPITAL
+Bengaluru
 
 Karnataka
 
-380 stations
-·
-⚡
-260 Fast DC" (→/india/karnataka/bengaluru/ev-charging-stations)
-"Gurugram
+STATIONS
+380
+FAST HUBS
+260" (→/india/karnataka/bengaluru/ev-charging-stations)
+"MAJOR EV HUB
+Gurugram
 
 Haryana
 
-210 stations
-·
-⚡
-150 Fast DC" (→/india/haryana/gurugram/ev-charging-stations)
-"Hyderabad
+STATIONS
+210
+FAST HUBS
+150" (→/india/haryana/gurugram/ev-charging-stations)
+"MAJOR EV HUB
+Hyderabad
 
 Telangana
 
-260 stations
-·
-⚡
-180 Fast DC" (→/india/telangana/hyderabad/ev-charging-stations)
-"Pune
+STATIONS
+260
+FAST HUBS
+180" (→/india/telangana/hyderabad/ev-charging-stations)
+"AUTOMOTIVE CORRIDOR
+Pune
 
 Maharashtra
 
-190 stations
-·
-⚡
-120 Fast DC" (→/india/maharashtra/pune/ev-charging-stations)
-"Chandigarh
+STATIONS
+190
+FAST HUBS
+120" (→/india/maharashtra/pune/ev-charging-stations)
+"MAJOR EV HUB
+Chandigarh
 
 Punjab
 
-110 stations
-·
-⚡
-75 Fast DC" (→/india/punjab/chandigarh/ev-charging-stations)
-"View on map
+STATIONS
+110
+FAST HUBS
+75" (→/india/punjab/chandigarh/ev-charging-stations)
+"Explore all
 →" (→/map)
 "Tata Power - Aerocity Rapid Charging Hub" (→/station/tata-power-aerocity-fast-charging-hub-delhi)
 "Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5501,77.1219)
@@ -86,28 +173,13 @@ Punjab
 "Tata Power - Nehru Place Commercial Hub" (→/station/tata-power-nehru-place-metro-hub-delhi)
 "Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5492,77.2526)
 "Details" (→/station/tata-power-nehru-place-metro-hub-delhi)
-"Explore all →" (→/map)
-"Tata Power - Aerocity Rapid Charging Hub" (→/station/tata-power-aerocity-fast-charging-hub-delhi)
-"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5501,77.1219)
-"Details" (→/station/tata-power-aerocity-fast-charging-hub-delhi)
-"Statiq - Connaught Place Outer Circle" (→/station/statiq-connaught-place-supercharger-delhi)
-"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.6289,77.2185)
-"Details" (→/station/statiq-connaught-place-supercharger-delhi)
-"Jio-bp pulse - Select CITYWALK Saket" (→/station/jio-bp-pulse-select-citywalk-saket-delhi)
-"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5284,77.2185)
-"Details" (→/station/jio-bp-pulse-select-citywalk-saket-delhi)
-"Tata Power - Nehru Place Commercial Hub" (→/station/tata-power-nehru-place-metro-hub-delhi)
-"Directions" (→https://www.google.com/maps/dir/?api=1&destination=28.5492,77.2526)
-"Details" (→/station/tata-power-nehru-place-metro-hub-delhi)
-"States & UTs
-
-Explore charging hubs across 28 states and union territories." (→/india)
-"Major Cities
-
-Metropolitan hubs, fast-charger counts, and local operator coverage." (→/india)
-"Interactive Map
-
-Pan, zoom, filter by connector, and preview station details live." (→/map)
+"Delhi NCR (120+)" (→/search?q=delhi&view=map)
+"Mumbai Expressways" (→/search?q=mumbai&view=map)
+"Bengaluru Outer Ring" (→/search?q=bengaluru&view=map)
+"Launch Interactive Map" (→/search?view=map)
+"Browse All Stations" (→/search?view=list)
+"Locate now
+→" (→/search?view=map&nearby=true)
 "⚡
 Open Interactive Map" (→/map?nearby=true)
 "Search by City or PIN" (→/search)
@@ -115,26 +187,26 @@ Open Interactive Map" (→/map?nearby=true)
 "Map" (→/map)
 "Search" (→/search)
 "Saved" (→/saved)
-[2.0s] Website mentions charging/EV: true
-[2.0s] "Find Chargers Near Me" CTA visible: true
-[2.0s] Search input visible: true
-[2.0s] Explore link visible: true
-[2.0s] Map link visible: true
-[2.0s] === ATTEMPTING MOST OBVIOUS ACTION ===
-[2.0s] Clicking primary CTA: "⚡
+[1.6s] Website mentions charging/EV: true
+[1.6s] "Find Chargers Near Me" CTA visible: true
+[1.6s] Search input visible: true
+[1.6s] Explore link visible: true
+[1.6s] Map link visible: true
+[1.6s] === ATTEMPTING MOST OBVIOUS ACTION ===
+[1.6s] Clicking primary CTA: "⚡
 Find Chargers Near Me"
-[2.4s] URL after click: http://localhost:3000/map?nearby=true
-[2.4s] Time to first action: 2.4s
-[2.4s] Station-like results found: 0
-[2.4s] Map visible: true
-[2.5s] No results yet, trying search...
-[2.5s] Found search box, typing "Delhi"
-[4.7s] Results after searching "Delhi": 0
-[4.7s] Time to first useful result: 4.7s
-[4.7s] ⚠ Could not find a station to select
+[1.9s] URL after click: http://localhost:3000/map?nearby=true
+[1.9s] Time to first action: 1.9s
+[1.9s] Station-like results found: 0
+[1.9s] Map visible: true
+[1.9s] No results yet, trying search...
+[1.9s] Found search box, typing "Delhi"
+[4.1s] Results after searching "Delhi": 0
+[4.1s] Time to first useful result: 4.1s
+[4.1s] ⚠ Could not find a station to select
 
 ========== SESSION 1 ASSESSMENT ==========
-Total time: 4.7s
+Total time: 4.1s
 Clicks: 2
 Wrong clicks: 0
 Confusion events: 2

@@ -1,17 +1,17 @@
-[0.9s] Homepage loaded
-[1.1s] Search page loaded: http://localhost:3000/search
-[1.1s] Search input visible: true
-[1.7s] Typed 110059
-[4.8s] URL after search: http://localhost:3000/search?q=110059
-[4.8s] Station links found: 7
-[4.8s] "No results" message: false
-[4.8s] Distance shown: true
-[4.8s] Map visible: false
+[0.7s] Homepage loaded
+[0.8s] Search page loaded: http://localhost:3000/search
+[0.8s] Search input visible: true
+[1.3s] Typed 110059
+[4.4s] URL after search: http://localhost:3000/search?q=110059
+[4.4s] Station links found: 7
+[4.4s] "No results" message: false
+[4.4s] Distance shown: true
+[4.4s] Map visible: false
 
 --- Direct URL test ---
-[8.7s] Direct URL loaded: http://localhost:3000/india/delhi/delhi/110059/ev-charging-stations
-[8.7s] Stations via direct URL: 6
-[8.7s] Nearby stations mentioned: true
+[8.2s] Direct URL loaded: http://localhost:3000/india/delhi/delhi/110059/ev-charging-stations
+[8.2s] Stations via direct URL: 6
+[8.2s] Nearby stations mentioned: true
 
 ========== SESSION 5 ASSESSMENT ==========
 Clicks: 2, Confusion events: 0

@@ -1,14 +1,14 @@
-[0.8s] Search page loaded
-[3.9s] Error/empty state shown: false
-[3.9s] URL: http://localhost:3000/search?q=999999
-[7.0s] Delhi results: 15
-[7.2s] Navigated to Explore: http://localhost:3000/search?q=Delhi
-[11.2s] Map page loaded
-[11.3s] Filter buttons found: 6
-[11.3s] Applying filter: "⚡ Fast (50kW+)"
-[13.5s] Reset button visible: true
-[15.7s] Filters reset
-[16.4s] Search box value on return: ""
+[0.7s] Search page loaded
+[3.7s] Error/empty state shown: false
+[3.7s] URL: http://localhost:3000/search?q=999999
+[6.8s] Delhi results: 15
+[6.9s] Navigated to Explore: http://localhost:3000/search?q=Delhi
+[10.8s] Map page loaded
+[10.8s] Filter buttons found: 6
+[10.8s] Applying filter: "⚡ Fast (50kW+)"
+[13.0s] Reset button visible: true
+[15.1s] Filters reset
+[15.8s] Search box value on return: ""
 
 ========== SESSION 6 ASSESSMENT ==========
 Clicks: 7, Confusion events: 0

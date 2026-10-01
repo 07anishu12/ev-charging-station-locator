@@ -238,6 +238,29 @@ body {
   }
 }
 
+/* Staggered Battery Filling */
+@keyframes battery-bar-fill-1 {
+  0%, 15% { opacity: 0.2; }
+  25%, 100% { opacity: 1; }
+}
+
+@keyframes battery-bar-fill-2 {
+  0%, 45% { opacity: 0.2; }
+  55%, 100% { opacity: 1; }
+}
+
+@keyframes battery-bar-fill-3 {
+  0%, 75% { opacity: 0.2; }
+  85%, 100% { opacity: 1; }
+}
+
+@keyframes charging-pulse-dot {
+  0% { transform: translateX(0); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(106px); opacity: 0; }
+}
+
 /* Utility classes */
 @utility animate-charging-pulse {
   animation: charging-pulse 1.8s ease-in-out infinite;
@@ -294,6 +317,18 @@ body {
 
 @utility animate-marker-halo {
   animation: marker-halo-pulse 900ms cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+}
+
+@utility animate-battery-bar-1 {
+  animation: battery-bar-fill-1 2s ease-in-out infinite;
+}
+
+@utility animate-battery-bar-2 {
+  animation: battery-bar-fill-2 2s ease-in-out infinite;
+}
+
+@utility animate-battery-bar-3 {
+  animation: battery-bar-fill-3 2s ease-in-out infinite;
 }
 
 /* Respect user preference for reduced motion */
