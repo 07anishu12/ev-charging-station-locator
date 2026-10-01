@@ -10,10 +10,15 @@ export const metadata: Metadata = {
   description: "Find EV charging stations across India.",
 };
 
+import { MobileBottomNav } from "@/components/navigation/mobile-bottom-nav";
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col pb-16 md:pb-0">
+        <div className="flex-1 flex flex-col">{children}</div>
+        <MobileBottomNav />
+      </body>
     </html>
   );
 }
