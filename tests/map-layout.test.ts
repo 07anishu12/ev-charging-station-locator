@@ -97,4 +97,40 @@ describe("Explore / Map station-discovery layout architecture", () => {
     // RootLayout children wrapper must have min-h-0
     expect(layoutContent).toContain('className="flex-1 flex flex-col min-h-0"');
   });
+
+  it("verifies station-to-map focus zoom, smooth flyTo, and race-condition handling", () => {
+    const mapContent = fs.readFileSync(mapViewPath, "utf-8");
+
+    // Must define and export STATION_FOCUS_ZOOM
+    expect(mapContent).toContain("export const STATION_FOCUS_ZOOM = 16");
+
+    // Must use smooth flyTo animation with STATION_FOCUS_ZOOM and duration
+    expect(mapContent).toMatch(/map\.flyTo\(\[.*latitude.*longitude\],\s*STATION_FOCUS_ZOOM,\s*\{\s*duration:\s*0\.8/);
+
+    // Selected marker must be elevated with high z-index and distinctive styling
+    expect(mapContent).toContain("zIndexOffset: isSelected ? 1000 : 0");
+    expect(mapContent).toContain("box-shadow: 0 0 0 3px #16C784");
+
+    // Popup must expose Operator, Station name, status, speed, connectors, and details link
+    expect(mapContent).toContain("station.operator.name");
+    expect(mapContent).toContain("station.name");
+    expect(mapContent).toContain("station.fastestPowerKw");
+    expect(mapContent).toContain("station.connectors");
+    expect(mapContent).toContain("View Details →");
+
+    // Must protect against race condition when selected before map is loaded
+    expect(mapContent).toContain("pendingFocusStationIdRef");
+  });
+
+  it("verifies station card selection styling and title interaction", () => {
+    const cardContent = fs.readFileSync(stationCardPath, "utf-8");
+
+    // Station card must have active ring and emerald background when selected
+    expect(cardContent).toContain("bg-emerald-50/30");
+    expect(cardContent).toContain("ring-[var(--color-primary)]/30");
+
+    // When onSelect is present, clicking title selects card rather than navigating away
+    expect(cardContent).toContain("onSelect ? (");
+    expect(cardContent).toContain("Details");
+  });
 });

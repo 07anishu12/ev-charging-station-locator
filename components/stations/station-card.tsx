@@ -30,9 +30,9 @@ export function StationCard({
       onClick={() => onSelect?.(station)}
       className={`relative rounded-2xl border bg-white p-4 sm:p-5 shadow-xs transition-all ${
         selected
-          ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/20 shadow-md"
+          ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/30 shadow-md bg-emerald-50/30"
           : "border-[var(--color-border)] hover:border-[var(--color-primary)]/60 hover:shadow-md"
-      } ${className}`}
+      } ${onSelect ? "cursor-pointer" : ""} ${className}`}
     >
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0 flex-1">
@@ -57,12 +57,18 @@ export function StationCard({
             )}
           </div>
           <h3 className="text-base sm:text-lg font-bold tracking-tight text-[var(--color-dark-green)] truncate">
-            <Link
-              href={routeUrls.station(station.slug)}
-              className="hover:text-[var(--color-primary)] transition-colors focus-visible:outline-none"
-            >
-              {station.name}
-            </Link>
+            {onSelect ? (
+              <span className="hover:text-[var(--color-primary)] transition-colors">
+                {station.name}
+              </span>
+            ) : (
+              <Link
+                href={routeUrls.station(station.slug)}
+                className="hover:text-[var(--color-primary)] transition-colors focus-visible:outline-none"
+              >
+                {station.name}
+              </Link>
+            )}
           </h3>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
