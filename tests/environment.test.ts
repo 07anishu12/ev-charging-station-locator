@@ -22,4 +22,11 @@ describe("environment configuration", () => {
     expect(result.openChargeMapApiKey).toBe("server-key");
     expect(result.siteUrl).toBe("https://fastcharger.example");
   });
+
+  it("parses OCM_API_KEY alias correctly", () => {
+    const result = parseEnvironment({
+      OCM_API_KEY: "my-ocm-key",
+    });
+    expect(result.openChargeMapApiKey).toBe("my-ocm-key");
+  });
 });

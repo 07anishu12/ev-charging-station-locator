@@ -26,11 +26,12 @@ export const environmentSchema = z
   .object({
     DATABASE_URL: optionalDatabaseUrl,
     OPENCHARGEMAP_API_KEY: optionalString,
+    OCM_API_KEY: optionalString,
     NEXT_PUBLIC_SITE_URL: optionalUrl,
   })
   .transform((values) => ({
     databaseUrl: values.DATABASE_URL ?? null,
-    openChargeMapApiKey: values.OPENCHARGEMAP_API_KEY ?? null,
+    openChargeMapApiKey: values.OCM_API_KEY ?? values.OPENCHARGEMAP_API_KEY ?? null,
     siteUrl: values.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   }));
 

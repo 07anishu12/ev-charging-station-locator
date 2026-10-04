@@ -8,8 +8,8 @@ The FastCharger API provides versioned HTTP endpoints for discovery, search, and
 - **Contract Package**: `@fastcharger/shared` (`shared/contracts/`)
 - **Technology**: TypeScript + Zod
 - **Base URL Configuration**:
-  - Frontend client: `NEXT_PUBLIC_API_URL` (default: `http://localhost:3001`)
-  - Standalone Backend service: `PORT` (default: `3001`)
+  - Frontend client: `NEXT_PUBLIC_API_URL` (required in production; dev defaults to `http://localhost:4000`)
+  - Standalone Backend service: `PORT` (default: `4000`)
 
 ---
 

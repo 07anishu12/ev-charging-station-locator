@@ -1,5 +1,6 @@
 import {
   FastChargerApiClient,
+  FastChargerApiError,
   type StationDetail as Station,
   type CitySummary as City,
   type SearchEntityResult,
@@ -17,10 +18,28 @@ export type {
   NearbyPincodeItem,
 };
 
-export interface PaginatedResponse<T> {
+export interface ApiSuccessResponse<T> {
+  status: "success";
   items: T[];
   pagination: Pagination;
+  error?: never;
 }
+
+export interface ApiErrorDetail {
+  code: string;
+  message: string;
+  status: number;
+  details?: unknown;
+}
+
+export interface ApiFailureResponse {
+  status: "error";
+  error: ApiErrorDetail;
+  items: [];
+  pagination: Pagination;
+}
+
+export type PaginatedResponse<T> = ApiSuccessResponse<T> | ApiFailureResponse;
 
 export type CityDetailResponse = CityStationsResponseData;
 
@@ -93,22 +112,51 @@ export interface PincodeSearchResult {
 
 export type SearchResultResponse = TextSearchResult | PincodeSearchResult;
 
-function getBaseUrl(): string {
+export function getBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
   }
-  if (typeof window === "undefined") {
-    return process.env.API_URL?.replace(/\/$/, "") || "http://localhost:3001";
+  // In production browser runtime, missing NEXT_PUBLIC_API_URL is an explicit configuration defect
+  if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Configuration Error: NEXT_PUBLIC_API_URL is required in production environment but was not defined.",
+    );
   }
-  return "http://localhost:3001";
+  if (typeof window === "undefined") {
+    return process.env.API_URL?.replace(/\/$/, "") || "http://localhost:4000";
+  }
+  return "http://localhost:4000";
 }
 
 class FrontendApiClient {
   private get client(): FastChargerApiClient {
     return new FastChargerApiClient({
       baseUrl: getBaseUrl(),
-      validateResponses: false,
+      validateResponses: true,
     });
+  }
+
+  private normalizeError(err: unknown): ApiErrorDetail {
+    if (err instanceof FastChargerApiError) {
+      return {
+        code: err.code,
+        message: err.message,
+        status: err.status,
+        details: err.details,
+      };
+    }
+    if (err instanceof Error) {
+      return {
+        code: "CLIENT_ERROR",
+        message: err.message,
+        status: 0,
+      };
+    }
+    return {
+      code: "UNKNOWN_ERROR",
+      message: "An unexpected error occurred while communicating with the API.",
+      status: 0,
+    };
   }
 
   async getStations(params: {
@@ -124,9 +172,22 @@ class FrontendApiClient {
   } = {}): Promise<PaginatedResponse<Station>> {
     try {
       const res = await this.client.getStations(params);
-      return res as unknown as PaginatedResponse<Station>;
-    } catch {
-      return { items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } };
+      return {
+        status: "success",
+        items: res.items as unknown as Station[],
+        pagination: res.pagination,
+      };
+    } catch (err) {
+      const error = this.normalizeError(err);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[ApiClient] getStations failed:", error.message);
+      }
+      return {
+        status: "error",
+        error,
+        items: [],
+        pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+      };
     }
   }
 
@@ -141,9 +202,22 @@ class FrontendApiClient {
   }): Promise<PaginatedResponse<Station & { distanceKm: number }>> {
     try {
       const res = await this.client.getNearbyStations(params);
-      return res as unknown as PaginatedResponse<Station & { distanceKm: number }>;
-    } catch {
-      return { items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } };
+      return {
+        status: "success",
+        items: res.items as unknown as Array<Station & { distanceKm: number }>,
+        pagination: res.pagination,
+      };
+    } catch (err) {
+      const error = this.normalizeError(err);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[ApiClient] getNearbyStations failed:", error.message);
+      }
+      return {
+        status: "error",
+        error,
+        items: [],
+        pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+      };
     }
   }
 
@@ -158,9 +232,22 @@ class FrontendApiClient {
   async getCities(params: { page?: number; pageSize?: number } = {}): Promise<PaginatedResponse<City>> {
     try {
       const res = await this.client.getCities(params);
-      return res as PaginatedResponse<City>;
-    } catch {
-      return { items: [], pagination: { page: 1, pageSize: 50, total: 0, totalPages: 0 } };
+      return {
+        status: "success",
+        items: res.items as unknown as City[],
+        pagination: res.pagination,
+      };
+    } catch (err) {
+      const error = this.normalizeError(err);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[ApiClient] getCities failed:", error.message);
+      }
+      return {
+        status: "error",
+        error,
+        items: [],
+        pagination: { page: 1, pageSize: 50, total: 0, totalPages: 0 },
+      };
     }
   }
 

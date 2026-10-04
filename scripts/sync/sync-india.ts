@@ -3,9 +3,9 @@ import { config } from "dotenv";
 config({ path: [".env.local", ".env"], quiet: true });
 
 async function main() {
-  if (!process.env.OPENCHARGEMAP_API_KEY) {
-    console.error("Error: OPENCHARGEMAP_API_KEY is not configured.");
-    console.error("Please configure OPENCHARGEMAP_API_KEY in .env.local or your environment.");
+  if (!process.env.OCM_API_KEY && !process.env.OPENCHARGEMAP_API_KEY) {
+    console.error("Error: OCM_API_KEY (or OPENCHARGEMAP_API_KEY) is not configured.");
+    console.error("Please configure OCM_API_KEY in .env.local or your environment.");
     process.exit(1);
   }
 

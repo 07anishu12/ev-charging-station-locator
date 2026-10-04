@@ -49,6 +49,34 @@ export class FastChargerApiError extends Error {
   }
 }
 
+export class ApiNetworkError extends FastChargerApiError {
+  constructor(message: string, details?: unknown) {
+    super("NETWORK_ERROR", message, 0, details);
+    this.name = "ApiNetworkError";
+  }
+}
+
+export class ApiHttpError extends FastChargerApiError {
+  constructor(status: number, message: string, code?: string, details?: unknown) {
+    super(code ?? `HTTP_${status}`, message, status, details);
+    this.name = "ApiHttpError";
+  }
+}
+
+export class ApiContractError extends FastChargerApiError {
+  constructor(message: string, status = 200, details?: unknown) {
+    super("CONTRACT_VIOLATION", message, status, details);
+    this.name = "ApiContractError";
+  }
+}
+
+export class ApiTimeoutError extends FastChargerApiError {
+  constructor(message = "Request timed out", details?: unknown) {
+    super("TIMEOUT_ERROR", message, 408, details);
+    this.name = "ApiTimeoutError";
+  }
+}
+
 export class FastChargerApiClient {
   private readonly baseUrl: string;
   private readonly fetcher: typeof fetch;
@@ -56,7 +84,8 @@ export class FastChargerApiClient {
 
   constructor(config: ApiClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
-    this.fetcher = config.fetchFn ?? fetch;
+    const rawFetch = config.fetchFn ?? globalThis.fetch;
+    this.fetcher = (...args: Parameters<typeof fetch>) => rawFetch.apply(globalThis, args);
     this.validateResponses = config.validateResponses ?? false;
   }
 
@@ -78,10 +107,15 @@ export class FastChargerApiClient {
         ...options,
       });
     } catch (networkError) {
-      throw new FastChargerApiError(
-        "NETWORK_ERROR",
+      if (networkError instanceof Error && (networkError.name === "AbortError" || networkError.name === "TimeoutError")) {
+        throw new ApiTimeoutError(
+          `Request to API service timed out: ${networkError.message}`,
+          networkError,
+        );
+      }
+      throw new ApiNetworkError(
         `Failed to communicate with API service: ${networkError instanceof Error ? networkError.message : "Unknown network error"}`,
-        0,
+        networkError,
       );
     }
 
@@ -92,12 +126,11 @@ export class FastChargerApiClient {
       const code = errorPayload?.code ?? `HTTP_${res.status}`;
       const message = errorPayload?.message ?? `API request failed with status ${res.status}`;
       const details = errorPayload?.details;
-      throw new FastChargerApiError(code, message, res.status, details);
+      throw new ApiHttpError(res.status, message, code, details);
     }
 
     if (!payload || !("data" in payload)) {
-      throw new FastChargerApiError(
-        "INVALID_RESPONSE",
+      throw new ApiContractError(
         "API returned a non-standard response envelope (missing 'data').",
         res.status,
       );
@@ -108,8 +141,7 @@ export class FastChargerApiClient {
     if (this.validateResponses && schema) {
       const parsed = schema.safeParse(data);
       if (!parsed.success) {
-        throw new FastChargerApiError(
-          "CONTRACT_VIOLATION",
+        throw new ApiContractError(
           "API response violated the expected contract schema.",
           res.status,
           parsed.error.issues,

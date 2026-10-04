@@ -63,12 +63,17 @@ export function deriveCanonicalStations({
     const nearbyWithDistance: Array<Station & { calculatedDistance: number }> = [];
 
     for (const station of allStations) {
-      const distance = distanceInKilometers(
-        { latitude: userLocation.lat, longitude: userLocation.lng },
-        { latitude: station.latitude, longitude: station.longitude },
-      );
+      const distance =
+        typeof station.distanceKm === "number" && !isNaN(station.distanceKm)
+          ? station.distanceKm
+          : distanceInKilometers(
+              { latitude: userLocation.lat, longitude: userLocation.lng },
+              { latitude: station.latitude, longitude: station.longitude },
+            );
 
-      if (distance <= radiusKm) {
+      // PostGIS spheroid calculation may differ slightly from sphere Haversine by a few hundred meters.
+      // Grant a 0.5 km margin so boundary stations returned by PostGIS are not erroneously dropped.
+      if (distance <= radiusKm + 0.5) {
         nearbyWithDistance.push({
           ...station,
           calculatedDistance: distance,

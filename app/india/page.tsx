@@ -39,18 +39,21 @@ export default async function IndiaPage() {
     name: s.name,
     slug: s.slug,
     code: s.code,
-    stationCount: 50,
-    cityCount: 1,
+    stationCount: 0,
+    cityCount: 0,
     latitude: s.latitude,
     longitude: s.longitude,
   }));
   const popularCities = citiesData.items;
   const sampleStations = stationsData.items;
+  const uniqueOperatorsCount = new Set(
+    sampleStations.map((s) => s.operator?.slug || s.operator?.id).filter(Boolean),
+  ).size;
   const stats = {
-    totalStations: stationsData.pagination.total || 1500,
-    totalCities: citiesData.pagination.total || 45,
+    totalStations: stationsData.pagination?.total ?? sampleStations.length,
+    totalCities: citiesData.pagination?.total ?? popularCities.length,
     totalStates: allStates.length,
-    totalOperators: 12,
+    totalOperators: uniqueOperatorsCount,
   };
 
   const breadcrumbsSchema = buildBreadcrumbSchema([{ name: "India", path: "/india" }]);

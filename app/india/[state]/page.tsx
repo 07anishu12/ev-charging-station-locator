@@ -78,14 +78,19 @@ export default async function StatePage({ params }: StatePageProps) {
       name: s.name,
       slug: s.slug,
       code: s.code,
-      stationCount: 50,
-      cityCount: 1,
+      stationCount: 0,
+      cityCount: 0,
       latitude: s.latitude,
       longitude: s.longitude,
     }));
 
-  const totalStations = stationsData.pagination.total || stationsInState.length || 45;
-  const totalCities = citiesInState.length > 0 ? citiesInState.length : 1;
+  const totalStations = stationsData.pagination?.total ?? stationsInState.length;
+  const totalCities = citiesInState.length;
+  const uniqueOperatorsCount = new Set(
+    stationsInState.map((s) => s.operator?.slug || s.operator?.id).filter(Boolean),
+  ).size;
+  const totalOperators = uniqueOperatorsCount > 0 ? uniqueOperatorsCount : (stationsInState.length > 0 ? 1 : 0);
+  const fastChargers = stationsInState.filter((s) => (s.fastestPowerKw ?? 0) >= 50).length;
 
   const breadcrumbsSchema = buildBreadcrumbSchema([
     { name: "India", path: routeUrls.india() },
@@ -153,8 +158,8 @@ export default async function StatePage({ params }: StatePageProps) {
         <StatsCards
           totalStations={totalStations}
           totalCities={totalCities}
-          totalOperators={6}
-          fastChargers={Math.round(totalStations * 0.65)}
+          totalOperators={totalOperators}
+          fastChargers={fastChargers}
         />
 
         {/* State Charging Map */}
@@ -222,6 +227,7 @@ export default async function StatePage({ params }: StatePageProps) {
 
           <StationList
             stations={stationsInState}
+            error={stationsData.status === "error" ? stationsData.error.message : null}
             emptyTitle={`No stations found in ${stateName}`}
             emptyDescription="Explore other Indian states or find chargers near your current location on the map."
           />

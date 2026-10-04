@@ -26,7 +26,7 @@ export class OpenChargeMapProvider implements ProviderAdapter {
   private readonly retryOptions: RetryOptions;
 
   constructor(config: OpenChargeMapConfig = {}) {
-    this.apiKey = config.apiKey ?? process.env.OPENCHARGEMAP_API_KEY ?? null;
+    this.apiKey = config.apiKey ?? process.env.OCM_API_KEY ?? process.env.OPENCHARGEMAP_API_KEY ?? null;
     this.baseUrl = config.baseUrl ?? "https://api.openchargemap.io/v3/poi";
     this.defaultPageSize = config.defaultPageSize ?? 20;
     this.retryOptions = config.retryOptions ?? {

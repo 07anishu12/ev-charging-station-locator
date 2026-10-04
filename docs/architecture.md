@@ -55,7 +55,8 @@ FastCharger is an India-wide EV charging discovery platform designed with a stri
   - Server-Side Rendering (SSR) & Static Site Generation (SSG).
   - Leaflet map rendering with client-side geolocation.
   - UI state management, skeleton loaders, and error boundaries.
-  - Direct consumption of backend REST API via `NEXT_PUBLIC_API_URL`.
+  - Direct consumption of backend REST API via `NEXT_PUBLIC_API_URL` (or same-origin `/api/v1/` proxy).
+  - Explicit error envelope handling (`res.status === "error"`) with user-friendly retry banners, avoiding false "0 Stations found" masks.
 
 ### `backend/` (`@fastcharger/backend`)
 - **Technology**: Node.js, Hono, Zod, Drizzle ORM.

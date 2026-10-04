@@ -72,7 +72,7 @@ export default async function CityPage({ params }: CityPageProps) {
   const totalStations = cityData.pagination.total;
   const stationsInCity = cityData.stations;
   const fastChargersCount = stationsInCity.filter((s) => s.fastestPowerKw >= 50).length;
-  const displayFastChargers = Math.max(fastChargersCount, Math.round(totalStations * 0.7));
+  const displayFastChargers = fastChargersCount;
 
   const nearbyCities = allCities.items
     .filter((c) => c.slug !== cityData.city.slug && c.slug !== citySlug)

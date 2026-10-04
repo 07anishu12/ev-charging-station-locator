@@ -5,8 +5,8 @@ config({ path: [".env.local", ".env"], quiet: true });
 async function main() {
   const isDryRun = process.argv.includes("--dry-run");
 
-  if (!isDryRun && !process.env.OPENCHARGEMAP_API_KEY) {
-    console.error("Error: OPENCHARGEMAP_API_KEY is not configured.");
+  if (!isDryRun && !process.env.OCM_API_KEY && !process.env.OPENCHARGEMAP_API_KEY) {
+    console.error("Error: OCM_API_KEY (or OPENCHARGEMAP_API_KEY) is not configured.");
     process.exit(1);
   }
 

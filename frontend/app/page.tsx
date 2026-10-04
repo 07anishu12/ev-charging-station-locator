@@ -127,10 +127,13 @@ export default async function HomePage() {
   const popularCities = allCities.slice(0, 7);
   const fastChargers = fastChargersData.items;
   const recentStations = recentStationsData.items;
+  const uniqueOperatorsCount = new Set(
+    recentStations.map((s) => s.operator?.slug || s.operator?.id).filter(Boolean),
+  ).size;
   const stats = {
-    totalStations: recentStationsData.pagination.total || 1500,
-    totalCities: citiesData.pagination.total || 45,
-    totalOperators: 12,
+    totalStations: recentStationsData.pagination?.total ?? recentStations.length,
+    totalCities: citiesData.pagination?.total ?? allCities.length,
+    totalOperators: uniqueOperatorsCount,
   };
 
   return (

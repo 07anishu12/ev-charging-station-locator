@@ -231,11 +231,10 @@ Create `.env.local` in the root workspace or target application:
 | `STORAGE_DEFAULT_BUCKET` | Storage / Worker / Backend | Default target bucket for object storage | `fastcharger-raw` |
 | `STORAGE_ACCESS_KEY` | Storage / Worker / Backend | Storage access key ID | `minioadmin` |
 | `STORAGE_SECRET_KEY` | Storage / Worker / Backend | Storage secret access key | `minioadmin` |
-| `STORAGE_FORCE_PATH_STYLE`| Storage / Worker / Backend | Enable path-style S3 URLs (required for MinIO) | `true` |
-| `NEXT_PUBLIC_API_URL` | Frontend | URL of backend API for client & SSR fetch | `http://localhost:3001` |
+| `NEXT_PUBLIC_API_URL` | Frontend | URL of backend API for client & SSR fetch (Next.js rewrites proxy `/api/v1/*`) | `http://localhost:4000` |
 | `NEXT_PUBLIC_SITE_URL` | Frontend | Canonical frontend site URL | `http://localhost:3000` |
-| `PORT` | Backend | Port for standalone backend API | `3001` |
-| `OPENCHARGEMAP_API_KEY` | Worker | API key for Open Charge Map provider ingestion | (optional for local mock/cache) |
+| `PORT` | Backend | Port for standalone backend API | `4000` |
+| `OCM_API_KEY` / `OPENCHARGEMAP_API_KEY` | Worker | API key for Open Charge Map provider ingestion | (Required for live OCM API fetch) |
 
 ---
 
