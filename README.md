@@ -50,8 +50,9 @@ fastcharger/
 ├── backend/              # Standalone Node.js + Hono HTTP REST API (/api/v1/)
 ├── worker/               # Background data ingestion, sync jobs, and normalization
 ├── database/             # PostgreSQL + PostGIS schema, Drizzle ORM, migrations
+├── storage/              # S3-compatible object storage abstraction (S3/R2/MinIO)
 ├── shared/               # Shared domain types, Zod contracts, and API client
-├── infrastructure/       # Docker Compose setup for PostgreSQL 16 + PostGIS 3.4
+├── infrastructure/       # Docker Compose setup for PostgreSQL, MongoDB & MinIO
 ├── docs/                 # Architectural specifications and migration documentation
 ├── package.json          # Root workspace configuration and scripts
 ├── tsconfig.base.json    # Base TypeScript configuration
@@ -63,8 +64,9 @@ fastcharger/
 - **`backend/` (`@fastcharger/backend`)**: High-performance HTTP server running on Hono. Handles request validation, spatial PostGIS queries (`ST_DWithin`, `ST_Distance`), city/pincode filtering, and standardized REST envelopes.
 - **`worker/` (`@fastcharger/worker`)**: Provider ingestion (Open Charge Map), normalization pipelines, and scheduled sync jobs.
 - **`database/` (`@fastcharger/database`)**: PostGIS geospatial schemas, Drizzle migrations, connection pool lifecycle, and health checks.
+- **`storage/` (`@fastcharger/storage`)**: S3-compatible object storage abstraction supporting AWS S3, Cloudflare R2, MinIO, and hermetic in-memory test drivers.
 - **`shared/` (`@fastcharger/shared`)**: Canonical TypeScript interfaces, validation schemas, HTTP client (`FastChargerApiClient`), and geographic reference catalogs.
-- **`infrastructure/`**: Local development Docker configuration for PostgreSQL + PostGIS.
+- **`infrastructure/`**: Local development Docker configuration for PostgreSQL, MongoDB, and MinIO.
 - **`docs/`**: Detailed architectural documentation (`docs/architecture.md`), database specifications (`docs/database.md`), and status tracking (`docs/migration-status.md`).
 
 ---
@@ -171,7 +173,52 @@ High-volume operational events expire automatically via database-side TTL indexe
 
 ---
 
-## 5. Environment Variables
+## 5. Object Storage Abstraction (S3 / R2 / MinIO)
+
+FastCharger introduces an S3-compatible Object Storage abstraction for large/raw artifacts:
+
+> **POSTGRESQL = canonical business data**  
+> **POSTGIS = canonical geographic intelligence**  
+> **MONGODB = flexible events/documents**  
+> **REDIS = cache/temporary acceleration**  
+> **OBJECT STORAGE = files/raw artifacts**  
+
+### Supported Conceptual Implementations:
+- **AWS S3**: Production object storage in AWS environments (`ap-south-1`).
+- **Cloudflare R2**: Zero-egress global object storage with custom endpoint integration.
+- **MinIO**: Local S3-compatible Docker service for hermetic development and offline CI.
+- **Memory**: Ephemeral in-memory test driver for fast unit testing.
+
+### Core Use Cases:
+- **Raw Provider Responses**: High-fidelity archival of vendor API responses (Open Charge Map, Kazam, Statiq).
+- **Provider Dumps**: Large JSON and CSV station dataset snapshots.
+- **Large JSON Payloads**: Intermediate normalization manifests and reconciliation trees.
+- **CSV & GeoJSON Exports**: User-requested or scheduled bulk export files.
+- **Ingestion Audit Reports**: Per-sync summary reports and anomaly logs.
+- **Future Station Media**: User-uploaded station photos and verification proofs.
+
+### Database Division of Responsibility:
+- **PostgreSQL stores metadata** via the `object_metadata` table:
+  `object_key`, `bucket`, `content_type`, `size_bytes`, `checksum_sha256`, `source`, `provider`, `job_id`, `created_at`, and retention parameters.
+- **Large raw files are NEVER stored directly in relational table rows.**
+
+### Uniform Abstraction API:
+Applications interact with storage purely through the domain abstraction interface, completely insulated from AWS SDK semantics:
+- `putObject(input)`: Uploads buffer or string, computes SHA-256 checksum, sets MIME type and metadata tags.
+- `getObject(input)`: Downloads object body as Buffer, validates length and checksum, returns metadata.
+- `headObject(input)`: Checks existence, content type, length, and metadata without downloading payload body.
+- `deleteObject(input)`: Deletes object from bucket.
+- `createSignedUrl(input)`: Generates time-limited presigned URLs for controlled GET or PUT operations.
+
+### Security & Access Control:
+- **Private by Default**: Storage buckets are strictly private; public read/write access is disabled.
+- **Zero Frontend Credential Exposure**: Storage credentials (`accessKeyId`, `secretAccessKey`) are never exposed to the frontend.
+- **Controlled Signed URLs**: When client download is required, the backend or worker issues short-lived presigned URLs (default 15 minutes).
+- **Worker Archival Ownership**: The worker package owns raw vendor payload archival (`RawProviderArchivalService`).
+
+---
+
+## 6. Environment Variables
 
 Create `.env.local` in the root workspace or target application:
 
@@ -179,6 +226,12 @@ Create `.env.local` in the root workspace or target application:
 | --- | --- | --- | --- |
 | `DATABASE_URL` | Backend / Database / Worker | PostgreSQL connection string with PostGIS | `postgresql://postgres:postgres@localhost:5432/fastcharger` |
 | `MONGODB_URI` | Database / Backend / Worker | MongoDB connection URI for operational events | `mongodb://admin:password@localhost:27017/fastcharger_events?authSource=admin` |
+| `STORAGE_PROVIDER` | Storage / Worker / Backend | Object storage implementation (`s3`, `r2`, `minio`, `memory`) | `minio` |
+| `STORAGE_ENDPOINT` | Storage / Worker / Backend | Endpoint URL for MinIO or Cloudflare R2 | `http://localhost:9000` |
+| `STORAGE_DEFAULT_BUCKET` | Storage / Worker / Backend | Default target bucket for object storage | `fastcharger-raw` |
+| `STORAGE_ACCESS_KEY` | Storage / Worker / Backend | Storage access key ID | `minioadmin` |
+| `STORAGE_SECRET_KEY` | Storage / Worker / Backend | Storage secret access key | `minioadmin` |
+| `STORAGE_FORCE_PATH_STYLE`| Storage / Worker / Backend | Enable path-style S3 URLs (required for MinIO) | `true` |
 | `NEXT_PUBLIC_API_URL` | Frontend | URL of backend API for client & SSR fetch | `http://localhost:3001` |
 | `NEXT_PUBLIC_SITE_URL` | Frontend | Canonical frontend site URL | `http://localhost:3000` |
 | `PORT` | Backend | Port for standalone backend API | `3001` |
@@ -186,9 +239,9 @@ Create `.env.local` in the root workspace or target application:
 
 ---
 
-## 6. Local Development
+## 7. Local Development
 
-### 1. Start Infrastructure (PostgreSQL + PostGIS & MongoDB)
+### 1. Start Infrastructure (PostgreSQL + PostGIS, MongoDB & MinIO)
 ```bash
 docker compose -f infrastructure/docker-compose.yml up -d
 ```

@@ -33,6 +33,7 @@ FastCharger enforces a strict division of data persistence responsibilities:
 | `connectors` | `id` (UUID) | `station_id` -> `stations.id` (CASCADE) | Unique `ocm_connection_id`, indexes on `station_id`, `normalized_type` | Charging plugs, power output (kW), voltage, amperage, and connector status. |
 | `sync_logs` | `id` (UUID) | None | Indexes on `started_at`, `status` | Audit history of ingestion runs, counts, and duration. |
 | `data_quality_issues` | `id` (UUID) | `station_id` -> `stations.id` (CASCADE) | Indexes on `station_id`, `ocm_id`, `issue_type`, `resolved` | Non-destructive audit trail of malformed or incomplete provider data. |
+| `object_metadata` | `id` (UUID) | None | Unique `object_key`, indexes on `bucket`, `source`, `provider`, `job_id`, `created_at`, `expires_at` | Metadata index for raw vendor dumps, payloads, and export files stored in S3/R2/MinIO. |
 
 ---
 
@@ -93,6 +94,7 @@ Invalid provider records must **never silently disappear**. Malformed records ar
 | `0001` | `0001_tired_marvel_zombies.sql` | Domain tables: states, cities, aliases, pincodes, operators, connectors, sync_logs, data_quality_issues | `DROP TABLE "data_quality_issues", "sync_logs", "connectors", "operators", "pincodes", "city_aliases", "cities", "states" CASCADE;` |
 | `0002` | `0002_supreme_iron_monger.sql` | Unique constraint on `connectors.ocm_connection_id` | `ALTER TABLE "connectors" DROP CONSTRAINT "connectors_ocm_connection_id_unique";` |
 | `0003` | `0003_canonical_postgis_entities.sql` | `districts`, `localities`, `station_provider_mappings`, `stations.verification_status` | `DROP INDEX IF EXISTS "stations_verification_status_idx"; ALTER TABLE "stations" DROP COLUMN IF EXISTS "verification_status"; DROP TABLE IF EXISTS "station_provider_mappings", "localities", "districts" CASCADE;` |
+| `0004` | `0004_object_metadata.sql` | `object_metadata` table for tracking raw files in S3/R2/MinIO | `DROP TABLE IF EXISTS "object_metadata" CASCADE;` |
 
 ---
 
@@ -146,3 +148,30 @@ Each event collection enforces:
   - Events are buffered in an in-memory ring buffer (up to 500 items).
   - Diagnostic warnings are emitted.
   - User-facing responses return HTTP 200 without error.
+
+---
+
+## 8. S3-Compatible Object Storage Architecture
+
+FastCharger delegates large files, vendor payloads, and binary exports strictly to S3-compatible Object Storage (AWS S3, Cloudflare R2, MinIO).
+
+> **OBJECT STORAGE = files / raw artifacts**  
+> **POSTGRESQL = metadata index (`object_metadata`)**
+
+### Separation of Responsibilities:
+- **Relational Integrity**: PostgreSQL never stores large raw payloads or binary files directly in table rows.
+- **Metadata Indexing**: PostgreSQL tracks storage metadata in `object_metadata`:
+  - `object_key`: Unique S3 URI key path.
+  - `bucket`: Private target bucket name.
+  - `content_type`: Standard MIME type (e.g. `application/json`, `text/csv`).
+  - `size_bytes`: Exact payload size in bytes.
+  - `checksum_sha256`: Cryptographic SHA-256 hash for payload verification.
+  - `source`: Producer identifier (e.g. `worker-ingestion`, `backend-export`).
+  - `provider`: Vendor reference (e.g. `open-charge-map`, `kazam`).
+  - `job_id`: Workflow or sync batch UUID.
+  - `retention_days` & `expires_at`: Explicit lifecycle management data.
+- **Security Invariant**:
+  - Buckets are private by default.
+  - Storage credentials are never sent to the browser or client applications.
+  - External access is mediated solely via time-limited signed URLs generated on-demand by backend or worker services.
+

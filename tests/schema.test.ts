@@ -14,6 +14,7 @@ import {
   districtsRelations,
   localities,
   localitiesRelations,
+  objectMetadata,
   operators,
   pincodes,
   states,
@@ -169,6 +170,21 @@ describe("database relational schema definition", () => {
     expect(dataQualityIssues.severity).toBeDefined();
     expect(dataQualityIssues.resolved).toBeDefined();
   });
+
+  it("defines object_metadata table for S3/R2/MinIO raw artifact tracking", () => {
+    expect(objectMetadata.id).toBeDefined();
+    expect(objectMetadata.objectKey).toBeDefined();
+    expect(objectMetadata.bucket).toBeDefined();
+    expect(objectMetadata.contentType).toBeDefined();
+    expect(objectMetadata.sizeBytes).toBeDefined();
+    expect(objectMetadata.checksumSha256).toBeDefined();
+    expect(objectMetadata.source).toBeDefined();
+    expect(objectMetadata.provider).toBeDefined();
+    expect(objectMetadata.jobId).toBeDefined();
+    expect(objectMetadata.retentionDays).toBeDefined();
+    expect(objectMetadata.expiresAt).toBeDefined();
+    expect(objectMetadata.metadata).toBeDefined();
+  });
 });
 
 describe("schema relationship definitions", () => {
@@ -189,7 +205,7 @@ describe("migration history verification", () => {
     expect(fs.existsSync(journalPath)).toBe(true);
 
     const journal = JSON.parse(fs.readFileSync(journalPath, "utf-8"));
-    expect(journal.entries.length).toBeGreaterThanOrEqual(4);
+    expect(journal.entries.length).toBeGreaterThanOrEqual(5);
 
     const migration0001 = fs.readFileSync(
       path.resolve(process.cwd(), `drizzle/${journal.entries[1].tag}.sql`),
@@ -214,5 +230,12 @@ describe("migration history verification", () => {
     expect(migration0003).toContain('CREATE TABLE IF NOT EXISTS "station_provider_mappings"');
     expect(migration0003).toContain('ALTER TABLE "stations" ADD COLUMN IF NOT EXISTS "verification_status"');
     expect(migration0003).toContain('"localities_location_gist_idx"');
+
+    const migration0004 = fs.readFileSync(
+      path.resolve(process.cwd(), `drizzle/${journal.entries[4].tag}.sql`),
+      "utf-8",
+    );
+    expect(migration0004).toContain('CREATE TABLE IF NOT EXISTS "object_metadata"');
+    expect(migration0004).toContain('"object_metadata_key_unique_idx"');
   });
 });

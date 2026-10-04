@@ -7,6 +7,7 @@ This directory contains local and deployment infrastructure specifications for F
 Local development uses Docker Compose to provision:
 1. **PostgreSQL 16 + PostGIS 3.4**: Sole authoritative source of truth for canonical business and geographic data.
 2. **MongoDB 7.0**: Flexible operational event, search analytics, and audit logging store (strictly non-authoritative).
+3. **MinIO (S3-Compatible Object Storage)**: Local development store for raw provider responses, dumps, and reports.
 
 ### Quick Start with Docker Compose
 
@@ -39,3 +40,11 @@ docker compose -f infrastructure/docker-compose.yml down
 - **Password**: `password`
 - **Database**: `fastcharger_events`
 - **Connection URL**: `mongodb://admin:password@localhost:27017/fastcharger_events?authSource=admin`
+
+#### 3. MinIO (S3-Compatible Object Storage)
+- **API Host**: `localhost`
+- **API Port**: `9000` (`http://localhost:9000`)
+- **Console Port**: `9001` (`http://localhost:9001`)
+- **Access Key**: `minioadmin`
+- **Secret Key**: `minioadmin`
+- **Default Bucket**: `fastcharger-raw`

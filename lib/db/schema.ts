@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   customType,
   doublePrecision,
@@ -317,6 +318,38 @@ export const dataQualityIssues = pgTable(
     index("data_quality_issues_ocm_id_idx").on(table.ocmId),
     index("data_quality_issues_issue_type_idx").on(table.issueType),
     index("data_quality_issues_resolved_idx").on(table.resolved),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Object Storage Metadata (PostgreSQL stores metadata, not raw payloads)
+// ---------------------------------------------------------------------------
+export const objectMetadata = pgTable(
+  "object_metadata",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    objectKey: text("object_key").notNull().unique(),
+    bucket: text("bucket").notNull(),
+    contentType: text("content_type").default("application/octet-stream").notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    checksumSha256: text("checksum_sha256"),
+    source: text("source").notNull(),
+    provider: text("provider"),
+    jobId: text("job_id"),
+    retentionDays: integer("retention_days"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("object_metadata_key_unique_idx").on(table.objectKey),
+    index("object_metadata_bucket_idx").on(table.bucket),
+    index("object_metadata_source_idx").on(table.source),
+    index("object_metadata_provider_idx").on(table.provider),
+    index("object_metadata_job_id_idx").on(table.jobId),
+    index("object_metadata_created_at_idx").on(table.createdAt),
+    index("object_metadata_expires_at_idx").on(table.expiresAt),
   ],
 );
 
