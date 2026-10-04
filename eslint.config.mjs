@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     "graphify-out/**",
     ".codex/**",
     "qa-tests/**",
+    "playwright-report/**",
+    "test-results/**",
     "lib/mock/**",
     "**/lib/mock/**",
   ]),

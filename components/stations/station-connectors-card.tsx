@@ -23,7 +23,8 @@ export function StationConnectorsCard({
 
       <div className="space-y-3">
         {connectors.map((c) => {
-          const isFast = c.powerKw >= 50;
+          const power = c.powerKw ?? 0;
+          const isFast = power >= 50;
           const typeLabel =
             c.normalizedType === "ccs2"
               ? "CCS2"

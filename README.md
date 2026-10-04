@@ -121,13 +121,67 @@ cd frontend && npm run dev
 
 ---
 
-## 5. Verification & Testing
+---
 
-The repository includes comprehensive unit and integration tests across all tiers:
+## 5. API Architecture & Versioned Contracts (v1)
+
+FastCharger enforces strict, versioned API contracts between frontend and backend to guarantee independent deployment.
+
+- **Current Version**: `v1` (`/api/v1/`)
+- **Contract Location**: `shared/contracts/`
+- **Schema Engine**: TypeScript + Zod
+
+### Response Envelope
+```json
+{
+  "data": { ... }
+}
+```
+
+### Error Envelope
+```json
+{
+  "error": {
+    "code": "STATION_NOT_FOUND",
+    "message": "Station not found",
+    "details": { ... }
+  }
+}
+```
+
+### Endpoint Inventory
+
+**Current (v1 Implemented):**
+- `GET /health` & `GET /health/db`: Process and PostGIS health checks
+- `GET /api/v1/stations`: Paginated stations with city, state, connector, and power filters
+- `GET /api/v1/stations/:slug`: Comprehensive station details
+- `GET /api/v1/stations/nearby`: PostGIS spatial distance search (`latitude`, `longitude`, `radiusKm`)
+- `GET /api/v1/cities`: Paginated catalog of indexed cities
+- `GET /api/v1/cities/:slug`: City station catalog and operator breakdown
+- `GET /api/v1/pincodes/:pincode`: 6-digit postal code location and nearby charging hubs
+- `GET /api/v1/search`: Unified search across stations, cities, operators, and PIN codes
+
+**Planned (Future Phases):**
+- `POST /api/v1/stations`: Ingestion webhook / CPO station push
+- `POST /api/v1/stations/:slug/feedback`: Community reviews and plug status check-ins
+- `GET /api/v1/routes/corridor`: Highway corridor charging stops planner
+
+### Backward Compatibility Policy
+- **Allowed within v1**: Adding optional response fields, adding optional query parameters, introducing new endpoints under `/api/v1/`.
+- **Breaking (Requires `/api/v2/`)**: Removing fields, renaming fields, altering types/units, modifying error/pagination envelope shapes.
+
+---
+
+## 6. Verification & Testing
+
+The repository includes comprehensive unit, integration, and contract tests across all tiers:
 
 ```bash
-# Run complete test suite (unit + integration)
+# Run complete test suite (17 test files, 159 tests)
 npm test
+
+# Run API contract test suite
+npx vitest run tests/contracts.test.ts
 
 # Run backend API integration tests
 npx vitest run backend/tests/api.integration.test.ts
@@ -141,7 +195,7 @@ npm run lint
 
 ---
 
-## 6. Migration Status
+## 7. Migration Status
 
 - **Prompt 1 (Physical Application Boundaries)**: **IMPLEMENTED**  
   Restructured into `frontend/`, `backend/`, `worker/`, `database/`, `shared/`, `infrastructure/`, `docs/`.
@@ -151,14 +205,17 @@ npm run lint
   Frontend converted to pure presentation consuming HTTP API; zero database dependencies.
 - **Prompt 4 (Release Verification & Stabilization)**: **IMPLEMENTED**  
   Typecheck, test suites, offline build verification, and clean architecture boundaries established.
-- **Prompt 5+ (Contracts, SEO, Document Store, Ingestion)**: **PLANNED** (Not started).
+- **Prompt 5 (API Contract System)**: **COMPLETE**  
+  Versioned `/api/v1/` contract system established under `shared/contracts/`, shared API client upgraded with validation, backward compatibility policy formalized, and 18 dedicated contract tests added.
+- **Prompt 6+ (SEO, Document Store, Ingestion)**: **PLANNED** (Not started).
 
 ---
 
-## 7. Independent Deployment
+## 8. Independent Deployment
 
 Each application tier is independently deployable:
 - **Frontend**: Deployable to edge/serverless runtimes (Vercel, Cloudflare Pages, Netlify) with only `NEXT_PUBLIC_API_URL`. Does not require VPC peering or database credentials.
 - **Backend API**: Deployable to container platforms (AWS ECS, Fly.io, Railway, Google Cloud Run) inside a private VPC with `DATABASE_URL`.
 - **Worker**: Deployable as independent scheduled jobs or background containers.
 - **Database**: Managed PostgreSQL + PostGIS (AWS RDS, Supabase, Neon).
+

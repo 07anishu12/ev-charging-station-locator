@@ -1,30 +1,11 @@
-export type ChargerStatus = "available" | "busy" | "unavailable" | "unknown";
+import type { ConnectorType } from "../constants";
 
-export interface StationConnector {
-  type: string;
-  powerKw?: number;
-  status: ChargerStatus;
-}
-
-export interface StationSummary {
-  id: string;
-  slug: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  address: string | null;
-  status: ChargerStatus;
-  connectors: StationConnector[];
-}
-
-export interface StationSearchResult {
-  items: StationSummary[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-  };
-}
+export type {
+  ChargerStatus,
+  StationConnector,
+  StationSummary,
+  StationSearchResult,
+} from "../contracts/station";
 
 export interface MockState {
   id: string;
@@ -59,14 +40,14 @@ export interface MockOperator {
 }
 
 export interface MockConnector {
-  id: string;
+  id?: string;
   type: string;
-  normalizedType: "ccs2" | "type2" | "chademo" | "gbt";
-  powerKw: number;
+  normalizedType?: ConnectorType;
+  powerKw?: number;
   voltage?: number;
   amps?: number;
   status: "available" | "busy" | "unavailable" | "unknown";
-  quantity: number;
+  quantity?: number;
 }
 
 export interface MockStation {
@@ -111,15 +92,9 @@ export interface MockStation {
   stationState?: string;
 }
 
-export interface SearchEntityResult {
-  type: "city" | "station" | "operator" | "pincode";
-  title: string;
-  subtitle: string;
-  href: string;
-  badge?: string;
-}
+export type { SearchEntityResult } from "../contracts/search";
 
-export type Station = MockStation;
+export type { Station } from "../contracts/station";
 export type City = MockCity;
 export type State = MockState;
 export type Operator = MockOperator;

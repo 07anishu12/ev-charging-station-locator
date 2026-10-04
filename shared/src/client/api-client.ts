@@ -1,213 +1,284 @@
-import type { ApiResponse } from "../contracts/response";
-import type { MockStation, SearchEntityResult, StationSearchResult } from "../types/station";
+import type { z } from "zod";
+import {
+  type ApiErrorResponse,
+  type ApiResponse,
+} from "../contracts/common";
+import {
+  type StationsQueryInput,
+  type NearbyStationsQueryInput,
+  type StationSearchResult,
+  type StationDetail,
+  stationSearchResultSchema,
+} from "../contracts/station";
+import {
+  type CitiesQueryInput,
+  type CityStationsQueryInput,
+  type CityStationsResponseData,
+  type CitySummary,
+  cityStationsResponseDataSchema,
+} from "../contracts/city";
+import {
+  type PincodeQueryInput,
+  type PincodeStationResponseData,
+  pincodeStationResponseDataSchema,
+} from "../contracts/pincode";
+import {
+  type SearchQueryInput,
+  type SearchResponseData,
+  searchResponseDataSchema,
+} from "../contracts/search";
+import type { PaginatedResult } from "../contracts/pagination";
 
 export interface ApiClientConfig {
   baseUrl: string;
   fetchFn?: typeof fetch;
+  validateResponses?: boolean;
+}
+
+export class FastChargerApiError extends Error {
+  readonly code: string;
+  readonly status: number;
+  readonly details?: unknown;
+
+  constructor(code: string, message: string, status: number, details?: unknown) {
+    super(message);
+    this.name = "FastChargerApiError";
+    this.code = code;
+    this.status = status;
+    this.details = details;
+  }
 }
 
 export class FastChargerApiClient {
   private readonly baseUrl: string;
   private readonly fetcher: typeof fetch;
+  private readonly validateResponses: boolean;
 
   constructor(config: ApiClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
     this.fetcher = config.fetchFn ?? fetch;
+    this.validateResponses = config.validateResponses ?? false;
   }
 
-  private async request<T>(path: string, options?: RequestInit): Promise<T> {
-    const url = `${this.baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
-    const res = await this.fetcher(url, {
-      headers: {
-        accept: "application/json",
-        ...options?.headers,
-      },
-      ...options,
-    });
+  private async request<T>(
+    endpoint: string,
+    schema?: z.ZodType<T>,
+    options?: RequestInit,
+  ): Promise<T> {
+    const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    const url = `${this.baseUrl}${cleanEndpoint}`;
 
-    if (!res.ok) {
-      const errorJson = (await res.json().catch(() => null)) as {
-        error?: { code?: string; message?: string };
-      } | null;
-      throw new Error(
-        errorJson?.error?.message || `API request failed with status ${res.status}: ${res.statusText}`,
+    let res: Response;
+    try {
+      res = await this.fetcher(url, {
+        headers: {
+          Accept: "application/json",
+          ...options?.headers,
+        },
+        ...options,
+      });
+    } catch (networkError) {
+      throw new FastChargerApiError(
+        "NETWORK_ERROR",
+        `Failed to communicate with API service: ${networkError instanceof Error ? networkError.message : "Unknown network error"}`,
+        0,
       );
     }
 
-    const payload = (await res.json()) as ApiResponse<T>;
-    if ("error" in payload) {
-      throw new Error(payload.error.message);
+    const payload = (await res.json().catch(() => null)) as ApiResponse<T> | null;
+
+    if (!res.ok || (payload && "error" in payload)) {
+      const errorPayload = payload && "error" in payload ? (payload as ApiErrorResponse).error : undefined;
+      const code = errorPayload?.code ?? `HTTP_${res.status}`;
+      const message = errorPayload?.message ?? `API request failed with status ${res.status}`;
+      const details = errorPayload?.details;
+      throw new FastChargerApiError(code, message, res.status, details);
     }
-    return payload.data;
+
+    if (!payload || !("data" in payload)) {
+      throw new FastChargerApiError(
+        "INVALID_RESPONSE",
+        "API returned a non-standard response envelope (missing 'data').",
+        res.status,
+      );
+    }
+
+    const data = payload.data;
+
+    if (this.validateResponses && schema) {
+      const parsed = schema.safeParse(data);
+      if (!parsed.success) {
+        throw new FastChargerApiError(
+          "CONTRACT_VIOLATION",
+          "API response violated the expected contract schema.",
+          res.status,
+          parsed.error.issues,
+        );
+      }
+      return parsed.data;
+    }
+
+    return data;
   }
 
-  async listStations(query: {
-    page?: number;
-    pageSize?: number;
-    query?: string;
-  } = {}): Promise<StationSearchResult> {
+  // --- Stations ---
+
+  async getStations(query: StationsQueryInput = {}): Promise<StationSearchResult> {
     const params = new URLSearchParams();
     if (query.page) params.set("page", String(query.page));
     if (query.pageSize) params.set("pageSize", String(query.pageSize));
+    if (query.city) params.set("city", query.city);
+    if (query.state) params.set("state", query.state);
+    if (query.operator) params.set("operator", query.operator);
+    if (query.status) params.set("status", query.status);
+    if (query.connectorType) params.set("connectorType", query.connectorType);
+    if (query.minPowerKw) params.set("minPowerKw", String(query.minPowerKw));
+    if (query.search) params.set("search", query.search);
     if (query.query) params.set("query", query.query);
+
     const qs = params.toString();
-    return this.request<StationSearchResult>(`/api/stations${qs ? `?${qs}` : ""}`);
+    return this.request<StationSearchResult>(
+      `/api/v1/stations${qs ? `?${qs}` : ""}`,
+      stationSearchResultSchema,
+    );
   }
 
-  async findNearbyStations(query: {
-    latitude: number;
-    longitude: number;
-    radiusKm?: number;
-    page?: number;
-    pageSize?: number;
-  }): Promise<StationSearchResult> {
+  async listStations(query: StationsQueryInput = {}): Promise<StationSearchResult> {
+    return this.getStations(query);
+  }
+
+  async getNearbyStations(query: NearbyStationsQueryInput): Promise<StationSearchResult> {
     const params = new URLSearchParams();
     params.set("latitude", String(query.latitude));
     params.set("longitude", String(query.longitude));
     if (query.radiusKm) params.set("radiusKm", String(query.radiusKm));
+    if (query.connectorType) params.set("connectorType", query.connectorType);
+    if (query.minPowerKw) params.set("minPowerKw", String(query.minPowerKw));
     if (query.page) params.set("page", String(query.page));
     if (query.pageSize) params.set("pageSize", String(query.pageSize));
-    return this.request<StationSearchResult>(`/api/stations/nearby?${params.toString()}`);
-  }
 
-  async getStation(idOrSlug: string): Promise<{ station: MockStation | null; phase?: number }> {
-    return this.request<{ station: MockStation | null; phase?: number }>(
-      `/api/stations/${encodeURIComponent(idOrSlug)}`,
+    return this.request<StationSearchResult>(
+      `/api/v1/stations/nearby?${params.toString()}`,
+      stationSearchResultSchema,
     );
   }
 
-  async listCities(): Promise<{ items: unknown[]; pagination: unknown }> {
-    return this.request<{ items: unknown[]; pagination: unknown }>("/api/cities");
+  async findNearbyStations(query: NearbyStationsQueryInput): Promise<StationSearchResult> {
+    return this.getNearbyStations(query);
   }
 
-  async getCityStations(
-    citySlug: string,
-    query: {
-      page?: number;
-      limit?: number;
-      minPowerKw?: number;
-      connectorType?: string;
-    } = {},
-  ): Promise<{
-    city: {
-      name: string;
-      slug: string;
-      stateName: string;
-      stateSlug: string;
-      stationCount: number;
-      latitude?: number;
-      longitude?: number;
-    };
-    operators: Array<{ name: string; slug: string; stationCount: number }>;
-    stations: MockStation[];
-    pagination: {
-      page: number;
-      pageSize: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
-  }> {
+  async getStation(slug: string): Promise<StationDetail | null> {
+    try {
+      const result = await this.request<{ station: StationDetail | null; phase?: number }>(
+        `/api/v1/stations/${encodeURIComponent(slug)}`,
+      );
+      return result?.station ?? null;
+    } catch (err) {
+      if (err instanceof FastChargerApiError && err.status === 404) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  // --- Cities ---
+
+  async getCities(query: CitiesQueryInput = {}): Promise<PaginatedResult<CitySummary>> {
     const params = new URLSearchParams();
     if (query.page) params.set("page", String(query.page));
+    if (query.pageSize) params.set("pageSize", String(query.pageSize));
+
+    const qs = params.toString();
+    return this.request<PaginatedResult<CitySummary>>(`/api/v1/cities${qs ? `?${qs}` : ""}`);
+  }
+
+  async listCities(query: CitiesQueryInput = {}): Promise<PaginatedResult<CitySummary>> {
+    return this.getCities(query);
+  }
+
+  async getCity(
+    slug: string,
+    query: CityStationsQueryInput = {},
+  ): Promise<CityStationsResponseData | null> {
+    const params = new URLSearchParams();
+    if (query.page) params.set("page", String(query.page));
+    if (query.pageSize) params.set("pageSize", String(query.pageSize));
     if (query.limit) params.set("limit", String(query.limit));
     if (query.minPowerKw) params.set("minPowerKw", String(query.minPowerKw));
     if (query.connectorType) params.set("connectorType", query.connectorType);
+
     const qs = params.toString();
-    return this.request(`/api/cities/${encodeURIComponent(citySlug)}${qs ? `?${qs}` : ""}`);
+    try {
+      return await this.request<CityStationsResponseData>(
+        `/api/v1/cities/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`,
+        cityStationsResponseDataSchema,
+      );
+    } catch (err) {
+      if (err instanceof FastChargerApiError && err.status === 404) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  async getCityStations(
+    slug: string,
+    query: CityStationsQueryInput = {},
+  ): Promise<CityStationsResponseData | null> {
+    return this.getCity(slug, query);
+  }
+
+  // --- Pincodes ---
+
+  async getPincode(
+    pincode: string,
+    query: PincodeQueryInput = {},
+  ): Promise<PincodeStationResponseData | null> {
+    const params = new URLSearchParams();
+    if (query.page) params.set("page", String(query.page));
+    if (query.pageSize) params.set("pageSize", String(query.pageSize));
+    if (query.radiusKm) params.set("radiusKm", String(query.radiusKm));
+
+    const qs = params.toString();
+    try {
+      return await this.request<PincodeStationResponseData>(
+        `/api/v1/pincodes/${encodeURIComponent(pincode)}${qs ? `?${qs}` : ""}`,
+        pincodeStationResponseDataSchema,
+      );
+    } catch (err) {
+      if (err instanceof FastChargerApiError && err.status === 404) {
+        return null;
+      }
+      throw err;
+    }
   }
 
   async getPincodeStations(
     pincode: string,
-    query: {
-      page?: number;
-      limit?: number;
-      radiusKm?: number;
-    } = {},
-  ): Promise<{
-    pincode: string;
-    location: {
-      city: string;
-      citySlug: string;
-      state: string;
-      stateSlug: string;
-      stateCode: string;
-      district: string;
-      latitude: number | null;
-      longitude: number | null;
-      hasCoordinates: boolean;
-    };
-    stations: MockStation[];
-    total: number;
-    exactPincodeCount: number;
-    nearbyPincodeCount: number;
-    radiusCount: number;
-    nearbyPincodes: Array<{
-      pincode: string;
-      city: string;
-      district: string;
-      distanceKm: number;
-    }>;
-    radiusKm: number;
-    pagination: {
-      page: number;
-      limit: number;
-      pageSize: number;
-      total: number;
-      totalPages: number;
-      hasMore: boolean;
-    };
-  }> {
-    const params = new URLSearchParams();
-    if (query.page) params.set("page", String(query.page));
-    if (query.limit) params.set("limit", String(query.limit));
-    if (query.radiusKm) params.set("radiusKm", String(query.radiusKm));
-    const qs = params.toString();
-    return this.request(`/api/pincodes/${encodeURIComponent(pincode)}${qs ? `?${qs}` : ""}`);
+    query: PincodeQueryInput = {},
+  ): Promise<PincodeStationResponseData | null> {
+    return this.getPincode(pincode, query);
   }
 
-  async search(query: {
-    q: string;
-    page?: number;
-    pageSize?: number;
-    radiusKm?: number;
-  }): Promise<{
-    searchType: "text" | "pincode";
-    query: string;
-    items?: SearchEntityResult[];
-    results?: MockStation[];
-    origin?: {
-      city: string;
-      citySlug: string;
-      state: string;
-      stateSlug: string;
-      stateCode: string;
-      district: string;
-      latitude: number | null;
-      longitude: number | null;
-      hasCoordinates: boolean;
-    };
-    nearbyPincodes?: Array<{
-      pincode: string;
-      city: string;
-      district: string;
-      distanceKm: number;
-    }>;
-    counts?: { exact: number; nearby: number; total: number };
-    radiusKm?: number;
-    pagination: {
-      page: number;
-      pageSize: number;
-      total: number;
-      totalPages: number;
-      hasMore?: boolean;
-    };
-  }> {
+  // --- Search ---
+
+  async search(query: SearchQueryInput): Promise<SearchResponseData | null> {
     const params = new URLSearchParams();
     params.set("q", query.q);
     if (query.page) params.set("page", String(query.page));
     if (query.pageSize) params.set("pageSize", String(query.pageSize));
     if (query.radiusKm) params.set("radiusKm", String(query.radiusKm));
-    return this.request(`/api/search?${params.toString()}`);
+
+    try {
+      return await this.request<SearchResponseData>(
+        `/api/v1/search?${params.toString()}`,
+        searchResponseDataSchema,
+      );
+    } catch (err) {
+      if (err instanceof FastChargerApiError && err.status === 404) {
+        return null;
+      }
+      throw err;
+    }
   }
 }
