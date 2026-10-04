@@ -108,19 +108,41 @@ export const stationsQuerySchema = paginationQuerySchema.extend({
   query: z.string().trim().min(1).optional(),
 });
 
-export const nearbyStationsQuerySchema = z.object({
+export const nearbyStationsQueryObjectSchema = z.object({
   latitude: latitudeSchema,
   longitude: longitudeSchema,
   radiusKm: z.coerce
-    .number()
+    .number({ message: "Radius must be a valid number." })
     .positive("Radius must be greater than 0.")
     .max(500, "Radius cannot exceed 500 km.")
     .default(10),
+  radius: z.coerce.number().positive().max(500).optional(),
   connectorType: z.string().trim().min(1).optional(),
+  operator: z.string().trim().min(1).optional(),
+  status: z.string().trim().min(1).optional(),
   minPowerKw: powerKwSchema.optional(),
+  sortBy: z.enum(["distance", "power", "name", "updatedAt"]).default("distance"),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
   page: paginationQuerySchema.shape.page,
   pageSize: paginationQuerySchema.shape.pageSize,
 });
+
+export const nearbyStationsQuerySchema = z.preprocess(
+  (arg: unknown) => {
+    if (arg && typeof arg === "object") {
+      const copy = { ...(arg as Record<string, unknown>) };
+      if (copy.radius !== undefined && copy.radiusKm === undefined) {
+        copy.radiusKm = copy.radius;
+      }
+      if (copy.sort !== undefined && copy.sortBy === undefined) {
+        copy.sortBy = copy.sort;
+      }
+      return copy;
+    }
+    return arg;
+  },
+  nearbyStationsQueryObjectSchema,
+);
 
 // Response Schemas
 export const stationSearchResultSchema = z.object({
@@ -146,7 +168,7 @@ export type Station = StationDetail;
 export type StationSlugParams = z.infer<typeof stationSlugParamSchema>;
 export type StationsQuery = z.infer<typeof stationsQuerySchema>;
 export type StationsQueryInput = z.input<typeof stationsQuerySchema>;
-export type NearbyStationsQuery = z.infer<typeof nearbyStationsQuerySchema>;
-export type NearbyStationsQueryInput = z.input<typeof nearbyStationsQuerySchema>;
+export type NearbyStationsQuery = z.infer<typeof nearbyStationsQueryObjectSchema>;
+export type NearbyStationsQueryInput = z.input<typeof nearbyStationsQueryObjectSchema>;
 export type StationSearchResult = z.infer<typeof stationSearchResultSchema>;
 export type StationDetailResponseData = z.infer<typeof stationDetailResponseDataSchema>;

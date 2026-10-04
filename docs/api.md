@@ -86,7 +86,7 @@ All error responses return non-200 HTTP status codes (e.g. 400, 404, 429, 500) w
 | `GET` | `/health/db` | Database & PostGIS connectivity check | None |
 | `GET` | `/api/v1/stations` | Paginated station catalog | `page`, `pageSize`, `city`, `state`, `operator`, `status`, `connectorType`, `minPowerKw`, `search` |
 | `GET` | `/api/v1/stations/:slug` | Detailed station profile | Path: `:slug` (alphanumeric, dashes, underscores) |
-| `GET` | `/api/v1/stations/nearby` | Spatial radius search | `latitude` (req), `longitude` (req), `radiusKm` (opt, default: 10), `minPowerKw`, `connectorType`, `page`, `pageSize` |
+| `GET` | `/api/v1/stations/nearby` | Spatial radius search (PostGIS GiST ST_DWithin + ST_Distance) | `latitude` (req), `longitude` (req), `radius`/`radiusKm` (default: 10, max: 500), `connectorType`, `operator`, `status`, `minPowerKw`, `sortBy`, `sortOrder`, `page`, `pageSize` |
 | `GET` | `/api/v1/cities` | Paginated list of indexed cities | `page`, `pageSize` |
 | `GET` | `/api/v1/cities/:slug` | City stations & operator breakdown | Path: `:slug`, Query: `page`, `pageSize`/`limit`, `minPowerKw`, `connectorType` |
 | `GET` | `/api/v1/pincodes/:pincode` | Pincode location & chargers | Path: `:pincode` (6 digits), Query: `page`, `pageSize`, `radiusKm` (default: 5) |

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, or, sql, type SQL } from "drizzle-orm";
 import { schema } from "@fastcharger/database";
 import { resolveCanonicalCity, resolveCanonicalState } from "@fastcharger/shared";
 import { getDatabase } from "../infrastructure/database";
@@ -29,6 +29,10 @@ export interface StationNearbyFilter {
   radiusKm: number;
   connectorType?: string;
   minPowerKw?: number;
+  operator?: string;
+  status?: string;
+  sortBy?: "distance" | "power" | "name" | "updatedAt";
+  sortOrder?: "asc" | "desc";
   page: number;
   pageSize: number;
 }
@@ -306,24 +310,76 @@ export class PostgisStationRepository implements IStationRepository {
         subqueryConditions.push(gte(connectors.powerKw, String(filter.minPowerKw)));
       }
       if (filter.connectorType) {
-        subqueryConditions.push(eq(connectors.normalizedType, filter.connectorType.toLowerCase()));
+        const connType = filter.connectorType.toLowerCase().trim();
+        subqueryConditions.push(
+          or(
+            eq(connectors.normalizedType, connType),
+            ilike(connectors.connectionType, `%${connType}%`),
+          )!,
+        );
       }
       whereConditions.push(
         sql`EXISTS (SELECT 1 FROM ${connectors} WHERE ${and(...subqueryConditions)})`,
       );
     }
 
+    // Filter by operator (slug or name)
+    if (filter.operator) {
+      const opClean = filter.operator.toLowerCase().trim();
+      whereConditions.push(
+        or(
+          eq(operators.slug, opClean),
+          ilike(operators.name, `%${opClean}%`),
+        )!,
+      );
+    }
+
+    // Filter by authoritative station status
+    if (filter.status) {
+      const statusClean = filter.status.toLowerCase().trim();
+      whereConditions.push(
+        or(
+          ilike(stations.status, statusClean),
+          ilike(stations.verificationStatus, statusClean),
+        )!,
+      );
+    }
+
     const combinedWhere = and(...whereConditions);
 
-    // Total count query
+    // Total count query executing inside PostgreSQL
     const countResult = await db
-      .select({ count: sql<number>`count(*)` })
+      .select({ count: sql<number>`count(distinct ${stations.id})` })
       .from(stations)
+      .leftJoin(operators, eq(stations.operatorId, operators.id))
       .where(combinedWhere);
 
     const total = Number(countResult[0]?.count || 0);
 
-    // Spatial nearby query ordered strictly by PostGIS distance
+    // Dynamic ordering: distance (default), power, name, updatedAt
+    const sortBy = filter.sortBy || "distance";
+    const sortOrder = filter.sortOrder || (sortBy === "power" ? "desc" : "asc");
+    const isDesc = sortOrder === "desc";
+
+    let orderExpr: SQL;
+    if (sortBy === "power") {
+      const maxPowerSubquery = sql`(
+        SELECT COALESCE(MAX(${connectors.powerKw}), 0)
+        FROM ${connectors}
+        WHERE ${connectors.stationId} = ${stations.id}
+      )`;
+      orderExpr = isDesc
+        ? sql`${maxPowerSubquery} DESC, ${distanceKmExpr} ASC`
+        : sql`${maxPowerSubquery} ASC, ${distanceKmExpr} ASC`;
+    } else if (sortBy === "name") {
+      orderExpr = isDesc ? desc(stations.name) : sql`${stations.name} ASC`;
+    } else if (sortBy === "updatedAt") {
+      orderExpr = isDesc ? desc(stations.updatedAt) : sql`${stations.updatedAt} ASC`;
+    } else {
+      orderExpr = isDesc ? sql`${distanceKmExpr} DESC` : sql`${distanceKmExpr} ASC`;
+    }
+
+    // Spatial nearby query ordered strictly by PostGIS distance or requested sort
     const stationRows = await db
       .select({
         id: stations.id,
@@ -358,7 +414,7 @@ export class PostgisStationRepository implements IStationRepository {
       .leftJoin(cities, eq(stations.cityId, cities.id))
       .leftJoin(states, eq(stations.stateId, states.id))
       .where(combinedWhere)
-      .orderBy(sql`${distanceKmExpr} ASC`)
+      .orderBy(orderExpr)
       .limit(pageSize)
       .offset(offset);
 

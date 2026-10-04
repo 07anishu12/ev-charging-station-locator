@@ -1,14 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  CANONICAL_CITIES,
-  CANONICAL_STATES,
   distanceInKilometers,
   resolveCanonicalCity,
-  resolveCanonicalState,
 } from "@fastcharger/shared";
 import {
-  FIXTURE_CITIES,
-  FIXTURE_STATIONS,
   FixtureCityRepository,
   FixtureStationRepository,
 } from "../backend/tests/fixtures/test-repositories";

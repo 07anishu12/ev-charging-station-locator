@@ -14,7 +14,7 @@ import {
   getMockStationsByCity,
   type MockStation,
 } from "@/lib/mock";
-import type { StationSearchResult, StationSummary } from "@/types/station";
+import type { ChargerStatus, StationSearchResult, StationSummary } from "@/types/station";
 
 export interface StationListQuery {
   page: number;
@@ -474,14 +474,14 @@ export async function findNearbyStations(query: NearbyStationQuery): Promise<Sta
         latitude: st.latitude,
         longitude: st.longitude,
         address: st.address,
-        status: (st.status === "Operational" ? "available" : "unknown") as any,
+        status: (st.status === "Operational" ? "available" : "unknown") as ChargerStatus,
         distanceKm: Number(st.distanceKm),
         connectors: connRows
           .filter((c) => c.stationId === st.id)
           .map((c) => ({
             type: c.connectionType,
             powerKw: c.powerKw ? Number(c.powerKw) : undefined,
-            status: (c.status as any) || "available",
+            status: ((c.status as ChargerStatus) || "available"),
           })),
       }));
 
@@ -527,7 +527,7 @@ export async function findNearbyStations(query: NearbyStationQuery): Promise<Sta
     connectors: st.connectors.map((c) => ({
       type: c.type,
       powerKw: c.powerKw ?? undefined,
-      status: (c.status as any) ?? "available",
+      status: (c.status as ChargerStatus) ?? "available",
     })),
   }));
 

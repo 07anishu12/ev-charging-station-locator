@@ -535,8 +535,9 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
           }
 
           // Fallback 2: Resolve by 6-digit Indian PIN code
-          if (!cityId && cleanPincode && (CANONICAL_PINCODES as Record<string, any>)[cleanPincode]) {
-            const pinInfo = (CANONICAL_PINCODES as Record<string, any>)[cleanPincode];
+          const pincodeLookup = CANONICAL_PINCODES as Record<string, { citySlug: string; stateSlug?: string }>;
+          if (!cityId && cleanPincode && pincodeLookup[cleanPincode]) {
+            const pinInfo = pincodeLookup[cleanPincode];
             cityId = cityMap.get(pinInfo.citySlug) ?? null;
             if (cityId) matchedCitySlug = pinInfo.citySlug;
             if (!stateId && pinInfo.stateSlug) {

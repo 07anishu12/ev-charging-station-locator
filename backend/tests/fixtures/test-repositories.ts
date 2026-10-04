@@ -206,7 +206,7 @@ export class FixtureStationRepository implements IStationRepository {
   }
 
   async findNearby(filter: StationNearbyFilter): Promise<PaginatedResult<NearbyStationModel>> {
-    const calculated = this.stations
+    let calculated = this.stations
       .map((s) => {
         const dist = distanceInKilometers(
           { latitude: filter.latitude, longitude: filter.longitude },
@@ -214,17 +214,68 @@ export class FixtureStationRepository implements IStationRepository {
         );
         return {
           ...s,
-          distanceKm: Math.round(dist * 10) / 10,
+          distanceKm: Math.round(dist * 100) / 100,
         };
       })
       .filter((s) => s.distanceKm <= filter.radiusKm);
 
-    // Sort strictly by distance
-    calculated.sort((a, b) => a.distanceKm - b.distanceKm);
+    if (filter.connectorType) {
+      const connType = filter.connectorType.toLowerCase();
+      calculated = calculated.filter((s) =>
+        s.connectors.some(
+          (c) =>
+            c.normalizedType?.toLowerCase() === connType ||
+            c.type.toLowerCase().includes(connType),
+        ),
+      );
+    }
+
+    if (filter.minPowerKw) {
+      calculated = calculated.filter((s) => s.fastestPowerKw >= filter.minPowerKw!);
+    }
+
+    if (filter.operator) {
+      const op = filter.operator.toLowerCase();
+      calculated = calculated.filter(
+        (s) =>
+          s.operator.slug.toLowerCase() === op ||
+          s.operator.name.toLowerCase().includes(op),
+      );
+    }
+
+    if (filter.status) {
+      const st = filter.status.toLowerCase();
+      calculated = calculated.filter(
+        (s) =>
+          s.status.toLowerCase() === st ||
+          s.operationalStatus?.toLowerCase() === st,
+      );
+    }
+
+    // Dynamic sorting
+    const sortBy = filter.sortBy || "distance";
+    const sortOrder = filter.sortOrder || (sortBy === "power" ? "desc" : "asc");
+    const multiplier = sortOrder === "desc" ? -1 : 1;
+
+    if (sortBy === "power") {
+      calculated.sort((a, b) => multiplier * (a.fastestPowerKw - b.fastestPowerKw));
+    } else if (sortBy === "name") {
+      calculated.sort((a, b) => multiplier * a.name.localeCompare(b.name));
+    } else if (sortBy === "updatedAt") {
+      calculated.sort(
+        (a, b) =>
+          multiplier *
+          (new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime()),
+      );
+    } else {
+      calculated.sort((a, b) => multiplier * (a.distanceKm - b.distanceKm));
+    }
 
     const total = calculated.length;
-    const offset = (filter.page - 1) * filter.pageSize;
-    const paged = calculated.slice(offset, offset + filter.pageSize);
+    const page = filter.page || 1;
+    const pageSize = filter.pageSize || 20;
+    const offset = (page - 1) * pageSize;
+    const paged = calculated.slice(offset, offset + pageSize);
 
     return {
       items: paged,
