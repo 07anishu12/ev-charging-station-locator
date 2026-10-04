@@ -164,9 +164,6 @@ export class PostgisStationRepository implements IStationRepository {
               ilike(stations.district, `%${cityClean}%`),
               ilike(stations.district, `%${canonicalSlug}%`),
               ilike(stations.district, `%${canonicalName}%`),
-              ilike(stations.address, `%${cityClean}%`),
-              ilike(stations.address, `%${canonicalSlug}%`),
-              ilike(stations.address, `%${canonicalName}%`),
               canonicalSlug === "delhi" ? sql`${stations.pincode} LIKE '110%'` : sql`false`
             )
           )

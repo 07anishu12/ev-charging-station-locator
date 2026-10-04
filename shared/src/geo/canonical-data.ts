@@ -92,16 +92,8 @@ export const CANONICAL_CITIES: CanonicalCityMapping[] = [
     canonicalSlug: "bengaluru",
     stateSlug: "karnataka",
     stateName: "Karnataka",
-    aliases: ["bangalore", "bangaluru", "bengaluru urban", "bengaluru rural", "bangalore urban"],
+    aliases: ["bangalore", "bangaluru", "bengaluru urban", "bengaluru rural", "bangalore urban", "whitefield", "bellandur", "electronic city", "indiranagar", "koramangala", "kogilu"],
     defaultCoordinates: { latitude: 12.9716, longitude: 77.5946 },
-  },
-  {
-    canonicalName: "Mumbai",
-    canonicalSlug: "mumbai",
-    stateSlug: "maharashtra",
-    stateName: "Maharashtra",
-    aliases: ["bombay", "mumbai suburban", "mumbai city", "greater mumbai"],
-    defaultCoordinates: { latitude: 19.076, longitude: 72.8777 },
   },
   {
     canonicalName: "Navi Mumbai",
@@ -110,6 +102,14 @@ export const CANONICAL_CITIES: CanonicalCityMapping[] = [
     stateName: "Maharashtra",
     aliases: ["new bombay", "vashi", "belapur", "nerul", "kharghar", "panvel"],
     defaultCoordinates: { latitude: 19.033, longitude: 73.0297 },
+  },
+  {
+    canonicalName: "Mumbai",
+    canonicalSlug: "mumbai",
+    stateSlug: "maharashtra",
+    stateName: "Maharashtra",
+    aliases: ["bombay", "mumbai suburban", "mumbai city", "greater mumbai", "bandra", "kurla", "lower parel", "andheri"],
+    defaultCoordinates: { latitude: 19.076, longitude: 72.8777 },
   },
   {
     canonicalName: "Gurugram",
@@ -132,7 +132,7 @@ export const CANONICAL_CITIES: CanonicalCityMapping[] = [
     canonicalSlug: "chennai",
     stateSlug: "tamil-nadu",
     stateName: "Tamil Nadu",
-    aliases: ["madras"],
+    aliases: ["madras", "anna nagar", "t nagar", "guindy", "adyar", "velachery"],
     defaultCoordinates: { latitude: 13.0827, longitude: 80.2707 },
   },
   {
@@ -140,7 +140,7 @@ export const CANONICAL_CITIES: CanonicalCityMapping[] = [
     canonicalSlug: "hyderabad",
     stateSlug: "telangana",
     stateName: "Telangana",
-    aliases: ["secunderabad", "cyberabad"],
+    aliases: ["secunderabad", "cyberabad", "gachibowli", "hitec city", "nallagandla", "madhapur", "kondapur"],
     defaultCoordinates: { latitude: 17.385, longitude: 78.4867 },
   },
   {
@@ -148,7 +148,7 @@ export const CANONICAL_CITIES: CanonicalCityMapping[] = [
     canonicalSlug: "pune",
     stateSlug: "maharashtra",
     stateName: "Maharashtra",
-    aliases: ["poona", "pcmc", "pimpri-chinchwad"],
+    aliases: ["poona", "pcmc", "pimpri-chinchwad", "baner", "hinjewadi", "wakad", "viman nagar"],
     defaultCoordinates: { latitude: 18.5204, longitude: 73.8567 },
   },
   {
@@ -156,7 +156,7 @@ export const CANONICAL_CITIES: CanonicalCityMapping[] = [
     canonicalSlug: "ahmedabad",
     stateSlug: "gujarat",
     stateName: "Gujarat",
-    aliases: ["amdavad", "ahmadabad"],
+    aliases: ["amdavad", "ahmadabad", "ahemdabad", "vatva", "sg highway", "bopal", "satellite"],
     defaultCoordinates: { latitude: 23.0225, longitude: 72.5714 },
   },
   {
@@ -308,7 +308,7 @@ export function resolveCanonicalCity(
     }
   }
 
-  // 2. Check if address text contains prominent canonical aliases (e.g. "Delhi", "Connaught Place", "Gurgaon")
+  // 2. Check if address text contains prominent canonical names or aliases (e.g. "Delhi", "Mumbai", "Bengaluru")
   for (const city of CANONICAL_CITIES) {
     const st = resolveCanonicalState(city.stateSlug);
     const stateCode = st?.code ?? "IN";
@@ -324,12 +324,21 @@ export function resolveCanonicalCity(
         stateCode,
       };
     }
-    for (const alias of city.aliases) {
-      if (fullText.includes(` ${alias} `) || fullText.endsWith(` ${alias}`) || fullText.startsWith(`${alias} `)) {
+
+    const candidateTerms = [
+      city.canonicalName.toLowerCase(),
+      city.canonicalSlug.toLowerCase(),
+      ...city.aliases.map((a) => a.toLowerCase()),
+    ].sort((a, b) => b.length - a.length);
+
+    for (const term of candidateTerms) {
+      const escaped = term.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      const regex = new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i");
+      if (regex.test(fullText)) {
         return {
           canonicalName: city.canonicalName,
           canonicalSlug: city.canonicalSlug,
-          aliasUsed: alias,
+          aliasUsed: term,
           stateSlug: city.stateSlug,
           stateName: city.stateName,
           stateCode,

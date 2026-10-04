@@ -15,7 +15,9 @@ import {
   type CityStationsQueryInput,
   type CityStationsResponseData,
   type CitySummary,
+  type CityStatistics,
   cityStationsResponseDataSchema,
+  cityStatisticsResponseDataSchema,
 } from "../contracts/city";
 import {
   type PincodeQueryInput,
@@ -262,6 +264,20 @@ export class FastChargerApiClient {
     query: CityStationsQueryInput = {},
   ): Promise<CityStationsResponseData | null> {
     return this.getCity(slug, query);
+  }
+
+  async getCityStatistics(slug: string): Promise<CityStatistics | null> {
+    try {
+      return await this.request<CityStatistics>(
+        `/api/v1/cities/${encodeURIComponent(slug)}/statistics`,
+        cityStatisticsResponseDataSchema,
+      );
+    } catch (err) {
+      if (err instanceof FastChargerApiError && err.status === 404) {
+        return null;
+      }
+      throw err;
+    }
   }
 
   // --- Pincodes ---

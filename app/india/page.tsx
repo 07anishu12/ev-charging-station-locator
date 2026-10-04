@@ -30,29 +30,44 @@ export const metadata: Metadata = {
 
 export default async function IndiaPage() {
   const [citiesData, stationsData] = await Promise.all([
-    apiClient.getCities({ pageSize: 8 }),
+    apiClient.getCities({ pageSize: 50 }),
     apiClient.getStations({ pageSize: 8 }),
   ]);
 
-  const allStates = CANONICAL_STATES.map((s) => ({
-    id: s.slug,
-    name: s.name,
-    slug: s.slug,
-    code: s.code,
-    stationCount: 0,
-    cityCount: 0,
-    latitude: s.latitude,
-    longitude: s.longitude,
-  }));
-  const popularCities = citiesData.items;
+  const allCities = citiesData.items;
+  const stateStationMap = new Map<string, { stationCount: number; cityCount: number }>();
+  for (const c of allCities) {
+    if (c.stateSlug) {
+      const existing = stateStationMap.get(c.stateSlug) || { stationCount: 0, cityCount: 0 };
+      existing.stationCount += c.stationCount;
+      existing.cityCount += 1;
+      stateStationMap.set(c.stateSlug, existing);
+    }
+  }
+
+  const allStates = CANONICAL_STATES.map((s) => {
+    const agg = stateStationMap.get(s.slug) || { stationCount: 0, cityCount: 0 };
+    return {
+      id: s.slug,
+      name: s.name,
+      slug: s.slug,
+      code: s.code,
+      stationCount: agg.stationCount,
+      cityCount: agg.cityCount,
+      latitude: s.latitude,
+      longitude: s.longitude,
+    };
+  }).sort((a, b) => b.stationCount - a.stationCount || a.name.localeCompare(b.name));
+
+  const popularCities = allCities.slice(0, 8);
   const sampleStations = stationsData.items;
   const uniqueOperatorsCount = new Set(
     sampleStations.map((s) => s.operator?.slug || s.operator?.id).filter(Boolean),
   ).size;
   const stats = {
     totalStations: stationsData.pagination?.total ?? sampleStations.length,
-    totalCities: citiesData.pagination?.total ?? popularCities.length,
-    totalStates: allStates.length,
+    totalCities: citiesData.pagination?.total ?? allCities.length,
+    totalStates: allStates.filter((s) => s.stationCount > 0).length || allStates.length,
     totalOperators: uniqueOperatorsCount,
   };
 

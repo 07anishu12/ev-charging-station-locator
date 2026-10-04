@@ -9,7 +9,7 @@ import type { ProviderAdapter, ProviderValidationResult, RawProviderPayload } fr
 
 const providerName = "open-charge-map";
 
-type OpenChargeMapQuery = ProviderStationQuery & { maxresults?: number; chargepointid?: string };
+type OpenChargeMapQuery = ProviderStationQuery & { maxresults?: number; chargepointid?: string; offset?: number };
 
 export interface OpenChargeMapConfig {
   apiKey?: string | null;
@@ -37,33 +37,47 @@ export class OpenChargeMapProvider implements ProviderAdapter {
   }
 
   /**
-   * Fetches raw JSON payload from Open Charge Map API with bounded exponential backoff retries.
+   * Fetches raw JSON payload from Open Charge Map API with bounded exponential backoff retries and pagination.
    */
   async fetchRawStations(query: ProviderStationQuery = {}): Promise<RawProviderPayload<unknown[]>> {
     this.assertConfigured();
 
-    const fetchResult = await retryWithBackoff(async () => {
-      const response = await this.request({
-        ...query,
-        maxresults: query.maxResults ?? query.pageSize ?? this.defaultPageSize,
-      });
+    const max = query.maxResults ?? query.pageSize ?? 5000;
+    const batchSize = Math.min(100, max);
+    const allItems: unknown[] = [];
+    let currentOffset = 0;
 
-      const payload: unknown = await response.json();
-      if (!Array.isArray(payload)) {
-        throw new PermanentError("Open Charge Map returned non-array payload.");
-      }
+    while (allItems.length < max) {
+      const fetchCount = Math.min(batchSize, max - allItems.length);
+      const batch = await retryWithBackoff(async () => {
+        const response = await this.request({
+          ...query,
+          maxresults: fetchCount,
+          offset: currentOffset,
+        });
 
-      return payload;
-    }, this.retryOptions);
+        const payload: unknown = await response.json();
+        if (!Array.isArray(payload)) {
+          throw new PermanentError("Open Charge Map returned non-array payload.");
+        }
+
+        return payload;
+      }, this.retryOptions);
+
+      if (batch.length === 0) break;
+      allItems.push(...batch);
+      currentOffset += batch.length;
+      if (batch.length < fetchCount) break;
+    }
 
     return {
       provider: this.providerName,
-      data: fetchResult,
+      data: allItems,
       receivedAt: new Date(),
-      recordCount: fetchResult.length,
+      recordCount: allItems.length,
       metadata: {
         countryCode: "IN",
-        pageSize: query.maxResults ?? query.pageSize ?? this.defaultPageSize,
+        pageSize: allItems.length,
       },
     };
   }

@@ -17,7 +17,7 @@ export const stationConnectorSchema = z.object({
   powerKw: powerKwSchema.optional(),
   voltage: z.number().positive().optional(),
   amps: z.number().positive().optional(),
-  status: chargerStatusSchema,
+  status: chargerStatusSchema.or(stationOperationalStatusSchema).or(z.string()),
   quantity: z.number().int().positive().optional(),
 });
 
@@ -26,7 +26,7 @@ export const stationOperatorSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   slug: z.string().min(1),
-  website: z.string().url().or(z.string()).optional(),
+  website: z.string().url().or(z.string()).nullable().optional(),
 });
 
 // Station Summary (compact view for cards, lists, search results)
@@ -69,14 +69,14 @@ export const stationDetailSchema = stationSummarySchema.extend({
   address: z.string(),
   city: z.object({ name: z.string(), slug: z.string() }),
   state: z.object({ name: z.string(), slug: z.string(), code: z.string() }),
-  district: z.string(),
+  district: z.string().nullable().optional().default(""),
   pincode: z.string(),
-  status: stationOperationalStatusSchema,
-  operationalStatus: chargerStatusSchema,
-  usageType: z.string(),
+  status: stationOperationalStatusSchema.or(chargerStatusSchema),
+  operationalStatus: chargerStatusSchema.optional(),
+  usageType: z.string().nullable().optional().default("Public"),
   dataProvider: z.string(),
-  dataLicense: z.string(),
-  ocmUrl: z.string(),
+  dataLicense: z.string().nullable().optional().default(""),
+  ocmUrl: z.string().nullable().optional().default(""),
   lastUpdated: z.string(),
   connectors: z.array(stationConnectorSchema),
   fastestPowerKw: powerKwSchema,

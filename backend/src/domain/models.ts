@@ -34,9 +34,23 @@ export interface CityModel {
   slug: string;
   stateId?: string;
   stateName?: string;
+  stateSlug?: string;
   latitude?: number | null;
   longitude?: number | null;
   stationCount: number;
+  networkCount?: number;
+  fastChargerCount?: number;
+}
+
+export interface CityStatisticsModel {
+  citySlug: string;
+  cityName: string;
+  stateSlug?: string;
+  stateName?: string;
+  stationCount: number;
+  networkCount: number;
+  fastChargerCount: number;
+  totalConnectors?: number;
 }
 
 export interface StateModel {

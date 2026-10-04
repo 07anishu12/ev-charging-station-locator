@@ -2,16 +2,33 @@ import { desc, eq, sql } from "drizzle-orm";
 import { schema } from "@fastcharger/database";
 import { resolveCanonicalCity } from "@fastcharger/shared";
 import { getDatabase } from "../infrastructure/database";
-import type { CityModel, PaginatedResult } from "../domain/models";
+import type { CityModel, CityStatisticsModel, PaginatedResult } from "../domain/models";
 
-const { cities, states, cityAliases } = schema;
+const { cities, states, cityAliases, stations, connectors } = schema;
 
 export interface ICityRepository {
   findAll(page: number, pageSize: number): Promise<PaginatedResult<CityModel>>;
   findBySlug(slug: string): Promise<CityModel | null>;
+  getStatistics(slug: string): Promise<CityStatisticsModel | null>;
 }
 
 export class DrizzleCityRepository implements ICityRepository {
+  private getCitySelectFields() {
+    return {
+      id: cities.id,
+      name: cities.name,
+      slug: cities.slug,
+      latitude: cities.latitude,
+      longitude: cities.longitude,
+      stationCount: sql<number>`cast(count(distinct ${stations.id}) as integer)`,
+      networkCount: sql<number>`cast(count(distinct ${stations.operatorId}) as integer)`,
+      fastChargerCount: sql<number>`cast(count(distinct case when ${connectors.powerKw} >= 50 then ${stations.id} end) as integer)`,
+      stateId: states.id,
+      stateName: states.name,
+      stateSlug: states.slug,
+    };
+  }
+
   async findAll(page: number, pageSize: number): Promise<PaginatedResult<CityModel>> {
     const db = getDatabase();
     const offset = (page - 1) * pageSize;
@@ -20,19 +37,13 @@ export class DrizzleCityRepository implements ICityRepository {
     const total = Number(countResult[0]?.count || 0);
 
     const rows = await db
-      .select({
-        id: cities.id,
-        name: cities.name,
-        slug: cities.slug,
-        latitude: cities.latitude,
-        longitude: cities.longitude,
-        stationCount: cities.stationCount,
-        stateId: states.id,
-        stateName: states.name,
-      })
+      .select(this.getCitySelectFields())
       .from(cities)
       .leftJoin(states, eq(cities.stateId, states.id))
-      .orderBy(desc(cities.stationCount), cities.name)
+      .leftJoin(stations, eq(stations.cityId, cities.id))
+      .leftJoin(connectors, eq(connectors.stationId, stations.id))
+      .groupBy(cities.id, states.id)
+      .orderBy(desc(sql`count(distinct ${stations.id})`), cities.name)
       .limit(pageSize)
       .offset(offset);
 
@@ -42,9 +53,12 @@ export class DrizzleCityRepository implements ICityRepository {
       slug: r.slug,
       latitude: r.latitude,
       longitude: r.longitude,
-      stationCount: r.stationCount,
+      stationCount: Number(r.stationCount || 0),
+      networkCount: Number(r.networkCount || 0),
+      fastChargerCount: Number(r.fastChargerCount || 0),
       stateId: r.stateId ?? undefined,
       stateName: r.stateName ?? undefined,
+      stateSlug: r.stateSlug ?? undefined,
     }));
 
     return {
@@ -64,19 +78,13 @@ export class DrizzleCityRepository implements ICityRepository {
 
     // 1. Direct match by slug
     const rows = await db
-      .select({
-        id: cities.id,
-        name: cities.name,
-        slug: cities.slug,
-        latitude: cities.latitude,
-        longitude: cities.longitude,
-        stationCount: cities.stationCount,
-        stateId: states.id,
-        stateName: states.name,
-      })
+      .select(this.getCitySelectFields())
       .from(cities)
       .leftJoin(states, eq(cities.stateId, states.id))
+      .leftJoin(stations, eq(stations.cityId, cities.id))
+      .leftJoin(connectors, eq(connectors.stationId, stations.id))
       .where(eq(cities.slug, cleanSlug))
+      .groupBy(cities.id, states.id)
       .limit(1);
 
     if (rows.length > 0) {
@@ -87,9 +95,12 @@ export class DrizzleCityRepository implements ICityRepository {
         slug: r.slug,
         latitude: r.latitude,
         longitude: r.longitude,
-        stationCount: r.stationCount,
+        stationCount: Number(r.stationCount || 0),
+        networkCount: Number(r.networkCount || 0),
+        fastChargerCount: Number(r.fastChargerCount || 0),
         stateId: r.stateId ?? undefined,
         stateName: r.stateName ?? undefined,
+        stateSlug: r.stateSlug ?? undefined,
       };
     }
 
@@ -102,19 +113,13 @@ export class DrizzleCityRepository implements ICityRepository {
 
     if (aliasRows.length > 0) {
       const canonicalRows = await db
-        .select({
-          id: cities.id,
-          name: cities.name,
-          slug: cities.slug,
-          latitude: cities.latitude,
-          longitude: cities.longitude,
-          stationCount: cities.stationCount,
-          stateId: states.id,
-          stateName: states.name,
-        })
+        .select(this.getCitySelectFields())
         .from(cities)
         .leftJoin(states, eq(cities.stateId, states.id))
+        .leftJoin(stations, eq(stations.cityId, cities.id))
+        .leftJoin(connectors, eq(connectors.stationId, stations.id))
         .where(eq(cities.id, aliasRows[0].cityId))
+        .groupBy(cities.id, states.id)
         .limit(1);
 
       if (canonicalRows.length > 0) {
@@ -125,9 +130,12 @@ export class DrizzleCityRepository implements ICityRepository {
           slug: r.slug,
           latitude: r.latitude,
           longitude: r.longitude,
-          stationCount: r.stationCount,
+          stationCount: Number(r.stationCount || 0),
+          networkCount: Number(r.networkCount || 0),
+          fastChargerCount: Number(r.fastChargerCount || 0),
           stateId: r.stateId ?? undefined,
           stateName: r.stateName ?? undefined,
+          stateSlug: r.stateSlug ?? undefined,
         };
       }
     }
@@ -139,5 +147,30 @@ export class DrizzleCityRepository implements ICityRepository {
     }
 
     return null;
+  }
+
+  async getStatistics(slug: string): Promise<CityStatisticsModel | null> {
+    const city = await this.findBySlug(slug);
+    if (!city) {
+      return null;
+    }
+
+    const db = getDatabase();
+    const connResult = await db
+      .select({ count: sql<number>`cast(count(distinct ${connectors.id}) as integer)` })
+      .from(connectors)
+      .innerJoin(stations, eq(connectors.stationId, stations.id))
+      .where(eq(stations.cityId, city.id));
+
+    return {
+      citySlug: city.slug,
+      cityName: city.name,
+      stateSlug: city.stateSlug,
+      stateName: city.stateName,
+      stationCount: city.stationCount,
+      networkCount: city.networkCount ?? 0,
+      fastChargerCount: city.fastChargerCount ?? 0,
+      totalConnectors: Number(connResult[0]?.count || 0),
+    };
   }
 }

@@ -552,6 +552,28 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
             if (!stateId) stateId = stateMap.get("delhi") ?? null;
           }
 
+          // Fallback 4: Spatial resolution within 25km of canonical cities
+          if (!cityId && station.latitude && station.longitude) {
+            for (const cc of CANONICAL_CITIES) {
+              if (cc.defaultCoordinates) {
+                const distKm = Math.hypot(
+                  (station.latitude - cc.defaultCoordinates.latitude) * 111,
+                  (station.longitude - cc.defaultCoordinates.longitude) * 111 * Math.cos((station.latitude * Math.PI) / 180),
+                );
+                if (distKm <= 25) {
+                  cityId = cityMap.get(cc.canonicalSlug) ?? null;
+                  if (cityId) {
+                    matchedCitySlug = cc.canonicalSlug;
+                    if (!stateId) {
+                      stateId = stateMap.get(cc.stateSlug) ?? null;
+                    }
+                    break;
+                  }
+                }
+              }
+            }
+          }
+
           if (matchedCitySlug) {
             affectedCitySlugs.add(matchedCitySlug);
           }
@@ -902,6 +924,15 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
       });
     } catch {
       // Cache invalidation errors are non-fatal
+    }
+
+    // Synchronize Canonical Station Counts in PostgreSQL
+    if (typeof (db as { execute?: unknown }).execute === "function") {
+      await (db as { execute: (q: unknown) => Promise<unknown> })
+        .execute(
+          sql`UPDATE cities c SET station_count = (SELECT count(distinct id) FROM stations WHERE city_id = c.id)`,
+        )
+        .catch(() => {});
     }
 
     // Update Final Sync Log in PostgreSQL

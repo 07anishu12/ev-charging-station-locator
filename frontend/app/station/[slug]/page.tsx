@@ -172,7 +172,7 @@ export default async function StationPage({ params }: StationPageProps) {
           stationSlug={station.slug}
           stationName={station.name}
           directionsUrl={directionsUrl}
-          operatorWebsite={station.operator.website}
+          operatorWebsite={station.operator.website ?? undefined}
         />
 
         {/* Available Connectors Card matching Screen 3 */}

@@ -73,16 +73,20 @@ export default async function StatePage({ params }: StatePageProps) {
   );
   const otherStates = CANONICAL_STATES.filter((s) => s.slug !== stateSlug)
     .slice(0, 3)
-    .map((s) => ({
-      id: s.slug,
-      name: s.name,
-      slug: s.slug,
-      code: s.code,
-      stationCount: 0,
-      cityCount: 0,
-      latitude: s.latitude,
-      longitude: s.longitude,
-    }));
+    .map((s) => {
+      const stateCities = citiesData.items.filter((c) => c.stateSlug === s.slug);
+      const stCount = stateCities.reduce((sum, c) => sum + c.stationCount, 0);
+      return {
+        id: s.slug,
+        name: s.name,
+        slug: s.slug,
+        code: s.code,
+        stationCount: stCount,
+        cityCount: stateCities.length,
+        latitude: s.latitude,
+        longitude: s.longitude,
+      };
+    });
 
   const totalStations = stationsData.pagination?.total ?? stationsInState.length;
   const totalCities = citiesInState.length;

@@ -69,10 +69,10 @@ export default async function CityPage({ params }: CityPageProps) {
 
   const cityName = cityData.city.name;
   const stateName = cityData.city.stateName || "India";
-  const totalStations = cityData.pagination.total;
+  const totalStations = cityData.city.stationCount ?? cityData.pagination.total;
   const stationsInCity = cityData.stations;
   const fastChargersCount = stationsInCity.filter((s) => s.fastestPowerKw >= 50).length;
-  const displayFastChargers = fastChargersCount;
+  const displayFastChargers = cityData.city.fastChargerCount ?? fastChargersCount;
 
   const nearbyCities = allCities.items
     .filter((c) => c.slug !== cityData.city.slug && c.slug !== citySlug)
@@ -89,6 +89,7 @@ export default async function CityPage({ params }: CityPageProps) {
     operatorsMap.set(s.operator.slug, existing);
   }
   const operators = Array.from(operatorsMap.values());
+  const totalOperators = cityData.city.networkCount ?? operators.length;
 
   const breadcrumbsSchema = buildBreadcrumbSchema([
     { name: "India", path: routeUrls.india() },
@@ -184,7 +185,7 @@ export default async function CityPage({ params }: CityPageProps) {
         {/* Real Network Statistics */}
         <StatsCards
           totalStations={totalStations}
-          totalOperators={operators.length}
+          totalOperators={totalOperators}
           fastChargers={displayFastChargers}
         />
 

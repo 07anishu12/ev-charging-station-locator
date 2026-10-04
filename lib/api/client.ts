@@ -3,6 +3,7 @@ import {
   FastChargerApiError,
   type StationDetail as Station,
   type CitySummary as City,
+  type CityStatistics,
   type SearchEntityResult,
   type PaginationMeta as Pagination,
   type CityStationsResponseData,
@@ -13,6 +14,7 @@ import {
 export type {
   Station,
   City,
+  CityStatistics,
   SearchEntityResult,
   Pagination,
   NearbyPincodeItem,
@@ -257,6 +259,14 @@ class FrontendApiClient {
   ): Promise<CityDetailResponse | null> {
     try {
       return await this.client.getCity(slug, params);
+    } catch {
+      return null;
+    }
+  }
+
+  async getCityStatistics(slug: string): Promise<CityStatistics | null> {
+    try {
+      return await this.client.getCityStatistics(slug);
     } catch {
       return null;
     }

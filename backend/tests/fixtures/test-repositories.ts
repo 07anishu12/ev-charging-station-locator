@@ -2,7 +2,7 @@ import type { IStationRepository, StationListFilter, StationNearbyFilter } from 
 import type { ICityRepository } from "../../src/repositories/city.repository";
 import type { IPincodeRepository } from "../../src/repositories/pincode.repository";
 import type { ISearchRepository, SearchEntity } from "../../src/repositories/search.repository";
-import type { StationModel, NearbyStationModel, CityModel, PincodeModel, PaginatedResult } from "../../src/domain/models";
+import type { StationModel, NearbyStationModel, CityModel, CityStatisticsModel, PincodeModel, PaginatedResult } from "../../src/domain/models";
 import { distanceInKilometers, resolveCanonicalCity } from "@fastcharger/shared";
 
 export const FIXTURE_STATIONS: StationModel[] = [
@@ -313,6 +313,21 @@ export class FixtureCityRepository implements ICityRepository {
       return this.cities.find((c) => c.slug === resolved.canonicalSlug) || null;
     }
     return null;
+  }
+
+  async getStatistics(slug: string): Promise<CityStatisticsModel | null> {
+    const city = await this.findBySlug(slug);
+    if (!city) return null;
+    return {
+      citySlug: city.slug,
+      cityName: city.name,
+      stateSlug: city.stateSlug,
+      stateName: city.stateName,
+      stationCount: city.stationCount,
+      networkCount: city.networkCount ?? 1,
+      fastChargerCount: city.fastChargerCount ?? 1,
+      totalConnectors: 2,
+    };
   }
 }
 

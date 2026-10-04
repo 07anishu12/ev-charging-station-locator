@@ -18,9 +18,10 @@ export const citySummarySchema = z.object({
   name: z.string().min(1),
   slug: z.string().min(1),
   stateName: z.string().min(1),
-  stateSlug: z.string().min(1),
+  stateSlug: z.string().min(1).default("india"),
   stationCount: z.number().int().nonnegative(),
   fastChargerCount: z.number().int().nonnegative().default(0),
+  networkCount: z.number().int().nonnegative().optional(),
   latitude: latitudeSchema,
   longitude: longitudeSchema,
   popularPincodes: z.array(z.string()).default([]),
@@ -31,6 +32,19 @@ export const cityOperatorSummarySchema = z.object({
   slug: z.string().min(1),
   stationCount: z.number().int().nonnegative(),
 });
+
+export const cityStatisticsSchema = z.object({
+  citySlug: z.string(),
+  cityName: z.string(),
+  stateSlug: z.string().optional(),
+  stateName: z.string().optional(),
+  stationCount: z.number().int().nonnegative(),
+  networkCount: z.number().int().nonnegative(),
+  fastChargerCount: z.number().int().nonnegative(),
+  totalConnectors: z.number().int().nonnegative().optional(),
+});
+
+export const cityStatisticsResponseDataSchema = cityStatisticsSchema;
 
 export const citiesQuerySchema = paginationQuerySchema.extend({
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
@@ -54,6 +68,8 @@ export const cityStationsResponseDataSchema = z.object({
 export type CitySlugParams = z.infer<typeof citySlugParamSchema>;
 export type CitySummary = z.infer<typeof citySummarySchema>;
 export type CityOperatorSummary = z.infer<typeof cityOperatorSummarySchema>;
+export type CityStatistics = z.infer<typeof cityStatisticsSchema>;
+export type CityStatisticsResponseData = z.infer<typeof cityStatisticsResponseDataSchema>;
 export type CitiesQuery = z.infer<typeof citiesQuerySchema>;
 export type CitiesQueryInput = z.input<typeof citiesQuerySchema>;
 export type CityStationsQuery = z.infer<typeof cityStationsQuerySchema>;

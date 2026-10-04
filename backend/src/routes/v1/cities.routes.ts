@@ -5,6 +5,7 @@ export function createCitiesRouter(controller: CityController = defaultCityContr
   const router = new Hono();
 
   router.get("/", controller.listCities);
+  router.get("/:slug/statistics", controller.getCityStatistics);
   router.get("/:slug", controller.getCity);
 
   return router;

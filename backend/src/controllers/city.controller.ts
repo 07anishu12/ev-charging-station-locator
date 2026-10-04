@@ -36,6 +36,12 @@ export class CityController {
       200,
     );
   };
+
+  getCityStatistics = async (c: Context) => {
+    const params = validateParams(citySlugParamSchema, c);
+    const result = await this.cityService.getCityStatistics(params.slug);
+    return c.json({ data: result }, 200);
+  };
 }
 
 export const defaultCityController = new CityController();

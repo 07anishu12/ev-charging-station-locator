@@ -367,6 +367,7 @@ describe("Backend Standalone API Integration Tests", () => {
       const mockCityRepo: ICityRepository = {
         async findAll() { return { items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } }; },
         async findBySlug() { return null; },
+        async getStatistics() { return null; },
       };
 
       const failingService = new StationService(failingRepo, mockCityRepo);

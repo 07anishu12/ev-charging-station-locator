@@ -1,5 +1,5 @@
 import { CityNotFoundError } from "../domain/errors";
-import type { CityModel, PaginatedResult } from "../domain/models";
+import type { CityModel, CityStatisticsModel, PaginatedResult } from "../domain/models";
 import { DrizzleCityRepository, type ICityRepository } from "../repositories/city.repository";
 
 export class CityService {
@@ -15,6 +15,14 @@ export class CityService {
       throw new CityNotFoundError(slug);
     }
     return city;
+  }
+
+  async getCityStatistics(slug: string): Promise<CityStatisticsModel> {
+    const stats = await this.cityRepo.getStatistics(slug);
+    if (!stats) {
+      throw new CityNotFoundError(slug);
+    }
+    return stats;
   }
 }
 

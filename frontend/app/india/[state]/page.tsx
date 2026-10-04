@@ -73,19 +73,28 @@ export default async function StatePage({ params }: StatePageProps) {
   );
   const otherStates = CANONICAL_STATES.filter((s) => s.slug !== stateSlug)
     .slice(0, 3)
-    .map((s) => ({
-      id: s.slug,
-      name: s.name,
-      slug: s.slug,
-      code: s.code,
-      stationCount: 0,
-      cityCount: 0,
-      latitude: s.latitude,
-      longitude: s.longitude,
-    }));
+    .map((s) => {
+      const stateCities = citiesData.items.filter((c) => c.stateSlug === s.slug);
+      const stCount = stateCities.reduce((sum, c) => sum + c.stationCount, 0);
+      return {
+        id: s.slug,
+        name: s.name,
+        slug: s.slug,
+        code: s.code,
+        stationCount: stCount,
+        cityCount: stateCities.length,
+        latitude: s.latitude,
+        longitude: s.longitude,
+      };
+    });
 
   const totalStations = stationsData.pagination?.total ?? stationsInState.length;
   const totalCities = citiesInState.length;
+  const uniqueOperatorsCount = new Set(
+    stationsInState.map((s) => s.operator?.slug || s.operator?.id).filter(Boolean),
+  ).size;
+  const totalOperators = uniqueOperatorsCount > 0 ? uniqueOperatorsCount : (stationsInState.length > 0 ? 1 : 0);
+  const fastChargers = stationsInState.filter((s) => (s.fastestPowerKw ?? 0) >= 50).length;
 
   const breadcrumbsSchema = buildBreadcrumbSchema([
     { name: "India", path: routeUrls.india() },
@@ -153,8 +162,8 @@ export default async function StatePage({ params }: StatePageProps) {
         <StatsCards
           totalStations={totalStations}
           totalCities={totalCities}
-          totalOperators={6}
-          fastChargers={Math.round(totalStations * 0.65)}
+          totalOperators={totalOperators}
+          fastChargers={fastChargers}
         />
 
         {/* State Charging Map */}

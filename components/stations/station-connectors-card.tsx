@@ -1,8 +1,8 @@
 import React from "react";
-import type { Connector } from "@fastcharger/shared";
+import type { Connector, StationConnector } from "@fastcharger/shared";
 
 interface StationConnectorsCardProps {
-  connectors: Connector[];
+  connectors: Array<Connector | StationConnector>;
   className?: string;
 }
 
