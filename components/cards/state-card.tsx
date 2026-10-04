@@ -1,10 +1,10 @@
 import Link from "next/link";
 
-import type { MockState } from "@/lib/mock";
+import type { State } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
 interface StateCardProps {
-  state: MockState;
+  state: State;
   className?: string;
 }
 

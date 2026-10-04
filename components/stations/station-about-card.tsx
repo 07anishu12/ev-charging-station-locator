@@ -1,8 +1,8 @@
 import React from "react";
-import type { MockStation } from "@/lib/mock";
+import type { Station } from "@fastcharger/shared";
 
 interface StationAboutCardProps {
-  station: MockStation;
+  station: Station;
   className?: string;
 }
 

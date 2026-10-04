@@ -6,11 +6,11 @@ import React from "react";
 import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { PowerBadge } from "@/components/ui/power-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { MockStation } from "@/lib/mock";
+import type { Station } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
 interface CompactStationCardProps {
-  station: MockStation;
+  station: Station;
   className?: string;
 }
 

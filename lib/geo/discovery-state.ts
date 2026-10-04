@@ -1,6 +1,6 @@
 import { distanceInKilometers } from "@/lib/geo/distance";
 import type { UserLocation } from "@/lib/geo/geolocation";
-import type { MockStation } from "@/lib/mock";
+import type { Station } from "@fastcharger/shared";
 
 export const NEARBY_DISCOVERY_RADIUS_KM = 25;
 
@@ -34,7 +34,7 @@ export interface MapCameraTrigger {
 }
 
 export interface DeriveStationsOptions {
-  allStations: MockStation[];
+  allStations: Station[];
   filters: DiscoveryFilters;
   userLocation: UserLocation | null;
   locationMode: LocationMode;
@@ -53,14 +53,14 @@ export function deriveCanonicalStations({
   locationMode,
   searchQuery = "",
   radiusKm = NEARBY_DISCOVERY_RADIUS_KM,
-}: DeriveStationsOptions): MockStation[] {
+}: DeriveStationsOptions): Station[] {
   const query = searchQuery.trim().toLowerCase();
 
   // 1. If in "user" location mode and location is present, compute spatial proximity
-  let baseStations: MockStation[] = [];
+  let baseStations: Station[] = [];
 
   if (locationMode === "user" && userLocation) {
-    const nearbyWithDistance: Array<MockStation & { calculatedDistance: number }> = [];
+    const nearbyWithDistance: Array<Station & { calculatedDistance: number }> = [];
 
     for (const station of allStations) {
       const distance = distanceInKilometers(

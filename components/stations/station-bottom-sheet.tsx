@@ -7,11 +7,11 @@ import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { PowerBadge } from "@/components/ui/power-badge";
 import { SavedButton } from "@/components/ui/saved-button";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { MockStation } from "@/lib/mock";
+import type { Station } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
 interface StationBottomSheetProps {
-  station: MockStation | null;
+  station: Station | null;
   onClose: () => void;
   className?: string;
 }

@@ -4,7 +4,7 @@ import type { LayerGroup, Map as LeafletMap, Marker } from "leaflet";
 import { useEffect, useRef, useState } from "react";
 
 import { MapSkeleton } from "@/components/ui/skeletons";
-import type { MockStation } from "@/lib/mock";
+import type { Station } from "@fastcharger/shared";
 
 export interface MapCameraTrigger {
   type?: "user" | "station" | "city" | "bounds" | "filter" | "none";
@@ -15,9 +15,9 @@ export interface MapCameraTrigger {
 }
 
 interface MapViewProps {
-  stations: MockStation[];
+  stations: Station[];
   selectedStationId?: string;
-  onSelectStation?: (station: MockStation) => void;
+  onSelectStation?: (station: Station) => void;
   initialCenter?: { lat: number; lng: number };
   initialZoom?: number;
   className?: string;
@@ -27,6 +27,22 @@ interface MapViewProps {
 }
 
 export const STATION_FOCUS_ZOOM = 16;
+
+interface LeafletModule {
+  default?: typeof import("leaflet");
+  map?: unknown;
+}
+
+function resolveLeaflet(module: unknown): typeof import("leaflet") {
+  const mod = module as LeafletModule;
+  if (mod && mod.default && typeof mod.default.map === "function") {
+    return mod.default;
+  }
+  if (mod && typeof mod.map === "function") {
+    return mod as unknown as typeof import("leaflet");
+  }
+  return (mod?.default ?? mod) as typeof import("leaflet");
+}
 
 export function MapView({
   stations,
@@ -65,92 +81,103 @@ export function MapView({
     async function initMap() {
       if (!containerRef.current) return;
 
-      // Dynamically import leaflet to prevent SSR issues
-      const L = (await import("leaflet")).default;
+      try {
+        // Dynamically import leaflet to prevent SSR issues
+        const leafletModule = await import("leaflet");
+        const L = resolveLeaflet(leafletModule);
 
-      // Ensure leaflet styles are present
-      if (!document.getElementById("leaflet-css")) {
-        const link = document.createElement("link");
-        link.id = "leaflet-css";
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
-      }
-
-      if (!isMounted || !containerRef.current) return;
-
-      // Clean up existing map if any
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-
-      // Determine initial center
-      let centerLat = initialCenter.lat;
-      let centerLng = initialCenter.lng;
-      let zoom = initialZoom;
-
-      // If a pending selected station exists at mount, focus it immediately
-      if (pendingFocusStationIdRef.current) {
-        const targetStation = initialStationsRef.current.find(
-          (s) => s.id === pendingFocusStationIdRef.current,
-        );
-        if (targetStation) {
-          centerLat = targetStation.latitude;
-          centerLng = targetStation.longitude;
-          zoom = STATION_FOCUS_ZOOM;
+        // Ensure leaflet styles are present as fallback if not bundled
+        if (!document.getElementById("leaflet-css")) {
+          const link = document.createElement("link");
+          link.id = "leaflet-css";
+          link.rel = "stylesheet";
+          link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+          document.head.appendChild(link);
         }
-      } else if (initialUserLocationRef.current && initialNearbyActiveRef.current) {
-        centerLat = initialUserLocationRef.current.lat;
-        centerLng = initialUserLocationRef.current.lng;
-        zoom = 13;
-      } else if (initialStationsRef.current.length > 0 && initialZoom === 5) {
-        centerLat = initialStationsRef.current[0].latitude;
-        centerLng = initialStationsRef.current[0].longitude;
-        zoom = initialStationsRef.current.length === 1 ? 14 : 11;
-      }
 
-      const map = L.map(containerRef.current, {
-        center: [centerLat, centerLng],
-        zoom,
-        zoomControl: false,
-      });
+        if (!isMounted || !containerRef.current) return;
 
-      L.control.zoom({ position: "bottomright" }).addTo(map);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(map);
-
-      // Create separate dedicated layers for stations and user location
-      stationLayerRef.current = L.layerGroup().addTo(map);
-      userLayerRef.current = L.layerGroup().addTo(map);
-
-      leafletRef.current = L;
-      mapInstanceRef.current = map;
-      setIsLoaded(true);
-
-      // Force size invalidation right after mount
-      requestAnimationFrame(() => {
-        if (isMounted && mapInstanceRef.current) {
-          mapInstanceRef.current.invalidateSize();
+        // Clean up existing map or stale leaflet id on container if any
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
         }
-      });
+        const container = containerRef.current as (HTMLDivElement & { _leaflet_id?: number | null }) | null;
+        if (container?._leaflet_id) {
+          container._leaflet_id = null;
+        }
 
-      // Observe container size changes (window resize, split pane resize, tab switch)
-      if (typeof ResizeObserver !== "undefined" && containerRef.current) {
-        resizeObserver = new ResizeObserver(() => {
+        // Determine initial center
+        let centerLat = initialCenter.lat;
+        let centerLng = initialCenter.lng;
+        let zoom = initialZoom;
+
+        // If a pending selected station exists at mount, focus it immediately
+        if (pendingFocusStationIdRef.current) {
+          const targetStation = initialStationsRef.current.find(
+            (s) => s.id === pendingFocusStationIdRef.current,
+          );
+          if (targetStation) {
+            centerLat = targetStation.latitude;
+            centerLng = targetStation.longitude;
+            zoom = STATION_FOCUS_ZOOM;
+          }
+        } else if (initialUserLocationRef.current && initialNearbyActiveRef.current) {
+          centerLat = initialUserLocationRef.current.lat;
+          centerLng = initialUserLocationRef.current.lng;
+          zoom = 13;
+        } else if (initialStationsRef.current.length > 0 && initialZoom === 5) {
+          centerLat = initialStationsRef.current[0].latitude;
+          centerLng = initialStationsRef.current[0].longitude;
+          zoom = initialStationsRef.current.length === 1 ? 14 : 11;
+        }
+
+        const map = L.map(containerRef.current, {
+          center: [centerLat, centerLng],
+          zoom,
+          zoomControl: false,
+        });
+
+        L.control.zoom({ position: "bottomright" }).addTo(map);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19,
+        }).addTo(map);
+
+        // Create separate dedicated layers for stations and user location
+        stationLayerRef.current = L.layerGroup().addTo(map);
+        userLayerRef.current = L.layerGroup().addTo(map);
+
+        leafletRef.current = L;
+        mapInstanceRef.current = map;
+        setIsLoaded(true);
+
+        // Force size invalidation right after mount
+        requestAnimationFrame(() => {
           if (isMounted && mapInstanceRef.current) {
             mapInstanceRef.current.invalidateSize();
           }
         });
-        resizeObserver.observe(containerRef.current);
+
+        // Observe container size changes (window resize, split pane resize, tab switch)
+        if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+          resizeObserver = new ResizeObserver(() => {
+            if (isMounted && mapInstanceRef.current) {
+              mapInstanceRef.current.invalidateSize();
+            }
+          });
+          resizeObserver.observe(containerRef.current);
+        }
+      } catch (err) {
+        console.error("Leaflet map initialization error:", err);
       }
     }
 
     initMap();
+
+    const currentContainer = containerRef.current as (HTMLDivElement & { _leaflet_id?: number | null }) | null;
 
     return () => {
       isMounted = false;
@@ -162,6 +189,9 @@ export function MapView({
         mapInstanceRef.current = null;
         stationLayerRef.current = null;
         userLayerRef.current = null;
+      }
+      if (currentContainer) {
+        currentContainer._leaflet_id = null;
       }
     };
   }, [initialCenter.lat, initialCenter.lng, initialZoom]);
@@ -364,8 +394,9 @@ export function MapView({
       syncMarkers(leafletRef.current);
     } else {
       import("leaflet").then((module) => {
-        leafletRef.current = module.default;
-        syncMarkers(module.default);
+        const L = resolveLeaflet(module);
+        leafletRef.current = L;
+        syncMarkers(L);
       });
     }
   }, [stations, selectedStationId, isLoaded, userLocation, isNearbyActive, onSelectStation]);
@@ -379,7 +410,7 @@ export function MapView({
     lastCameraTimestampRef.current = cameraTrigger.timestamp;
 
     import("leaflet").then((module) => {
-      const L = module.default;
+      const L = resolveLeaflet(module);
       const map = mapInstanceRef.current;
       if (!map) return;
 

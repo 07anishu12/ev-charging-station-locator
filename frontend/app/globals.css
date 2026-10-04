@@ -1,0 +1,444 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #16c784;
+  --color-dark-green: #073b2a;
+  --color-secondary-green: #0f6b45;
+  --color-light-green: #eafbf3;
+  --color-background: #f8faf9;
+  --color-text: #10201a;
+  --color-muted: #68756f;
+  --color-border: #dce8e1;
+  --color-available: #16c784;
+  --color-busy: #f5a623;
+  --color-unavailable: #e5484d;
+  --color-unknown: #8a9490;
+  --background: var(--color-background);
+  --foreground: var(--color-text);
+
+  /* Motion Tokens */
+  --motion-fast: 150ms;
+  --motion-normal: 250ms;
+  --motion-slow: 500ms;
+}
+
+@theme inline {
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-text);
+  --color-primary: var(--color-primary);
+  --color-dark-green: var(--color-dark-green);
+  --color-secondary-green: var(--color-secondary-green);
+  --color-light-green: var(--color-light-green);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --color-available: var(--color-available);
+  --color-busy: var(--color-busy);
+  --color-unavailable: var(--color-unavailable);
+  --color-unknown: var(--color-unknown);
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  margin: 0;
+}
+
+/* ==========================================================
+   Motion System & Environmental Micro-Animations (GPU only)
+   ========================================================== */
+
+@keyframes charging-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes electricity-flow {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes loading {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes bottom-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Subtle Apple-style Environmental Leaf Sway (4-8s period) */
+@keyframes leaf-sway-slow {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(3px, -2px, 0) rotate(2.5deg);
+  }
+}
+
+@keyframes leaf-sway-reverse {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(-3px, 2px, 0) rotate(-2deg);
+  }
+}
+
+@keyframes tree-leaf-sway {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes tree-leaf-sway-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-3.5deg);
+  }
+}
+
+/* Upward subtle energy motes for bottom CTA */
+@keyframes particle-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(0, -55px, 0) scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* Travelling electric pulse through cable */
+@keyframes cable-pulse {
+  0% {
+    stroke-dashoffset: 80;
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+  80%, 100% {
+    stroke-dashoffset: -80;
+    opacity: 0;
+  }
+}
+
+/* Battery meter gentle charge block pulse */
+@keyframes battery-pulse {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scale(0.96);
+  }
+}
+
+/* Operational 1-second pulse on render then stop */
+@keyframes status-pulse-once {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* Filter activation micro-bounce */
+@keyframes filter-activate-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Search results stagger animation */
+@keyframes search-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Selected marker halo animation */
+@keyframes marker-halo-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 199, 132, 0.6);
+  }
+  70% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 8px rgba(22, 199, 132, 0);
+  }
+  100% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 0 rgba(22, 199, 132, 0);
+  }
+}
+
+/* Staggered Battery Filling */
+@keyframes battery-bar-fill-1 {
+  0%, 15% { opacity: 0.2; }
+  25%, 100% { opacity: 1; }
+}
+
+@keyframes battery-bar-fill-2 {
+  0%, 45% { opacity: 0.2; }
+  55%, 100% { opacity: 1; }
+}
+
+@keyframes battery-bar-fill-3 {
+  0%, 75% { opacity: 0.2; }
+  85%, 100% { opacity: 1; }
+}
+
+@keyframes charging-pulse-dot {
+  0% { transform: translateX(0); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(106px); opacity: 0; }
+}
+
+/* Subtle Energy Beam across sections (650ms) */
+@keyframes energy-beam {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(350%);
+    opacity: 0;
+  }
+}
+
+/* Chip selection subtle energy accent (no geometric bounce) */
+@keyframes chip-charge-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(22, 199, 132, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 3.5px rgba(22, 199, 132, 0.2);
+  }
+  100% {
+    box-shadow: 0 2px 8px rgba(22, 199, 132, 0.25);
+  }
+}
+
+/* Operational dot subtle breathing (selected / detail page only) */
+@keyframes operational-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* Car subtle float (1.5px max) */
+@keyframes car-subtle-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+/* Bottom sheet top edge energy pulse (550ms once) */
+@keyframes sheet-energy-accent {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  75% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Utility classes */
+@utility animate-charging-pulse {
+  animation: charging-pulse 1.8s ease-in-out infinite;
+}
+
+@utility animate-electricity-flow {
+  animation: electricity-flow 2.4s linear infinite;
+}
+
+@utility animate-loading {
+  animation: loading 1.4s ease-in-out infinite;
+}
+
+@utility animate-bottom-sheet-in {
+  animation: bottom-sheet-in 220ms ease-out both;
+}
+
+@utility animate-leaf-sway-slow {
+  animation: leaf-sway-slow 7s ease-in-out infinite alternate;
+}
+
+@utility animate-leaf-sway-reverse {
+  animation: leaf-sway-reverse 8.5s ease-in-out infinite alternate;
+}
+
+@utility animate-tree-leaf-sway {
+  animation: tree-leaf-sway 6s ease-in-out infinite alternate;
+}
+
+@utility animate-tree-leaf-sway-slow {
+  animation: tree-leaf-sway-slow 8s ease-in-out infinite alternate;
+}
+
+@utility animate-particle-rise {
+  animation: particle-rise 3s ease-out infinite;
+}
+
+@utility animate-cable-pulse {
+  stroke-dasharray: 40;
+  animation: cable-pulse 2s ease-in-out infinite;
+}
+
+@utility animate-battery-pulse {
+  animation: battery-pulse 1.8s ease-in-out infinite;
+}
+
+@utility animate-status-pulse-once {
+  animation: status-pulse-once 1s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+@utility animate-filter-pulse {
+  animation: filter-activate-pulse 200ms ease-out 1;
+}
+
+@utility animate-marker-halo {
+  animation: marker-halo-pulse 900ms cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+}
+
+@utility animate-battery-bar-1 {
+  animation: battery-bar-fill-1 2s ease-in-out infinite;
+}
+
+@utility animate-battery-bar-2 {
+  animation: battery-bar-fill-2 2s ease-in-out infinite;
+}
+
+@utility animate-battery-bar-3 {
+  animation: battery-bar-fill-3 2s ease-in-out infinite;
+}
+
+@utility animate-energy-beam {
+  animation: energy-beam 750ms cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+}
+
+@utility animate-chip-charge {
+  animation: chip-charge-pulse 300ms ease-out 1 forwards;
+}
+
+@utility animate-operational-dot {
+  animation: operational-dot 2s ease-in-out infinite;
+}
+
+@utility animate-car-float {
+  animation: car-subtle-float 4s ease-in-out infinite;
+}
+
+@utility animate-sheet-energy {
+  animation: sheet-energy-accent 600ms cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+}
+
+/* Desktop hover enhancements (hover: hover and pointer: fine) */
+@media (hover: hover) and (pointer: fine) {
+  .custom-charger-pin:hover > div {
+    transform: scale(1.12);
+  }
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+  }
+}
+

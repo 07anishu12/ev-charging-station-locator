@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@fastcharger/shared": ["shared/src"],
+      "@fastcharger/shared/*": ["shared/src/*"],
+      "@fastcharger/database": ["database/src"],
+      "@fastcharger/database/*": ["database/src/*"],
+      "@fastcharger/backend": ["backend/src"],
+      "@fastcharger/backend/*": ["backend/src/*"],
+      "@fastcharger/worker": ["worker/src"],
+      "@fastcharger/worker/*": ["worker/src/*"],
+      "@fastcharger/frontend/*": ["frontend/*"],
+      "@/*": ["./*"]
+    }
+  }
+}

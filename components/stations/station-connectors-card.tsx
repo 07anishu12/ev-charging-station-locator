@@ -1,8 +1,8 @@
 import React from "react";
-import type { MockConnector } from "@/lib/mock";
+import type { Connector } from "@fastcharger/shared";
 
 interface StationConnectorsCardProps {
-  connectors: MockConnector[];
+  connectors: Connector[];
   className?: string;
 }
 

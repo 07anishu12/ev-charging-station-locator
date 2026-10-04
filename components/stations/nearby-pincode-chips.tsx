@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { NearbyPincodeItem } from "@/services/pincodes/pincode-service";
+import type { NearbyPincodeItem } from "@/lib/api";
 import { routeUrls } from "@/lib/utils/url";
 
 interface NearbyPincodeChipsProps {

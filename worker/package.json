@@ -1,0 +1,26 @@
+{
+  "name": "@fastcharger/worker",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "sync:india": "tsx src/jobs/sync-india.ts",
+    "discover:cities": "tsx src/jobs/discover-cities.ts"
+  },
+  "dependencies": {
+    "@fastcharger/database": "*",
+    "@fastcharger/shared": "*",
+    "dotenv": "^18.0.5",
+    "drizzle-orm": "^0.45.3",
+    "pg": "^8.23.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}

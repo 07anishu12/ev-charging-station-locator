@@ -4,10 +4,11 @@ import { useState } from "react";
 
 import { StationCard } from "@/components/stations/station-card";
 import { StationCardSkeleton } from "@/components/ui/skeletons";
-import type { MockStation } from "@/lib/mock";
+import { apiClient } from "@/lib/api";
+import type { Station } from "@fastcharger/shared";
 
 interface CityStationBrowserProps {
-  initialStations: MockStation[];
+  initialStations: Station[];
   citySlug: string;
   cityName: string;
   totalStations: number;
@@ -25,7 +26,7 @@ export function CityStationBrowser({
   initialPage = 1,
   className = "",
 }: CityStationBrowserProps) {
-  const [stations, setStations] = useState<MockStation[]>(initialStations);
+  const [stations, setStations] = useState<Station[]>(initialStations);
   const [page, setPage] = useState<number>(initialPage);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,14 +42,12 @@ export function CityStationBrowser({
     const nextPage = page + 1;
 
     try {
-      const res = await fetch(`/api/cities/${citySlug}?page=${nextPage}&limit=${pageSize}`);
-      if (!res.ok) throw new Error("Failed to load more stations.");
-      const json = await res.json();
-      if (json.data && Array.isArray(json.data.stations)) {
+      const data = await apiClient.getCity(citySlug, { page: nextPage, pageSize });
+      if (data && Array.isArray(data.stations)) {
         setStations((prev) => {
           const existingIds = new Set(prev.map((s) => s.id));
-          const newStations = json.data.stations.filter(
-            (s: MockStation) => !existingIds.has(s.id),
+          const newStations = data.stations.filter(
+            (s: Station) => !existingIds.has(s.id),
           );
           return [...prev, ...newStations];
         });

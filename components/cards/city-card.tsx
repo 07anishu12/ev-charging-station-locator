@@ -1,10 +1,10 @@
 import Link from "next/link";
 
-import type { MockCity } from "@/lib/mock";
+import type { City } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
 interface CityCardProps {
-  city: MockCity;
+  city: City;
   className?: string;
 }
 

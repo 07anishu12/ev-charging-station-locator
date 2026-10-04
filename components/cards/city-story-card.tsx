@@ -1,11 +1,11 @@
 import Link from "next/link";
 import React from "react";
 
-import type { MockCity } from "@/lib/mock";
+import type { City } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
 interface CityStoryCardProps {
-  city: MockCity;
+  city: City;
   className?: string;
   badge?: string;
 }

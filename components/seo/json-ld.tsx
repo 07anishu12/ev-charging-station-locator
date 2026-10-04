@@ -1,6 +1,6 @@
 import React from "react";
 
-import type { MockStation } from "@/lib/mock";
+import type { Station } from "@fastcharger/shared";
 import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo/config";
 
 /**
@@ -77,7 +77,7 @@ export function buildFAQSchema(faqs: Array<{ question: string; answer: string }>
  * Authoritative EV Charging Station schema
  * Only includes properties actually present in the database.
  */
-export function buildStationSchema(station: MockStation, canonicalPath: string) {
+export function buildStationSchema(station: Station, canonicalPath: string) {
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": ["CivicStructure", "ElectricVehicleChargingStation"],

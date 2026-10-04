@@ -4,10 +4,13 @@ import { useState } from "react";
 
 import { StationCard } from "@/components/stations/station-card";
 import { StationCardSkeleton } from "@/components/ui/skeletons";
-import type {
-  PincodeStationItem,
-  PincodeStationResult,
-} from "@/services/pincodes/pincode-service";
+import {
+  apiClient,
+  type PincodeDetailResponse,
+  type PincodeStationItem,
+} from "@/lib/api";
+
+export type PincodeStationResult = PincodeDetailResponse;
 
 interface PincodeStationBrowserProps {
   initialResult: PincodeStationResult;
@@ -48,10 +51,7 @@ export function PincodeStationBrowser({
     setRadiusKm(newRadius);
 
     try {
-      const res = await fetch(`/api/pincodes/${pincode}?radiusKm=${newRadius}&page=1&limit=${pageSize}`);
-      if (!res.ok) throw new Error("Failed to search nearby stations.");
-      const json = await res.json();
-      const data: PincodeStationResult = json.data;
+      const data = await apiClient.getPincode(pincode, { radiusKm: newRadius, page: 1, pageSize });
 
       if (data && Array.isArray(data.stations)) {
         setStations(data.stations);
@@ -76,12 +76,7 @@ export function PincodeStationBrowser({
     const nextPage = page + 1;
 
     try {
-      const res = await fetch(
-        `/api/pincodes/${pincode}?radiusKm=${radiusKm}&page=${nextPage}&limit=${pageSize}`,
-      );
-      if (!res.ok) throw new Error("Failed to load more stations.");
-      const json = await res.json();
-      const data = json.data;
+      const data = await apiClient.getPincode(pincode, { radiusKm, page: nextPage, pageSize });
 
       if (data && Array.isArray(data.stations)) {
         setStations((prev) => {

@@ -1,127 +1,164 @@
 # FastCharger
 
-FastCharger is a mobile-first foundation for discovering EV charging stations across India.
+FastCharger is an India-wide EV charging discovery platform with a decoupled, high-performance architecture built for reliability, scalability, and technical SEO.
 
-> Find your next charging stop.
+> Find your next charging stop across India with real-time station availability, technical connector specifications, and verified geographical data.
 
-Phase 1 establishes the Next.js App Router architecture, provider boundary, PostGIS schema, validation, design tokens, placeholder routes, and test foundation. It intentionally does not include production station data or the complete discovery UI.
+---
 
-## Stack
+## 1. Architectural Boundaries
 
-- Next.js 16 + TypeScript + App Router
-- Tailwind CSS 4
-- PostgreSQL + PostGIS
-- Drizzle ORM
-- Leaflet boundary for the map phase
-- Zod validation
-- Vitest
+FastCharger enforces strict boundaries between presentation, business operations, canonical persistence, and background ingestion:
 
-## Getting started
+```text
+┌────────────────────────────────────────────────────────┐
+│                      FRONTEND                          │
+│  (Next.js App Router, React 19, Tailwind CSS 4, SSR)   │
+└───────────────────────────┬────────────────────────────┘
+                            │ HTTP REST / JSON
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                      BACKEND                           │
+│     (Node.js, Hono API, Zod Validation, Drizzle ORM)   │
+└───────────────────────────┬────────────────────────────┘
+                            │ SQL / PostGIS
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                     DATABASE                           │
+│        (PostgreSQL 16 + PostGIS Spatial Engine)        │
+└───────────────────────────▲────────────────────────────┘
+                            │ SQL / Ingestion writes
+┌───────────────────────────┴────────────────────────────┐
+│                      WORKER                            │
+│  (Provider Ingestion, Normalization, Scheduled Jobs)   │
+└────────────────────────────────────────────────────────┘
+```
 
+### Core Invariants:
+- **`frontend → HTTP → backend → database`**: The frontend communicates with the backend purely via HTTP. The frontend contains zero database drivers (`pg`, `drizzle-orm`) and zero database connection pools.
+- **Frontend Independence**: The frontend builds and renders without requiring `DATABASE_URL`.
+- **Worker Isolation**: Ingestion and synchronization workers persist canonical records directly to the database without UI dependencies.
+- **Shared Contracts**: `@fastcharger/shared` defines type contracts, Zod schemas, and client wrappers without database or framework couplings.
+
+---
+
+## 2. Directory Layout & Package Responsibilities
+
+```text
+fastcharger/
+├── frontend/             # Next.js 16 presentation, SSR/SSG pages, maps, SEO
+├── backend/              # Standalone Node.js + Hono HTTP REST API (/api/v1/)
+├── worker/               # Background data ingestion, sync jobs, and normalization
+├── database/             # PostgreSQL + PostGIS schema, Drizzle ORM, migrations
+├── shared/               # Shared domain types, Zod contracts, and API client
+├── infrastructure/       # Docker Compose setup for PostgreSQL 16 + PostGIS 3.4
+├── docs/                 # Architectural specifications and migration documentation
+├── package.json          # Root workspace configuration and scripts
+├── tsconfig.base.json    # Base TypeScript configuration
+└── README.md             # Project documentation
+```
+
+### Workspace Breakdown:
+- **`frontend/` (`@fastcharger/frontend`)**: Next.js App Router, React 19, Tailwind CSS 4, Leaflet map client, mobile-responsive UI, metadata, and JSON-LD structured data. Connects to backend via `NEXT_PUBLIC_API_URL`.
+- **`backend/` (`@fastcharger/backend`)**: High-performance HTTP server running on Hono. Handles request validation, spatial PostGIS queries (`ST_DWithin`, `ST_Distance`), city/pincode filtering, and standardized REST envelopes.
+- **`worker/` (`@fastcharger/worker`)**: Provider ingestion (Open Charge Map), normalization pipelines, and scheduled sync jobs.
+- **`database/` (`@fastcharger/database`)**: PostGIS geospatial schemas, Drizzle migrations, connection pool lifecycle, and health checks.
+- **`shared/` (`@fastcharger/shared`)**: Canonical TypeScript interfaces, validation schemas, HTTP client (`FastChargerApiClient`), and geographic reference catalogs.
+- **`infrastructure/`**: Local development Docker configuration for PostgreSQL + PostGIS.
+- **`docs/`**: Detailed architectural documentation (`docs/architecture.md`) and status tracking (`docs/migration-status.md`).
+
+---
+
+## 3. Environment Variables
+
+Create `.env.local` in the root workspace or target application:
+
+| Variable | Target | Purpose | Example |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | Backend / Database / Worker | PostgreSQL connection string with PostGIS | `postgresql://postgres:postgres@localhost:5432/fastcharger` |
+| `NEXT_PUBLIC_API_URL` | Frontend | URL of backend API for client & SSR fetch | `http://localhost:3001` |
+| `NEXT_PUBLIC_SITE_URL` | Frontend | Canonical frontend site URL | `http://localhost:3000` |
+| `PORT` | Backend | Port for standalone backend API | `3001` |
+| `OPENCHARGEMAP_API_KEY` | Worker | API key for Open Charge Map provider ingestion | (optional for local mock/cache) |
+
+---
+
+## 4. Local Development
+
+### 1. Start Infrastructure (PostgreSQL + PostGIS)
+```bash
+docker compose -f infrastructure/docker-compose.yml up -d
+```
+
+### 2. Install Dependencies
 ```bash
 npm install
-cp .env.example .env.local
+```
+
+### 3. Run Database Migrations
+```bash
+npm run db:migrate
+```
+
+### 4. Start Applications
+
+**Start All (Full Stack):**
+```bash
 npm run dev
 ```
 
-The app runs at <http://localhost:3000>.
+**Start Backend API Only:**
+```bash
+cd backend && npm run dev
+# Backend API runs at http://localhost:3001/api/v1/health
+```
 
-### Environment
+**Start Frontend Only:**
+```bash
+cd frontend && npm run dev
+# Frontend runs at http://localhost:3000
+```
 
-| Variable | Server/browser | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | Server only | PostgreSQL connection string with PostGIS enabled |
-| `OPENCHARGEMAP_API_KEY` | Server only | Open Charge Map ingestion access |
-| `NEXT_PUBLIC_SITE_URL` | Public | Canonical site URL; defaults to `http://localhost:3000` |
+---
 
-`OPENCHARGEMAP_API_KEY` is read only by the server-side provider implementation and is never imported by client components.
+## 5. Verification & Testing
 
-## Commands
+The repository includes comprehensive unit and integration tests across all tiers:
 
 ```bash
-npm run dev          # local development
-npm run build        # production build
-npm run start        # serve a production build
-npm run lint         # ESLint
-npm test             # Vitest test run
-npm run test:watch   # Vitest watch mode
-npm run db:generate  # generate Drizzle migrations
-npm run db:migrate   # apply migrations; requires DATABASE_URL and PostGIS
+# Run complete test suite (unit + integration)
+npm test
+
+# Run backend API integration tests
+npx vitest run backend/tests/api.integration.test.ts
+
+# Run frontend build verification (with DATABASE_URL unset)
+DATABASE_URL="" npm run build
+
+# Run lint checks
+npm run lint
 ```
 
-## Architecture
+---
 
-```text
-Open Charge Map
-      ↓
-services/providers + services/ingestion
-      ↓
-services/normalization
-      ↓
-PostgreSQL + PostGIS (lib/db, drizzle/)
-      ↓
-services/stations
-      ↓
-Next.js API routes
-      ↓
-Next.js frontend
-```
+## 6. Migration Status
 
-The frontend talks only to the application API. It has no dependency on Open Charge Map.
+- **Prompt 1 (Physical Application Boundaries)**: **IMPLEMENTED**  
+  Restructured into `frontend/`, `backend/`, `worker/`, `database/`, `shared/`, `infrastructure/`, `docs/`.
+- **Prompt 2 (Backend Extraction)**: **IMPLEMENTED**  
+  Standalone Hono HTTP server running at `/api/v1/` with PostGIS queries and full test suite.
+- **Prompt 3 (Frontend Decoupling)**: **IMPLEMENTED**  
+  Frontend converted to pure presentation consuming HTTP API; zero database dependencies.
+- **Prompt 4 (Release Verification & Stabilization)**: **IMPLEMENTED**  
+  Typecheck, test suites, offline build verification, and clean architecture boundaries established.
+- **Prompt 5+ (Contracts, SEO, Document Store, Ingestion)**: **PLANNED** (Not started).
 
-## Routes
+---
 
-- `/`
-- `/india`
-- `/india/[state]`
-- `/india/[state]/[city]/ev-charging-stations`
-- `/india/[state]/[city]/[pincode]/ev-charging-stations`
-- `/station/[slug]`
+## 7. Independent Deployment
 
-API placeholders:
-
-- `GET /api/stations`
-- `GET /api/stations/nearby`
-- `GET /api/stations/[id]`
-- `GET /api/cities`
-- `GET /api/cities/[slug]`
-- `GET /api/search`
-- `GET /api/pincodes/[pincode]`
-
-Collection endpoints currently return empty, typed result sets. No fake charger records are seeded.
-
-## Project conventions
-
-- `lib/config` is the central configuration boundary.
-- `lib/api/validation.ts` owns request schemas; invalid requests return a consistent error envelope.
-- Server-only provider/database code imports `server-only` and never crosses into client components.
-- `app/globals.css` contains FastCharger color tokens and reduced-motion-safe animation utilities.
-- The first migration in `drizzle/` enables PostGIS and creates the station location index without inserting data.
-
-## Graphify 3D Architecture Viewer
-
-Interactive 3D knowledge-graph explorer for FastCharger architecture, modules, communities, god nodes, and dependency paths using `graphify-out/graph.json`.
-
-1. Generate graph:
-   ```bash
-   graphify . --code-only
-   ```
-
-2. Generate community analysis:
-   ```bash
-   graphify cluster-only .
-   ```
-
-3. Open 3D viewer:
-   ```bash
-   npm run graph:3d
-   ```
-
-The viewer serves developer tooling at `http://localhost:3333/3d/` with zero production dependencies, reading `graphify-out/graph.json` dynamically with WebGL hardware acceleration, community isolation, real-time search, BFS path tracing, and god-node hub discovery.
-
-### SQL Parsing Note
-Graphify AST extraction reports `tree_sitter_sql not installed` when parsing SQL schemas. To enable tree-sitter SQL parsing support in your Graphify installation:
-```bash
-uv tool install "graphifyy[sql]"
-```
-
+Each application tier is independently deployable:
+- **Frontend**: Deployable to edge/serverless runtimes (Vercel, Cloudflare Pages, Netlify) with only `NEXT_PUBLIC_API_URL`. Does not require VPC peering or database credentials.
+- **Backend API**: Deployable to container platforms (AWS ECS, Fly.io, Railway, Google Cloud Run) inside a private VPC with `DATABASE_URL`.
+- **Worker**: Deployable as independent scheduled jobs or background containers.
+- **Database**: Managed PostgreSQL + PostGIS (AWS RDS, Supabase, Neon).

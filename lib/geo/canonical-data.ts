@@ -58,6 +58,8 @@ export const INDIAN_STATES: CanonicalState[] = [
   { name: "West Bengal", slug: "west-bengal", code: "WB", latitude: 22.9868, longitude: 87.855 },
 ];
 
+export const CANONICAL_STATES = INDIAN_STATES;
+
 /**
  * Common canonical city mappings and historical/regional aliases.
  */

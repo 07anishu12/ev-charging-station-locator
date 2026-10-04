@@ -3,15 +3,15 @@
 import { StationCard } from "@/components/stations/station-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StationCardSkeleton } from "@/components/ui/skeletons";
-import type { MockStation } from "@/lib/mock";
+import type { Station } from "@fastcharger/shared";
 
 interface StationListProps {
-  stations: MockStation[];
+  stations: Station[];
   isLoading?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
   selectedStationId?: string;
-  onSelectStation?: (station: MockStation) => void;
+  onSelectStation?: (station: Station) => void;
   className?: string;
 }
 

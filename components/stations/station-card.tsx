@@ -7,13 +7,13 @@ import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { PowerBadge } from "@/components/ui/power-badge";
 import { SavedButton } from "@/components/ui/saved-button";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { MockStation } from "@/lib/mock";
+import type { Station } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
 interface StationCardProps {
-  station: MockStation;
+  station: Station;
   className?: string;
-  onSelect?: (station: MockStation) => void;
+  onSelect?: (station: Station) => void;
   selected?: boolean;
 }
 
