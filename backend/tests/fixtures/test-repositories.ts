@@ -3,7 +3,7 @@ import type { ICityRepository } from "../../src/repositories/city.repository";
 import type { IPincodeRepository } from "../../src/repositories/pincode.repository";
 import type { ISearchRepository, SearchEntity } from "../../src/repositories/search.repository";
 import type { StationModel, NearbyStationModel, CityModel, PincodeModel, PaginatedResult } from "../../src/domain/models";
-import { distanceInKilometers } from "@fastcharger/shared";
+import { distanceInKilometers, resolveCanonicalCity } from "@fastcharger/shared";
 
 export const FIXTURE_STATIONS: StationModel[] = [
   {
@@ -162,7 +162,15 @@ export class FixtureStationRepository implements IStationRepository {
     let items = [...this.stations];
 
     if (filter.city) {
-      items = items.filter((s) => s.city.slug === filter.city?.toLowerCase());
+      const cityFilter = filter.city.toLowerCase();
+      const canonical = resolveCanonicalCity(filter.city)?.canonicalSlug ?? cityFilter;
+      items = items.filter(
+        (s) =>
+          s.city.slug === cityFilter ||
+          s.city.slug === canonical ||
+          s.district?.toLowerCase().includes(cityFilter) ||
+          s.address.toLowerCase().includes(cityFilter),
+      );
     }
     if (filter.operator) {
       items = items.filter((s) => s.operator.slug === filter.operator?.toLowerCase());
@@ -181,16 +189,18 @@ export class FixtureStationRepository implements IStationRepository {
     }
 
     const total = items.length;
-    const offset = (filter.page - 1) * filter.pageSize;
-    const paged = items.slice(offset, offset + filter.pageSize);
+    const page = filter.page || 1;
+    const pageSize = filter.pageSize || 20;
+    const offset = (page - 1) * pageSize;
+    const paged = items.slice(offset, offset + pageSize);
 
     return {
       items: paged,
       pagination: {
-        page: filter.page,
-        pageSize: filter.pageSize,
+        page,
+        pageSize,
         total,
-        totalPages: Math.max(1, Math.ceil(total / filter.pageSize)),
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
       },
     };
   }
@@ -245,7 +255,13 @@ export class FixtureCityRepository implements ICityRepository {
   }
 
   async findBySlug(slug: string): Promise<CityModel | null> {
-    return this.cities.find((c) => c.slug === slug.toLowerCase()) || null;
+    const direct = this.cities.find((c) => c.slug === slug.toLowerCase());
+    if (direct) return direct;
+    const resolved = resolveCanonicalCity(slug);
+    if (resolved) {
+      return this.cities.find((c) => c.slug === resolved.canonicalSlug) || null;
+    }
+    return null;
   }
 }
 

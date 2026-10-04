@@ -1,5 +1,6 @@
 import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { schema } from "@fastcharger/database";
+import { resolveCanonicalCity, resolveCanonicalState } from "@fastcharger/shared";
 import { getDatabase } from "../infrastructure/database";
 import type {
   StationModel,
@@ -8,7 +9,7 @@ import type {
   ConnectorModel,
 } from "../domain/models";
 
-const { stations, connectors, operators, cities, states } = schema;
+const { stations, connectors, operators, cities, states, cityAliases } = schema;
 
 export interface StationListFilter {
   page: number;
@@ -137,13 +138,55 @@ export class PostgisStationRepository implements IStationRepository {
     const whereConditions = [];
 
     if (filter.city) {
+      const cityClean = filter.city.trim().toLowerCase();
+      const canonical = resolveCanonicalCity(filter.city);
+      const canonicalSlug = canonical?.canonicalSlug ?? cityClean;
+      const canonicalName = canonical?.canonicalName ?? filter.city;
+
       whereConditions.push(
-        or(eq(cities.slug, filter.city.toLowerCase()), ilike(cities.name, filter.city)),
+        or(
+          eq(cities.slug, cityClean),
+          eq(cities.slug, canonicalSlug),
+          ilike(cities.name, filter.city),
+          ilike(cities.name, canonicalName),
+          sql`EXISTS (
+            SELECT 1 FROM ${cityAliases}
+            WHERE ${cityAliases.cityId} = ${stations.cityId}
+            AND (${eq(cityAliases.alias, cityClean)} OR ${eq(cityAliases.alias, canonicalSlug)})
+          )`,
+          and(
+            sql`${stations.cityId} IS NULL`,
+            or(
+              ilike(stations.district, `%${cityClean}%`),
+              ilike(stations.district, `%${canonicalSlug}%`),
+              ilike(stations.district, `%${canonicalName}%`),
+              ilike(stations.address, `%${cityClean}%`),
+              ilike(stations.address, `%${canonicalSlug}%`),
+              ilike(stations.address, `%${canonicalName}%`),
+              canonicalSlug === "delhi" ? sql`${stations.pincode} LIKE '110%'` : sql`false`
+            )
+          )
+        ),
       );
     }
     if (filter.state) {
+      const stateClean = filter.state.trim().toLowerCase();
+      const canonicalState = resolveCanonicalState(filter.state);
+      const stateSlug = canonicalState?.slug ?? stateClean;
+
       whereConditions.push(
-        or(eq(states.slug, filter.state.toLowerCase()), ilike(states.name, filter.state)),
+        or(
+          eq(states.slug, stateClean),
+          eq(states.slug, stateSlug),
+          ilike(states.name, filter.state),
+          and(
+            sql`${stations.stateId} IS NULL`,
+            or(
+              ilike(stations.district, `%${filter.state}%`),
+              ilike(stations.address, `%${filter.state}%`)
+            )
+          )
+        ),
       );
     }
     if (filter.operator) {

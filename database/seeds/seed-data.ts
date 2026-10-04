@@ -3,6 +3,7 @@ config({ path: [".env.local", ".env"], quiet: true });
 
 import { Pool } from "pg";
 import { CANONICAL_PINCODES } from "../../lib/geo/canonical-pincodes";
+import { CANONICAL_CITIES } from "../../lib/geo/canonical-data";
 import { MOCK_CITIES, MOCK_OPERATORS, MOCK_STATES, MOCK_STATIONS } from "../../lib/mock/data";
 
 async function seed() {
@@ -50,6 +51,22 @@ async function seed() {
     const cityRows = await pool.query(`SELECT id, slug FROM cities`);
     for (const row of cityRows.rows) {
       cityMap.set(row.slug, row.id);
+    }
+
+    // 2.5 Seed Canonical City Aliases
+    console.log("Seeding canonical city aliases...");
+    for (const canonicalCity of CANONICAL_CITIES) {
+      const cityId = cityMap.get(canonicalCity.canonicalSlug);
+      if (!cityId) continue;
+      for (const alias of canonicalCity.aliases) {
+        await pool.query(
+          `INSERT INTO city_aliases (alias, city_id, created_at, updated_at)
+           VALUES ($1, $2, NOW(), NOW())
+           ON CONFLICT (alias) DO UPDATE
+           SET city_id = EXCLUDED.city_id, updated_at = NOW();`,
+          [alias.toLowerCase(), cityId]
+        );
+      }
     }
 
     // 3. Seed Operators

@@ -59,7 +59,7 @@ export default async function CityPage({ params }: CityPageProps) {
   const { state: stateSlug, city: citySlug } = await params;
 
   const [cityData, allCities] = await Promise.all([
-    apiClient.getCity(citySlug, { page: 1, pageSize: 20 }),
+    apiClient.getCity(citySlug, { page: 1, pageSize: 100 }),
     apiClient.getCities({ pageSize: 6 }),
   ]);
 
@@ -223,7 +223,7 @@ export default async function CityPage({ params }: CityPageProps) {
 
         {/* Interactive Station Browser with Pagination */}
         <CityStationBrowser
-          initialStations={stationsInCity}
+          initialStations={stationsInCity.slice(0, 20)}
           citySlug={citySlug}
           cityName={cityName}
           totalStations={totalStations}

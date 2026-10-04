@@ -83,6 +83,7 @@ export class DrizzleSearchRepository implements ISearchRepository {
           ilike(stations.name, pattern),
           ilike(stations.address, pattern),
           ilike(stations.pincode, pattern),
+          ilike(stations.district, pattern),
         ),
       )
       .limit(limit);

@@ -8,6 +8,7 @@ import { cities, cityAliases, connectors, operators, states, stations } from "@/
 import { resolveCanonicalCity } from "@/lib/geo/canonical-data";
 import {
   getMockCityBySlug,
+  getMockNearbyStations,
   getMockOperators,
   getMockStations,
   getMockStationsByCity,
@@ -413,7 +414,131 @@ export async function listStations(query: StationListQuery): Promise<StationSear
 }
 
 export async function findNearbyStations(query: NearbyStationQuery): Promise<StationSearchResult> {
-  return listStations(query);
+  const page = Math.max(1, query.page || 1);
+  const pageSize = Math.min(100, Math.max(1, query.pageSize || 20));
+  const radiusKm = query.radiusKm || 25;
+
+  if (appConfig.database.configured) {
+    try {
+      const db = getDb();
+      const targetPoint = sql`ST_SetSRID(ST_MakePoint(${query.longitude}, ${query.latitude}), 4326)::geography`;
+      const distanceKmExpr = sql<number>`ROUND((ST_Distance(${stations.location}, ${targetPoint}) / 1000.0)::numeric, 2)`;
+      const withinRadiusExpr = sql`ST_DWithin(${stations.location}, ${targetPoint}, ${radiusKm * 1000})`;
+
+      const whereConditions = [withinRadiusExpr];
+      if (query.minPowerKw) {
+        whereConditions.push(
+          sql`EXISTS (SELECT 1 FROM ${connectors} WHERE ${connectors.stationId} = ${stations.id} AND ${connectors.powerKw} >= ${query.minPowerKw})`,
+        );
+      }
+      if (query.connectorType) {
+        whereConditions.push(
+          sql`EXISTS (SELECT 1 FROM ${connectors} WHERE ${connectors.stationId} = ${stations.id} AND ${connectors.normalizedType} = ${query.connectorType.toLowerCase()})`,
+        );
+      }
+
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(stations)
+        .where(sql.join(whereConditions, sql` AND `));
+      const total = Number(countResult[0]?.count || 0);
+
+      const offset = (page - 1) * pageSize;
+      const rows = await db
+        .select({
+          id: stations.id,
+          slug: stations.slug,
+          name: stations.name,
+          latitude: stations.latitude,
+          longitude: stations.longitude,
+          address: stations.address,
+          status: stations.status,
+          distanceKm: distanceKmExpr,
+        })
+        .from(stations)
+        .where(sql.join(whereConditions, sql` AND `))
+        .orderBy(sql`${distanceKmExpr} ASC`)
+        .limit(pageSize)
+        .offset(offset);
+
+      const stationIds = rows.map((r) => r.id);
+      const connRows =
+        stationIds.length > 0
+          ? await db.select().from(connectors).where(inArray(connectors.stationId, stationIds))
+          : [];
+
+      const items: StationSummary[] = rows.map((st) => ({
+        id: st.id,
+        slug: st.slug,
+        name: st.name,
+        latitude: st.latitude,
+        longitude: st.longitude,
+        address: st.address,
+        status: (st.status === "Operational" ? "available" : "unknown") as any,
+        distanceKm: Number(st.distanceKm),
+        connectors: connRows
+          .filter((c) => c.stationId === st.id)
+          .map((c) => ({
+            type: c.connectionType,
+            powerKw: c.powerKw ? Number(c.powerKw) : undefined,
+            status: (c.status as any) || "available",
+          })),
+      }));
+
+      return {
+        items,
+        pagination: {
+          page,
+          pageSize,
+          total,
+        },
+      };
+    } catch {
+      // Fall through to mock spatial
+    }
+  }
+
+  // Fallback to spatial in-memory proximity calculation
+  const allNearby = getMockNearbyStations(query.latitude, query.longitude, radiusKm);
+  let filtered = allNearby;
+  if (query.minPowerKw) {
+    filtered = filtered.filter((s) => s.fastestPowerKw >= query.minPowerKw!);
+  }
+  if (query.connectorType) {
+    const t = query.connectorType.toLowerCase();
+    filtered = filtered.filter((s) =>
+      s.connectors.some((c) => c.normalizedType === t || c.type.toLowerCase().includes(t)),
+    );
+  }
+
+  const total = filtered.length;
+  const offset = (page - 1) * pageSize;
+  const sliced = filtered.slice(offset, offset + pageSize);
+
+  const items: StationSummary[] = sliced.map((st) => ({
+    id: st.id,
+    slug: st.slug,
+    name: st.name,
+    latitude: st.latitude,
+    longitude: st.longitude,
+    address: st.address,
+    status: st.operationalStatus ?? "available",
+    distanceKm: st.distanceKm,
+    connectors: st.connectors.map((c) => ({
+      type: c.type,
+      powerKw: c.powerKw ?? undefined,
+      status: (c.status as any) ?? "available",
+    })),
+  }));
+
+  return {
+    items,
+    pagination: {
+      page,
+      pageSize,
+      total,
+    },
+  };
 }
 
 export async function getStation(idOrSlug: string): Promise<MockStation | null> {

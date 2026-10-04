@@ -38,7 +38,15 @@ import {
   syncLogs,
   validateIndianPincode,
 } from "@fastcharger/database";
-import { createSlug, type ChargingDataProvider, type ProviderStation } from "@fastcharger/shared";
+import {
+  CANONICAL_CITIES,
+  CANONICAL_PINCODES,
+  createSlug,
+  resolveCanonicalCity,
+  resolveCanonicalState,
+  type ChargingDataProvider,
+  type ProviderStation,
+} from "@fastcharger/shared";
 import { getRawProviderArchivalService, RawProviderArchivalService } from "@fastcharger/storage";
 import { getCacheInvalidator, type CacheInvalidator } from "../cache";
 import { createChargingDataProvider, type ProviderAdapter } from "../providers";
@@ -340,10 +348,23 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
     for (const a of existingAliases) {
       cityMap.set(a.alias.toLowerCase(), a.cityId);
     }
+    // Also include canonical aliases from CANONICAL_CITIES for robust mapping
+    for (const cc of CANONICAL_CITIES) {
+      const canonicalCityId = cityMap.get(cc.canonicalSlug) ?? cityMap.get(cc.canonicalName.toLowerCase());
+      if (canonicalCityId) {
+        for (const alias of cc.aliases) {
+          if (!cityMap.has(alias.toLowerCase())) {
+            cityMap.set(alias.toLowerCase(), canonicalCityId);
+          }
+        }
+      }
+    }
 
     const operatorMap = new Map<string, string>();
+    const operatorIdToSlugMap = new Map<string, string>();
     for (const op of existingOperators) {
       operatorMap.set(op.slug, op.id);
+      operatorIdToSlugMap.set(op.id, op.slug);
     }
 
     // Multi-tier Station Resolution Maps
@@ -373,6 +394,7 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
         name: st.name,
         latitude: st.latitude,
         longitude: st.longitude,
+        operatorSlug: st.operatorId ? operatorIdToSlugMap.get(st.operatorId) : undefined,
       });
     }
 
@@ -476,15 +498,61 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
             const cleanState = station.state.trim().toLowerCase();
             const slugState = createSlug(station.state);
             stateId = stateMap.get(cleanState) ?? stateMap.get(slugState) ?? null;
+            if (!stateId) {
+              const canonicalState = resolveCanonicalState(station.state);
+              if (canonicalState) {
+                stateId = stateMap.get(canonicalState.slug) ?? stateMap.get(canonicalState.name.toLowerCase()) ?? null;
+              }
+            }
             if (slugState) affectedStateSlugs.add(slugState);
           }
 
           let cityId: string | null = null;
+          let matchedCitySlug: string | null = null;
+
           if (station.city) {
             const cleanCity = station.city.trim().toLowerCase();
             const slugCity = createSlug(station.city);
             cityId = cityMap.get(cleanCity) ?? cityMap.get(slugCity) ?? null;
-            if (slugCity) affectedCitySlugs.add(slugCity);
+            if (cityId) matchedCitySlug = slugCity;
+          }
+
+          // Fallback 1: Resolve canonical city using full address, town, and state
+          if (!cityId) {
+            const resolvedCity = resolveCanonicalCity(
+              station.city,
+              station.address,
+              station.state,
+              { allowFallback: true },
+            );
+            if (resolvedCity) {
+              cityId =
+                cityMap.get(resolvedCity.canonicalSlug) ??
+                cityMap.get(resolvedCity.canonicalName.toLowerCase()) ??
+                null;
+              if (cityId) matchedCitySlug = resolvedCity.canonicalSlug;
+            }
+          }
+
+          // Fallback 2: Resolve by 6-digit Indian PIN code
+          if (!cityId && cleanPincode && (CANONICAL_PINCODES as Record<string, any>)[cleanPincode]) {
+            const pinInfo = (CANONICAL_PINCODES as Record<string, any>)[cleanPincode];
+            cityId = cityMap.get(pinInfo.citySlug) ?? null;
+            if (cityId) matchedCitySlug = pinInfo.citySlug;
+            if (!stateId && pinInfo.stateSlug) {
+              stateId = stateMap.get(pinInfo.stateSlug) ?? null;
+            }
+          }
+
+          // Fallback 3: Resolve Delhi NCT prefix (110xxx)
+          if (!cityId && cleanPincode?.startsWith("110")) {
+            cityId = cityMap.get("delhi") ?? null;
+            if (cityId) matchedCitySlug = "delhi";
+            if (!stateId) stateId = stateMap.get("delhi") ?? null;
+          }
+
+          if (matchedCitySlug) {
+            affectedCitySlugs.add(matchedCitySlug);
           }
 
           // Operator Upsert
