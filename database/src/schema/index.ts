@@ -38,6 +38,30 @@ export const states = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Districts
+// ---------------------------------------------------------------------------
+export const districts = pgTable(
+  "districts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+    stateId: uuid("state_id")
+      .notNull()
+      .references(() => states.id, { onDelete: "cascade" }),
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("districts_state_id_idx").on(table.stateId),
+    index("districts_slug_idx").on(table.slug),
+    index("districts_name_idx").on(table.name),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // Cities
 // ---------------------------------------------------------------------------
 export const cities = pgTable(
@@ -79,6 +103,36 @@ export const cityAliases = pgTable(
     index("city_aliases_alias_idx").on(table.alias),
     index("city_aliases_city_id_idx").on(table.cityId),
     uniqueIndex("city_aliases_alias_city_unique_idx").on(table.alias, table.cityId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Localities (Sub-city geographic areas)
+// ---------------------------------------------------------------------------
+export const localities = pgTable(
+  "localities",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    cityId: uuid("city_id")
+      .notNull()
+      .references(() => cities.id, { onDelete: "cascade" }),
+    stateId: uuid("state_id").references(() => states.id, { onDelete: "set null" }),
+    districtId: uuid("district_id").references(() => districts.id, { onDelete: "set null" }),
+    pincode: varchar("pincode", { length: 6 }),
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
+    location: geographyPoint("location"),
+    stationCount: integer("station_count").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("localities_city_id_idx").on(table.cityId),
+    index("localities_slug_idx").on(table.slug),
+    uniqueIndex("localities_city_slug_unique_idx").on(table.cityId, table.slug),
+    index("localities_location_gist_idx").using("gist", table.location),
   ],
 );
 
@@ -141,6 +195,7 @@ export const stations = pgTable(
     longitude: doublePrecision("longitude").notNull(),
     location: geographyPoint("location").notNull(),
     status: text("status").default("unknown").notNull(),
+    verificationStatus: text("verification_status").default("unverified").notNull(),
     usageType: text("usage_type"),
     dataProvider: text("data_provider").default("Open Charge Map").notNull(),
     dataLicense: text("data_license"),
@@ -157,7 +212,31 @@ export const stations = pgTable(
     index("stations_state_id_idx").on(table.stateId),
     index("stations_operator_id_idx").on(table.operatorId),
     index("stations_status_idx").on(table.status),
+    index("stations_verification_status_idx").on(table.verificationStatus),
     index("stations_pincode_idx").on(table.pincode),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Station Provider Mappings (Multi-provider upstream identity mappings)
+// ---------------------------------------------------------------------------
+export const stationProviderMappings = pgTable(
+  "station_provider_mappings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    stationId: uuid("station_id")
+      .notNull()
+      .references(() => stations.id, { onDelete: "cascade" }),
+    providerName: text("provider_name").notNull(),
+    providerStationId: text("provider_station_id").notNull(),
+    rawData: jsonb("raw_data"),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("station_provider_unique_idx").on(table.providerName, table.providerStationId),
+    index("station_provider_station_id_idx").on(table.stationId),
   ],
 );
 
@@ -245,9 +324,18 @@ export const dataQualityIssues = pgTable(
 // Drizzle Relations
 // ---------------------------------------------------------------------------
 export const statesRelations = relations(states, ({ many }) => ({
+  districts: many(districts),
   cities: many(cities),
   stations: many(stations),
   pincodes: many(pincodes),
+}));
+
+export const districtsRelations = relations(districts, ({ one, many }) => ({
+  state: one(states, {
+    fields: [districts.stateId],
+    references: [states.id],
+  }),
+  localities: many(localities),
 }));
 
 export const citiesRelations = relations(cities, ({ one, many }) => ({
@@ -256,6 +344,7 @@ export const citiesRelations = relations(cities, ({ one, many }) => ({
     references: [states.id],
   }),
   aliases: many(cityAliases),
+  localities: many(localities),
   stations: many(stations),
   pincodes: many(pincodes),
 }));
@@ -264,6 +353,21 @@ export const cityAliasesRelations = relations(cityAliases, ({ one }) => ({
   city: one(cities, {
     fields: [cityAliases.cityId],
     references: [cities.id],
+  }),
+}));
+
+export const localitiesRelations = relations(localities, ({ one }) => ({
+  city: one(cities, {
+    fields: [localities.cityId],
+    references: [cities.id],
+  }),
+  state: one(states, {
+    fields: [localities.stateId],
+    references: [states.id],
+  }),
+  district: one(districts, {
+    fields: [localities.districtId],
+    references: [districts.id],
   }),
 }));
 
@@ -296,7 +400,15 @@ export const stationsRelations = relations(stations, ({ one, many }) => ({
     references: [states.id],
   }),
   connectors: many(connectors),
+  providerMappings: many(stationProviderMappings),
   qualityIssues: many(dataQualityIssues),
+}));
+
+export const stationProviderMappingsRelations = relations(stationProviderMappings, ({ one }) => ({
+  station: one(stations, {
+    fields: [stationProviderMappings.stationId],
+    references: [stations.id],
+  }),
 }));
 
 export const connectorsRelations = relations(connectors, ({ one }) => ({

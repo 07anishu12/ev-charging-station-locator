@@ -10,12 +10,18 @@ import {
   connectors,
   connectorsRelations,
   dataQualityIssues,
+  districts,
+  districtsRelations,
+  localities,
+  localitiesRelations,
   operators,
   pincodes,
   states,
   statesRelations,
   stations,
   stationsRelations,
+  stationProviderMappings,
+  stationProviderMappingsRelations,
   syncLogs,
 } from "@/lib/db/schema";
 import { createSlug } from "@/lib/search/slug";
@@ -58,6 +64,15 @@ describe("database relational schema definition", () => {
     expect(states.updatedAt).toBeDefined();
   });
 
+  it("defines districts table with state foreign key and geographic coordinates", () => {
+    expect(districts.id).toBeDefined();
+    expect(districts.name).toBeDefined();
+    expect(districts.slug).toBeDefined();
+    expect(districts.stateId).toBeDefined();
+    expect(districts.latitude).toBeDefined();
+    expect(districts.longitude).toBeDefined();
+  });
+
   it("defines cities table with state foreign key and station count", () => {
     expect(cities.id).toBeDefined();
     expect(cities.name).toBeDefined();
@@ -70,6 +85,18 @@ describe("database relational schema definition", () => {
     expect(cityAliases.id).toBeDefined();
     expect(cityAliases.alias).toBeDefined();
     expect(cityAliases.cityId).toBeDefined();
+  });
+
+  it("defines localities table with city/district references, spatial location, and station count", () => {
+    expect(localities.id).toBeDefined();
+    expect(localities.name).toBeDefined();
+    expect(localities.slug).toBeDefined();
+    expect(localities.cityId).toBeDefined();
+    expect(localities.stateId).toBeDefined();
+    expect(localities.districtId).toBeDefined();
+    expect(localities.pincode).toBeDefined();
+    expect(localities.location).toBeDefined();
+    expect(localities.stationCount).toBeDefined();
   });
 
   it("defines pincodes table with 6-digit primary key and city/state relations", () => {
@@ -96,10 +123,20 @@ describe("database relational schema definition", () => {
     expect(stations.longitude).toBeDefined();
     expect(stations.location).toBeDefined();
     expect(stations.status).toBeDefined();
+    expect(stations.verificationStatus).toBeDefined();
     expect(stations.usageType).toBeDefined();
     expect(stations.dataProvider).toBeDefined();
     expect(stations.ocmUrl).toBeDefined();
     expect(stations.lastSyncedAt).toBeDefined();
+  });
+
+  it("defines station_provider_mappings table for multi-provider upstream identity", () => {
+    expect(stationProviderMappings.id).toBeDefined();
+    expect(stationProviderMappings.stationId).toBeDefined();
+    expect(stationProviderMappings.providerName).toBeDefined();
+    expect(stationProviderMappings.providerStationId).toBeDefined();
+    expect(stationProviderMappings.rawData).toBeDefined();
+    expect(stationProviderMappings.lastSyncedAt).toBeDefined();
   });
 
   it("defines connectors table with power decimal precision and status", () => {
@@ -135,10 +172,13 @@ describe("database relational schema definition", () => {
 });
 
 describe("schema relationship definitions", () => {
-  it("defines relationships between states, cities, stations, operators, and connectors", () => {
+  it("defines relationships between states, districts, cities, localities, stations, operators, connectors, and provider mappings", () => {
     expect(statesRelations).toBeDefined();
+    expect(districtsRelations).toBeDefined();
     expect(citiesRelations).toBeDefined();
+    expect(localitiesRelations).toBeDefined();
     expect(stationsRelations).toBeDefined();
+    expect(stationProviderMappingsRelations).toBeDefined();
     expect(connectorsRelations).toBeDefined();
   });
 });
@@ -149,7 +189,7 @@ describe("migration history verification", () => {
     expect(fs.existsSync(journalPath)).toBe(true);
 
     const journal = JSON.parse(fs.readFileSync(journalPath, "utf-8"));
-    expect(journal.entries.length).toBeGreaterThanOrEqual(2);
+    expect(journal.entries.length).toBeGreaterThanOrEqual(4);
 
     const migration0001 = fs.readFileSync(
       path.resolve(process.cwd(), `drizzle/${journal.entries[1].tag}.sql`),
@@ -164,5 +204,15 @@ describe("migration history verification", () => {
     expect(migration0001).toContain('CREATE TABLE "sync_logs"');
     expect(migration0001).toContain('CREATE TABLE "data_quality_issues"');
     expect(migration0001).toContain('ALTER TABLE "stations" ADD COLUMN "ocm_id"');
+
+    const migration0003 = fs.readFileSync(
+      path.resolve(process.cwd(), `drizzle/${journal.entries[3].tag}.sql`),
+      "utf-8",
+    );
+    expect(migration0003).toContain('CREATE TABLE IF NOT EXISTS "districts"');
+    expect(migration0003).toContain('CREATE TABLE IF NOT EXISTS "localities"');
+    expect(migration0003).toContain('CREATE TABLE IF NOT EXISTS "station_provider_mappings"');
+    expect(migration0003).toContain('ALTER TABLE "stations" ADD COLUMN IF NOT EXISTS "verification_status"');
+    expect(migration0003).toContain('"localities_location_gist_idx"');
   });
 });

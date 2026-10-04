@@ -65,11 +65,54 @@ fastcharger/
 - **`database/` (`@fastcharger/database`)**: PostGIS geospatial schemas, Drizzle migrations, connection pool lifecycle, and health checks.
 - **`shared/` (`@fastcharger/shared`)**: Canonical TypeScript interfaces, validation schemas, HTTP client (`FastChargerApiClient`), and geographic reference catalogs.
 - **`infrastructure/`**: Local development Docker configuration for PostgreSQL + PostGIS.
-- **`docs/`**: Detailed architectural documentation (`docs/architecture.md`) and status tracking (`docs/migration-status.md`).
+- **`docs/`**: Detailed architectural documentation (`docs/architecture.md`), database specifications (`docs/database.md`), and status tracking (`docs/migration-status.md`).
 
 ---
 
-## 3. Environment Variables
+## 3. Authoritative Source of Truth: PostgreSQL + PostGIS
+
+FastCharger strictly separates data authority:
+
+> **POSTGRESQL = canonical business data**  
+> **POSTGIS = canonical geographic intelligence**
+
+- **PostgreSQL** is authoritative for:
+  - `states`, `districts`, `cities`, `localities`, `pincodes`, `city_aliases`
+  - `operators`, `stations`, `connectors`
+  - `station status`, `verification_status`
+  - Upstream provider cross-references (`station_provider_mappings`)
+  - Verification state & data quality audit trail (`data_quality_issues`)
+  - Synchronisation logs (`sync_logs`) and immutable timestamps
+- **PostGIS** (`geography(Point, 4326)`) is authoritative for:
+  - Geographic coordinates (latitude, longitude)
+  - Geodesic spatial distance metrics
+  - Radius-based bounding and filtering (`ST_DWithin`)
+  - Sub-millisecond indexed spatial search (`stations_location_gist_idx`, `localities_location_gist_idx`)
+- **Non-Authoritative Layers**:
+  - Redis: transient cache only; volatile.
+  - MongoDB: raw telemetry and payload archival only.
+  - Object storage: static media and photos only.
+  - Frontend state: ephemeral UI render cache only.
+  - Provider API responses: untrusted raw external inputs.
+
+### Station Identity & Multi-Provider De-duplication
+Repeated synchronizations across providers (OCM, Kazam, Statiq) never create duplicate stations:
+1. **Provider Mapping Match**: Known `(provider_name, provider_station_id)` tuples resolve directly to canonical station records.
+2. **Spatial Proximity + Operator/Name Fingerprint**: Stations within a 25-meter radius sharing operator slug or name similarity are reconciled as the same physical charging site.
+3. **Deterministic Canonical Slugs**: Generated deterministically using base name, locality/city anchor, and provider ID or coordinate grid hash.
+
+### Data Quality & Anomaly Tracking
+Invalid provider data is never silently dropped. Anomalies are recorded in `data_quality_issues`:
+- `invalid_coordinates`: Coordinates outside standard boundaries or Null Island `(0,0)`.
+- `invalid_pincode`: Malformed non-6-digit PIN codes.
+- `missing_city` & `ambiguous_city`: Unresolved or conflicting city assignments.
+- `duplicate_provider_record`: Repeated upstream provider records.
+- `malformed_connector`: Missing connector type or invalid negative power rating.
+- `invalid_status`: Unrecognized operational states.
+
+---
+
+## 4. Environment Variables
 
 Create `.env.local` in the root workspace or target application:
 
@@ -83,7 +126,7 @@ Create `.env.local` in the root workspace or target application:
 
 ---
 
-## 4. Local Development
+## 5. Local Development
 
 ### 1. Start Infrastructure (PostgreSQL + PostGIS)
 ```bash
@@ -121,9 +164,7 @@ cd frontend && npm run dev
 
 ---
 
----
-
-## 5. API Architecture & Versioned Contracts (v1)
+## 6. API Architecture & Versioned Contracts (v1)
 
 FastCharger enforces strict, versioned API contracts between frontend and backend to guarantee independent deployment.
 
@@ -161,24 +202,25 @@ FastCharger enforces strict, versioned API contracts between frontend and backen
 - `GET /api/v1/pincodes/:pincode`: 6-digit postal code location and nearby charging hubs
 - `GET /api/v1/search`: Unified search across stations, cities, operators, and PIN codes
 
-**Planned (Future Phases):**
-- `POST /api/v1/stations`: Ingestion webhook / CPO station push
-- `POST /api/v1/stations/:slug/feedback`: Community reviews and plug status check-ins
-- `GET /api/v1/routes/corridor`: Highway corridor charging stops planner
-
 ### Backward Compatibility Policy
 - **Allowed within v1**: Adding optional response fields, adding optional query parameters, introducing new endpoints under `/api/v1/`.
 - **Breaking (Requires `/api/v2/`)**: Removing fields, renaming fields, altering types/units, modifying error/pagination envelope shapes.
 
 ---
 
-## 6. Verification & Testing
+## 7. Verification & Testing
 
-The repository includes comprehensive unit, integration, and contract tests across all tiers:
+The repository includes comprehensive unit, integration, spatial, and contract tests across all tiers:
 
 ```bash
-# Run complete test suite (17 test files, 159 tests)
+# Run complete test suite (18 test files, 181 tests)
 npm test
+
+# Run canonical database ownership tests
+npx vitest run tests/canonical-data-ownership.test.ts
+
+# Run database schema & migration tests
+npx vitest run tests/schema.test.ts
 
 # Run API contract test suite
 npx vitest run tests/contracts.test.ts
@@ -195,7 +237,7 @@ npm run lint
 
 ---
 
-## 7. Migration Status
+## 8. Migration Status
 
 - **Prompt 1 (Physical Application Boundaries)**: **IMPLEMENTED**  
   Restructured into `frontend/`, `backend/`, `worker/`, `database/`, `shared/`, `infrastructure/`, `docs/`.
@@ -207,15 +249,15 @@ npm run lint
   Typecheck, test suites, offline build verification, and clean architecture boundaries established.
 - **Prompt 5 (API Contract System)**: **COMPLETE**  
   Versioned `/api/v1/` contract system established under `shared/contracts/`, shared API client upgraded with validation, backward compatibility policy formalized, and 18 dedicated contract tests added.
-- **Prompt 6+ (SEO, Document Store, Ingestion)**: **PLANNED** (Not started).
+- **Prompt 6 — COMPLETE**: **COMPLETE**  
+  **PostgreSQL + PostGIS established as canonical authoritative source of truth**. Added canonical tables for `districts`, `localities`, and `station_provider_mappings`. Added `verification_status` to `stations`. Implemented deterministic multi-attribute station identity and de-duplication resolution (`database/src/identity.ts`). Formalized comprehensive anomaly tracking in `data_quality_issues` (`database/src/quality.ts`). Created migration `0003_canonical_postgis_entities.sql` with verified rollback procedures. 18 test suites and 181 tests passing.
 
 ---
 
-## 8. Independent Deployment
+## 9. Independent Deployment
 
 Each application tier is independently deployable:
 - **Frontend**: Deployable to edge/serverless runtimes (Vercel, Cloudflare Pages, Netlify) with only `NEXT_PUBLIC_API_URL`. Does not require VPC peering or database credentials.
 - **Backend API**: Deployable to container platforms (AWS ECS, Fly.io, Railway, Google Cloud Run) inside a private VPC with `DATABASE_URL`.
 - **Worker**: Deployable as independent scheduled jobs or background containers.
 - **Database**: Managed PostgreSQL + PostGIS (AWS RDS, Supabase, Neon).
-
