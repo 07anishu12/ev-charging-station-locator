@@ -453,10 +453,13 @@ export class PostgisStationRepository implements IStationRepository {
       0,
     );
 
+    const validConnectorTypes = new Set(["ccs2", "type2", "chademo", "gbt", "wall", "type1", "other"]);
     const mappedConnectors: ConnectorModel[] = connectorRows.map((c) => ({
       id: c.id,
       type: c.connectionType,
-      normalizedType: c.normalizedType,
+      normalizedType: (validConnectorTypes.has(c.normalizedType as string)
+        ? c.normalizedType
+        : "other") as ConnectorModel["normalizedType"],
       powerKw: c.powerKw ? Number(c.powerKw) : 50,
       voltage: c.voltage ?? undefined,
       amps: c.amps ?? undefined,

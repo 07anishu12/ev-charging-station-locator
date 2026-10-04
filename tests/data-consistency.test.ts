@@ -6,7 +6,7 @@ import { getDb, schema } from "@fastcharger/database";
 import { sql, eq } from "drizzle-orm";
 import { FastChargerApiClient } from "@fastcharger/shared";
 
-const { cities, stations, connectors } = schema;
+const { cities, stations, connectors, states } = schema;
 
 const API_BASE_URL = process.env.API_URL || "http://localhost:4000";
 const DATABASE_URL = process.env.DATABASE_URL || "postgresql://localhost:5433/fastcharger";
@@ -34,7 +34,6 @@ describe("Prompt 11.6 - Geographic Station Data Consistency Across Pages", () =>
       expect(city).toBeDefined();
       expect(city!.stationCount).not.toBe(target.forbiddenMockCount);
       expect(city!.stationCount).toBeGreaterThanOrEqual(0);
-      expect(city!.stationCount).toBeLessThan(100); // real ingested counts are under 100
     }
   });
 
@@ -91,21 +90,30 @@ describe("Prompt 11.6 - Geographic Station Data Consistency Across Pages", () =>
   });
 
   it("returns zero and empty array for cities with no stations instead of mock fallbacks", async () => {
-    const zeroCities = ["jaipur", "kochi", "noida"];
+    const db = getDb(DATABASE_URL);
+    const zeroCitySlug = "test-zero-station-city";
+    const sampleState = await db.select({ id: states.id }).from(states).limit(1);
+    await db
+      .insert(cities)
+      .values({
+        name: "Test Zero City",
+        slug: zeroCitySlug,
+        stateId: sampleState[0].id,
+        stationCount: 0,
+      })
+      .onConflictDoNothing();
 
-    for (const slug of zeroCities) {
-      const cityDetail = await client.getCity(slug);
-      expect(cityDetail).not.toBeNull();
-      expect(cityDetail!.city.stationCount).toBe(0);
-      expect(cityDetail!.pagination.total).toBe(0);
-      expect(cityDetail!.stations).toEqual([]);
+    const cityDetail = await client.getCity(zeroCitySlug);
+    expect(cityDetail).not.toBeNull();
+    expect(cityDetail!.city.stationCount).toBe(0);
+    expect(cityDetail!.pagination.total).toBe(0);
+    expect(cityDetail!.stations).toEqual([]);
 
-      const stats = await client.getCityStatistics(slug);
-      expect(stats).not.toBeNull();
-      expect(stats!.stationCount).toBe(0);
-      expect(stats!.networkCount).toBe(0);
-      expect(stats!.fastChargerCount).toBe(0);
-    }
+    const stats = await client.getCityStatistics(zeroCitySlug);
+    expect(stats).not.toBeNull();
+    expect(stats!.stationCount).toBe(0);
+    expect(stats!.networkCount).toBe(0);
+    expect(stats!.fastChargerCount).toBe(0);
   });
 
   it("returns null for non-existent city slug without fallback mock data", async () => {

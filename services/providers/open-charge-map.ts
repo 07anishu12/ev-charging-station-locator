@@ -14,9 +14,10 @@ export class OpenChargeMapProvider implements ChargingDataProvider {
 
   async fetchStations(query: ProviderStationQuery = {}): Promise<ProviderStation[]> {
     this.assertConfigured();
+    const max = query.maxResults ?? query.pageSize ?? 10000;
     const response = await this.request({
       ...query,
-      maxresults: query.maxResults ?? query.pageSize ?? appConfig.pagination.defaultPageSize,
+      maxresults: Math.min(max, 10000),
     });
     const payload: unknown = await response.json();
     if (!Array.isArray(payload)) return [];
@@ -57,7 +58,13 @@ export class OpenChargeMapProvider implements ChargingDataProvider {
     url.searchParams.set("compact", "false");
     url.searchParams.set("verbose", "false");
     for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined) url.searchParams.set(key, String(value));
+      if (value !== undefined && key !== "offset" && key !== "maxResults" && key !== "maxresults") {
+        url.searchParams.set(key, String(value));
+      }
+    }
+    const maxResultsParam = query.maxresults ?? query.maxResults;
+    if (maxResultsParam !== undefined) {
+      url.searchParams.set("maxresults", String(maxResultsParam));
     }
     url.searchParams.set("key", this.apiKey ?? "");
 

@@ -23,7 +23,6 @@ export function normalizeConnectorType(rawTitle?: string | null): string {
   if (lower.includes("chademo")) return "chademo";
   if (lower.includes("gb/t") || lower.includes("gbt") || lower.includes("gb-t")) return "gbt";
   if (lower.includes("type 1") || lower.includes("type-1") || lower.includes("j1772")) return "type1";
-  if (lower.includes("tesla")) return "tesla";
   if (
     lower.includes("wall") ||
     lower.includes("bs 1363") ||

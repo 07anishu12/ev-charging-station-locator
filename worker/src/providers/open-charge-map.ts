@@ -37,38 +37,29 @@ export class OpenChargeMapProvider implements ProviderAdapter {
   }
 
   /**
-   * Fetches raw JSON payload from Open Charge Map API with bounded exponential backoff retries and pagination.
+   * Fetches raw JSON payload from Open Charge Map API with bounded exponential backoff retries.
+   * Open Charge Map allows up to 10,000 results in a single request.
+   * Note: The OCM API does not support the 'offset' parameter (passing offset triggers a 100-item clamp).
    */
   async fetchRawStations(query: ProviderStationQuery = {}): Promise<RawProviderPayload<unknown[]>> {
     this.assertConfigured();
 
-    const max = query.maxResults ?? query.pageSize ?? 5000;
-    const batchSize = Math.min(100, max);
-    const allItems: unknown[] = [];
-    let currentOffset = 0;
+    const max = query.maxResults ?? query.pageSize ?? 10000;
+    const fetchCount = Math.min(max, 10000);
 
-    while (allItems.length < max) {
-      const fetchCount = Math.min(batchSize, max - allItems.length);
-      const batch = await retryWithBackoff(async () => {
-        const response = await this.request({
-          ...query,
-          maxresults: fetchCount,
-          offset: currentOffset,
-        });
+    const allItems = await retryWithBackoff(async () => {
+      const response = await this.request({
+        ...query,
+        maxresults: fetchCount,
+      });
 
-        const payload: unknown = await response.json();
-        if (!Array.isArray(payload)) {
-          throw new PermanentError("Open Charge Map returned non-array payload.");
-        }
+      const payload: unknown = await response.json();
+      if (!Array.isArray(payload)) {
+        throw new PermanentError("Open Charge Map returned non-array payload.");
+      }
 
-        return payload;
-      }, this.retryOptions);
-
-      if (batch.length === 0) break;
-      allItems.push(...batch);
-      currentOffset += batch.length;
-      if (batch.length < fetchCount) break;
-    }
+      return payload;
+    }, this.retryOptions);
 
     return {
       provider: this.providerName,
@@ -172,7 +163,13 @@ export class OpenChargeMapProvider implements ProviderAdapter {
     url.searchParams.set("compact", "false");
     url.searchParams.set("verbose", "false");
     for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined) url.searchParams.set(key, String(value));
+      if (value !== undefined && key !== "offset" && key !== "maxResults" && key !== "maxresults") {
+        url.searchParams.set(key, String(value));
+      }
+    }
+    const maxResultsParam = query.maxresults ?? query.maxResults;
+    if (maxResultsParam !== undefined) {
+      url.searchParams.set("maxresults", String(maxResultsParam));
     }
     url.searchParams.set("key", this.apiKey ?? "");
 

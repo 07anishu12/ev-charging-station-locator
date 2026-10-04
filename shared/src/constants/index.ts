@@ -1,4 +1,4 @@
-export const CONNECTOR_TYPES = ["ccs2", "type2", "chademo", "gbt", "wall", "other"] as const;
+export const CONNECTOR_TYPES = ["ccs2", "type2", "chademo", "gbt", "wall", "type1", "other"] as const;
 export type ConnectorType = (typeof CONNECTOR_TYPES)[number];
 
 export const STATION_STATUSES = ["Operational", "Not Operational", "Planned", "Unknown"] as const;

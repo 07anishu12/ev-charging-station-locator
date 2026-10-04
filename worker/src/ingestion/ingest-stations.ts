@@ -216,8 +216,8 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
 
     if (isProviderAdapter(provider)) {
       const rawResult = await provider.fetchRawStations({
-        maxResults: options.maxResults ?? 5000,
-        pageSize: options.pageSize ?? 5000,
+        maxResults: options.maxResults ?? 10000,
+        pageSize: options.pageSize ?? 10000,
       });
       rawPayloadItems = Array.isArray(rawResult.data) ? rawResult.data : [];
       received = rawPayloadItems.length;
@@ -236,8 +236,8 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
     } else {
       // Backwards-compatible path for standard ChargingDataProvider
       candidateStations = await provider.fetchStations({
-        maxResults: options.maxResults ?? 5000,
-        pageSize: options.pageSize ?? 5000,
+        maxResults: options.maxResults ?? 10000,
+        pageSize: options.pageSize ?? 10000,
       });
       rawPayloadItems = candidateStations;
       received = candidateStations.length;

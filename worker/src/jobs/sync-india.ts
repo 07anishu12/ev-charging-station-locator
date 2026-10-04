@@ -21,7 +21,7 @@ async function main() {
   try {
     console.log(`[INGESTION] Starting FastCharger India Ingestion${isDryRun ? " (DRY RUN)" : ""}...`);
     const result = await ingestStations({
-      maxResults: isDryRun ? 10 : 5000,
+      maxResults: isDryRun ? 10 : 10000,
     });
 
     console.log("\n==================================================");

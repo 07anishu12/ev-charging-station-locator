@@ -106,8 +106,8 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
   try {
     // 2. Fetch stations from provider
     const fetchedStations: ProviderStation[] = await provider.fetchStations({
-      maxResults: options.maxResults ?? 5000,
-      pageSize: options.pageSize ?? 5000,
+      maxResults: options.maxResults ?? 10000,
+      pageSize: options.pageSize ?? 10000,
     });
     recordsFetched = fetchedStations.length;
 
