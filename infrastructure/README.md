@@ -2,19 +2,21 @@
 
 This directory contains local and deployment infrastructure specifications for FastCharger services.
 
-## Local Infrastructure (PostgreSQL + PostGIS)
+## Local Infrastructure
 
-Local development relies on PostgreSQL 16 with PostGIS 3.4 enabled.
+Local development uses Docker Compose to provision:
+1. **PostgreSQL 16 + PostGIS 3.4**: Sole authoritative source of truth for canonical business and geographic data.
+2. **MongoDB 7.0**: Flexible operational event, search analytics, and audit logging store (strictly non-authoritative).
 
 ### Quick Start with Docker Compose
 
-To start the local database container:
+To start local containers:
 
 ```bash
 docker compose -f infrastructure/docker-compose.yml up -d
 ```
 
-To stop the container:
+To stop containers:
 
 ```bash
 docker compose -f infrastructure/docker-compose.yml down
@@ -22,6 +24,7 @@ docker compose -f infrastructure/docker-compose.yml down
 
 ### Connection Details
 
+#### 1. PostgreSQL (Canonical Business & PostGIS Geographic Engine)
 - **Host**: `localhost`
 - **Port**: `5432`
 - **User**: `postgres`
@@ -29,4 +32,10 @@ docker compose -f infrastructure/docker-compose.yml down
 - **Database**: `fastcharger`
 - **Connection URL**: `postgresql://postgres:postgres@localhost:5432/fastcharger`
 
-Ensure this matches the `DATABASE_URL` configured in `.env.local` for the backend and database migration tasks.
+#### 2. MongoDB (Flexible Event & Operational Store)
+- **Host**: `localhost`
+- **Port**: `27017`
+- **User**: `admin`
+- **Password**: `password`
+- **Database**: `fastcharger_events`
+- **Connection URL**: `mongodb://admin:password@localhost:27017/fastcharger_events?authSource=admin`

@@ -93,3 +93,56 @@ Invalid provider records must **never silently disappear**. Malformed records ar
 | `0001` | `0001_tired_marvel_zombies.sql` | Domain tables: states, cities, aliases, pincodes, operators, connectors, sync_logs, data_quality_issues | `DROP TABLE "data_quality_issues", "sync_logs", "connectors", "operators", "pincodes", "city_aliases", "cities", "states" CASCADE;` |
 | `0002` | `0002_supreme_iron_monger.sql` | Unique constraint on `connectors.ocm_connection_id` | `ALTER TABLE "connectors" DROP CONSTRAINT "connectors_ocm_connection_id_unique";` |
 | `0003` | `0003_canonical_postgis_entities.sql` | `districts`, `localities`, `station_provider_mappings`, `stations.verification_status` | `DROP INDEX IF EXISTS "stations_verification_status_idx"; ALTER TABLE "stations" DROP COLUMN IF EXISTS "verification_status"; DROP TABLE IF EXISTS "station_provider_mappings", "localities", "districts" CASCADE;` |
+
+---
+
+## 7. MongoDB Operational & Flexible Document Event Layer
+
+MongoDB acts strictly as a flexible document and operational telemetry store. **MongoDB is NOT a secondary station database.**
+
+### Canonical Persistence Division:
+- **PostgreSQL / PostGIS:** Authoritative for canonical stations, connectors, operators, cities, districts, localities, pincodes, and spatial queries.
+- **MongoDB:** Flexible events, provider payloads, search analytics, and operational telemetry.
+- **Redis:** Volatile caching and temporary acceleration.
+- **Object Storage:** Media assets, photos, and raw payload archives.
+
+### Allowed Collections & Workloads:
+1. `ingestion_events`: Sync run lifecycle, batch checkpoints, and provider ingestion metrics. Retention: 90 days.
+2. `provider_processing_events`: Upstream raw payload diffs, normalization transitions, and rate-limiting telemetry. Retention: 30 days.
+3. `data_quality_events`: Historical anomaly event log (coordinate errors, PIN code anomalies, malformed plugs) for provider decay analysis. Retention: 180 days.
+4. `search_analytics_events`: High-volume query telemetry, filter selections, zero-result terms, and latency monitoring. Retention: 30 days.
+5. `operational_events`: Circuit breaker status, system boot events, cache drop notifications, and health telemetry. Retention: 14 days.
+6. `audit_events`: Security actions, schema migration logs, and configuration changes. Retention: 365 days.
+
+### Prohibited Entities:
+MongoDB must **never** store canonical stations, canonical cities, canonical pincodes, canonical connectors, or the canonical geographic hierarchy.
+
+### Deterministic Event Envelope:
+```typescript
+interface BaseEvent<TPayload> {
+  eventId: string;          // UUID or deterministic hash
+  eventType: string;        // Dot-notated event identifier
+  timestamp: Date;          // ISO Date
+  source: string;           // Emitting component
+  correlationId: string;    // Distributed tracing ID
+  entityId?: string | null; // Optional business entity ID reference
+  payload: TPayload;        // Flexible document payload
+  version: number;          // Schema version (>= 1)
+  expiresAt?: Date;         // Optional explicit TTL target
+}
+```
+
+### Collection Index Specifications:
+Each event collection enforces:
+- Unique Index: `{ eventId: 1 }` (unique: true) for idempotency and duplicate elimination.
+- Compound Index: `{ timestamp: -1, eventType: 1 }` for time-series range queries and incident investigation.
+- Correlation Index: `{ correlationId: 1 }` for tracing workflows across worker and backend tiers.
+- Sparse Entity Index: `{ entityId: 1 }` for tracking events against specific business references.
+- TTL Retention Index: `{ timestamp: 1 }` with collection-specific `expireAfterSeconds`.
+
+### Failure Isolation & Fallback Policy:
+- MongoDB failures **never** impact PostgreSQL-backed APIs or core station discovery.
+- If MongoDB is unreachable, the event store switches to `BUFFER_AND_LOG` mode:
+  - Events are buffered in an in-memory ring buffer (up to 500 items).
+  - Diagnostic warnings are emitted.
+  - User-facing responses return HTTP 200 without error.

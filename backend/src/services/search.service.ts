@@ -1,3 +1,9 @@
+import {
+  EVENT_COLLECTIONS,
+  EVENT_TYPES,
+  getEventStore,
+  MongoEventStore,
+} from "@fastcharger/database";
 import { DrizzleSearchRepository, type ISearchRepository, type SearchEntity } from "../repositories/search.repository";
 import { PincodeService, defaultPincodeService } from "./pincode.service";
 
@@ -5,6 +11,7 @@ export class SearchService {
   constructor(
     private readonly searchRepo: ISearchRepository = new DrizzleSearchRepository(),
     private readonly pincodeService: PincodeService = defaultPincodeService,
+    private readonly eventStore: MongoEventStore = getEventStore(),
   ) {}
 
   async search(params: { q: string; page: number; pageSize: number; radiusKm?: number }) {
@@ -17,6 +24,9 @@ export class SearchService {
         limit: params.pageSize,
         radiusKm: params.radiusKm || 10,
       });
+
+      // Asynchronous search analytics event recording with strict failure isolation
+      this.recordSearchAnalytics(cleanQ, "pincode", pinResult?.total ?? 0);
 
       return {
         searchType: "pincode",
@@ -50,6 +60,9 @@ export class SearchService {
     const offset = (params.page - 1) * params.pageSize;
     const pagedItems = allEntities.slice(offset, offset + params.pageSize);
 
+    // Asynchronous search analytics event recording with strict failure isolation
+    this.recordSearchAnalytics(cleanQ, "text", allEntities.length);
+
     return {
       searchType: "text",
       query: cleanQ,
@@ -64,6 +77,31 @@ export class SearchService {
         hasMore: offset + params.pageSize < allEntities.length,
       },
     };
+  }
+
+  private recordSearchAnalytics(query: string, searchType: string, resultCount: number): void {
+    try {
+      this.eventStore
+        .recordEvent(EVENT_COLLECTIONS.SEARCH_ANALYTICS_EVENTS, {
+          eventId: crypto.randomUUID(),
+          eventType: EVENT_TYPES.SEARCH_QUERY_EXECUTED,
+          timestamp: new Date(),
+          source: "fastcharger-backend",
+          correlationId: `search-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          entityId: null,
+          payload: {
+            query,
+            searchType,
+            resultCount,
+          },
+          version: 1,
+        })
+        .catch(() => {
+          // Failure isolation: Mongo unavailability must never affect search response
+        });
+    } catch {
+      // Failure isolation: synchronous throw protection
+    }
   }
 }
 

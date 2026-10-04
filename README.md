@@ -112,13 +112,73 @@ Invalid provider data is never silently dropped. Anomalies are recorded in `data
 
 ---
 
-## 4. Environment Variables
+## 4. Flexible Operational & Event Layer: MongoDB
+
+FastCharger introduces MongoDB **strictly for flexible document and operational event workloads**:
+
+> **POSTGRESQL = canonical business data**  
+> **MONGODB = flexible events/documents**  
+> **REDIS = cache/temporary acceleration**  
+> **OBJECT STORAGE = large files/raw payloads**  
+
+### Strict Boundary Rules:
+- **MongoDB MAY store**:
+  - `ingestion_events`: Sync run lifecycle, batch checkpoints, and provider ingestion metrics.
+  - `provider_processing_events`: Raw provider payload transformations, normalization transitions, and rate-limiting notifications.
+  - `audit_events`: Administrative modifications, security events, and configuration change records.
+  - `data_quality_events`: Historical anomaly event log (coordinate anomalies, PIN code mismatches, connector errors) for trend analysis.
+  - `search_analytics_events`: High-volume query telemetry, search filters, zero-result queries, and latency profiling.
+  - `operational_events`: Circuit breaker state changes, system health checks, cache drops, and worker job heartbeats.
+- **MongoDB MUST NOT store**:
+  - Canonical charging stations
+  - Canonical cities or districts
+  - Canonical pincodes or localities
+  - Canonical connectors
+  - Canonical geographic hierarchy
+- **PostgreSQL truth is NEVER duplicated into MongoDB.**
+
+### Deterministic Event Structure:
+Every operational event adheres strictly to the canonical event envelope:
+```typescript
+interface BaseEvent<TPayload> {
+  eventId: string;          // UUID v4 or deterministic event hash
+  eventType: string;        // e.g. "search.query_executed", "ingestion.batch_processed"
+  timestamp: Date;          // ISO Date
+  source: string;           // System emitting event (e.g. "fastcharger-backend")
+  correlationId: string;    // Request or job correlation ID for distributed tracing
+  entityId?: string | null; // Optional business entity ID reference
+  payload: TPayload;        // Flexible document payload
+  version: number;          // Schema version (>= 1)
+  expiresAt?: Date;         // Optional explicit TTL target
+}
+```
+
+### High-Volume Retention Policy (TTL Indexes):
+High-volume operational events expire automatically via database-side TTL indexes (`expireAfterSeconds` on `timestamp`):
+- `operational_events`: **14 days** (1,209,600s) — System health, circuit breakers, cache drops.
+- `search_analytics_events`: **30 days** (2,592,000s) — Query telemetry, zero-result analysis.
+- `provider_processing_events`: **30 days** (2,592,000s) — Upstream payload diffs, normalization transitions.
+- `ingestion_events`: **90 days** (7,776,000s) — Batch progress, sync lifecycle telemetry.
+- `data_quality_events`: **180 days** (15,552,000s) — Upstream provider anomaly decay analysis.
+- `audit_events`: **365 days** (31,536,000s) — Security, configuration changes, migrations.
+
+### Failure Isolation & Fallback Policy:
+- **MongoDB failure NEVER breaks core station discovery or transactional flows.**
+- If MongoDB becomes unavailable (offline, network split, timeout):
+  1. PostgreSQL-backed APIs continue serving 100% of user traffic without errors or performance penalties.
+  2. The event store triggers an explicit `BUFFER_AND_LOG` fallback policy, appending events to an in-memory ring buffer while logging diagnostic warnings.
+  3. Analytics or logging failures never turn into user-facing 500 outages.
+
+---
+
+## 5. Environment Variables
 
 Create `.env.local` in the root workspace or target application:
 
 | Variable | Target | Purpose | Example |
 | --- | --- | --- | --- |
 | `DATABASE_URL` | Backend / Database / Worker | PostgreSQL connection string with PostGIS | `postgresql://postgres:postgres@localhost:5432/fastcharger` |
+| `MONGODB_URI` | Database / Backend / Worker | MongoDB connection URI for operational events | `mongodb://admin:password@localhost:27017/fastcharger_events?authSource=admin` |
 | `NEXT_PUBLIC_API_URL` | Frontend | URL of backend API for client & SSR fetch | `http://localhost:3001` |
 | `NEXT_PUBLIC_SITE_URL` | Frontend | Canonical frontend site URL | `http://localhost:3000` |
 | `PORT` | Backend | Port for standalone backend API | `3001` |
@@ -126,9 +186,9 @@ Create `.env.local` in the root workspace or target application:
 
 ---
 
-## 5. Local Development
+## 6. Local Development
 
-### 1. Start Infrastructure (PostgreSQL + PostGIS)
+### 1. Start Infrastructure (PostgreSQL + PostGIS & MongoDB)
 ```bash
 docker compose -f infrastructure/docker-compose.yml up -d
 ```
