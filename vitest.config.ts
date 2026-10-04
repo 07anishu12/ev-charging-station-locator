@@ -10,6 +10,7 @@ export default defineConfig({
       "@fastcharger/database": path.resolve(__dirname, "database/src"),
       "@fastcharger/backend": path.resolve(__dirname, "backend/src"),
       "@fastcharger/worker": path.resolve(__dirname, "worker/src"),
+      "@fastcharger/storage": path.resolve(__dirname, "storage/src"),
     },
   },
   test: {

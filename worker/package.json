@@ -7,11 +7,13 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "sync:india": "tsx src/jobs/sync-india.ts",
+    "sync:dry-run": "tsx src/jobs/dry-run.ts",
     "discover:cities": "tsx src/jobs/discover-cities.ts"
   },
   "dependencies": {
     "@fastcharger/database": "*",
     "@fastcharger/shared": "*",
+    "@fastcharger/storage": "*",
     "dotenv": "^18.0.5",
     "drizzle-orm": "^0.45.3",
     "pg": "^8.23.1",

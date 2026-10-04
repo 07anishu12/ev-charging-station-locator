@@ -27,6 +27,8 @@
       "@fastcharger/backend/*": ["./backend/src/*"],
       "@fastcharger/worker": ["./worker/src"],
       "@fastcharger/worker/*": ["./worker/src/*"],
+      "@fastcharger/storage": ["./storage/src"],
+      "@fastcharger/storage/*": ["./storage/src/*"],
       "@/*": ["./*"]
     }
   },

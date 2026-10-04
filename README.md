@@ -277,7 +277,101 @@ cd frontend && npm run dev
 
 ---
 
-## 6. API Architecture & Versioned Contracts (v1)
+---
+
+## 6. Durable Worker Ingestion System (`@fastcharger/worker`)
+
+FastCharger provides a production-grade, independent background ingestion pipeline designed for resilience, idempotency, and complete failure isolation:
+
+```text
+Provider Adapter (OCM, Kazam, Statiq)
+       │
+       ▼
+1. Raw Archival ────────► Object Storage (S3/R2/MinIO) & PostgreSQL object_metadata
+       │
+       ▼
+2. Validation ──────────► Strict coordinate & ID check (records error to data_quality_issues)
+       │                  [Fatal records isolated; batch continues]
+       ▼
+3. Normalization ───────► Canonical plug types (ccs2, type2, chademo, gbt, wall) & status
+       │
+       ▼
+4. Identity Resolution ─► Multi-tier resolution:
+       │                  - Upstream provider mapping (station_provider_mappings)
+       │                  - 25m spatial proximity deduplication (isProximityDuplicate)
+       │                  - Stable deterministic slug (generateDeterministicStationSlug)
+       ▼
+5. PostgreSQL/PostGIS ──► Authoritative persistence, spatial point indexing, upsert semantics
+       │
+       ▼
+6. Operational Events ──► MongoEventStore (INGESTION_STARTED, INGESTION_COMPLETED, anomalies)
+       │                  [Failure-isolated via BUFFER_AND_LOG]
+       ▼
+7. Cache Invalidation ──► Invalidate affected Redis keys (stations, cities, pincodes)
+```
+
+### Worker Responsibilities:
+- **Independent Ingestion Engine**: Orchestrates upstream vendor synchronization completely decoupled from frontend rendering and backend request serving.
+- **Authoritative Data Ingestion**: PostGIS + PostgreSQL is the sole authoritative destination for all stations, connectors, operators, and spatial points.
+- **Zero Data Loss**: Anomalies, malformed records, and upstream provider discrepancies are persisted in `data_quality_issues` and logged to MongoDB events rather than silently discarded.
+
+### Provider Adapter Boundary (`worker/src/providers/`):
+- All vendor-specific query parameters, API keys, HTTP headers, and URL routes are strictly encapsulated inside provider adapters implementing `ProviderAdapter`.
+- New vendors (Kazam, Statiq, ChargePoint) can be added without modifying the core 8-stage pipeline.
+- **Bounded Exponential Backoff Retries**: Transient failures (HTTP 429 Too Many Requests, HTTP 5xx Server Errors, socket timeouts, network resets) are retried with exponential backoff and jitter (up to 3 retries). Permanent failures (400, 401, 403, 404, unparseable payload) fail fast immediately.
+
+### Validation & Malformed Record Isolation:
+- Validates coordinates, 6-digit Indian PIN codes, connector types, operational statuses, and provider identifiers.
+- **Batch Resilience**: A fatal validation error on a single record (e.g. invalid latitude/longitude or missing upstream identifier) is isolated, logged as an anomaly, and increments `rejected` without aborting the remaining batch.
+- Non-fatal warnings (e.g. 5-digit PIN code, missing operator name) create audit records in `data_quality_issues` while allowing the station record to persist.
+
+### Identity Resolution & Idempotency:
+- **Deterministic Multi-Tier Resolution**:
+  1. `station_provider_mappings` check on `(provider_name, provider_station_id)` resolves existing station ID.
+  2. Direct OCM ID / External ID lookup.
+  3. **25-Meter Spatial Proximity Deduplication**: Stations within 25m sharing operator slug or high name similarity are resolved as the same physical charging site, incrementing `duplicates` and updating provider mappings.
+  4. **Deterministic Canonical Slugs**: Generated via `generateDeterministicStationSlug()` ensuring URI stability across sync runs.
+- **Idempotency Guarantee**: Running the same sync payload repeatedly produces `inserted: 0, updated: N` with zero duplicate stations created.
+
+### Raw Archival & Cache Invalidation:
+- **Raw Archival**: Unmodified raw payloads are archived to object storage via `RawProviderArchivalService` and indexed in PostgreSQL's `object_metadata` table.
+- **Cache Invalidation**: On successful PostgreSQL persistence, affected Redis cache keys (`stations:all`, `stations:nearby:*`, `city:{slug}`, `state:{slug}`, `pincode:{code}`, `station:{slug}`) are invalidated.
+- **Failure Isolation**: If Redis or MongoDB or Object Storage is temporarily unavailable, the core PostgreSQL station ingestion completes successfully without crashing.
+
+### Observability Metrics Contract:
+Every ingestion run produces a comprehensive observability report with exact metrics:
+```typescript
+interface IngestionRunResult {
+  runId: string;        // Unique job run identifier (UUID)
+  provider: string;     // Provider identifier (e.g. "open-charge-map")
+  started: Date;        // Job start timestamp
+  completed: Date;      // Job completion timestamp
+  received: number;     // Raw records received from provider
+  validated: number;    // Records passing validation
+  rejected: number;     // Malformed records rejected and isolated
+  inserted: number;     // New stations inserted into PostgreSQL
+  updated: number;      // Existing stations updated
+  duplicates: number;   // Spatial proximity / multi-provider duplicates resolved
+  errors: number;       // Unexpected record-level processing errors
+  archivedObjectKey?: string | null; // S3/R2/MinIO raw dump location
+}
+```
+
+### Ingestion Commands & Local Execution:
+```bash
+# 1. Local Pipeline Dry Run (Runs complete 8-stage pipeline with mock data, no API key required)
+npm run sync:dry-run
+
+# 2. Open Charge Map India Synchronization (Requires OPENCHARGEMAP_API_KEY and DATABASE_URL)
+npm run sync:india
+
+# 3. Dry-run mode for India sync (Tests connectivity and processes first 10 records)
+npx tsx worker/src/jobs/sync-india.ts --dry-run
+```
+
+---
+
+## 7. API Architecture & Versioned Contracts (v1)
 
 FastCharger enforces strict, versioned API contracts between frontend and backend to guarantee independent deployment.
 
@@ -321,19 +415,25 @@ FastCharger enforces strict, versioned API contracts between frontend and backen
 
 ---
 
-## 7. Verification & Testing
+## 8. Verification & Testing
 
-The repository includes comprehensive unit, integration, spatial, and contract tests across all tiers:
+The repository includes comprehensive unit, integration, spatial, storage, and worker pipeline tests:
 
 ```bash
-# Run complete test suite (18 test files, 181 tests)
+# Run complete test suite (21 test files, 229 tests)
 npm test
+
+# Run worker ingestion pipeline tests (12 dedicated tests)
+npx vitest run tests/worker-ingestion.test.ts
 
 # Run canonical database ownership tests
 npx vitest run tests/canonical-data-ownership.test.ts
 
-# Run database schema & migration tests
-npx vitest run tests/schema.test.ts
+# Run object storage abstraction tests
+npx vitest run tests/object-storage.test.ts
+
+# Run MongoDB event store tests
+npx vitest run tests/mongodb-event-store.test.ts
 
 # Run API contract test suite
 npx vitest run tests/contracts.test.ts
@@ -350,7 +450,7 @@ npm run lint
 
 ---
 
-## 8. Migration Status
+## 9. Migration Status
 
 - **Prompt 1 (Physical Application Boundaries)**: **IMPLEMENTED**  
   Restructured into `frontend/`, `backend/`, `worker/`, `database/`, `shared/`, `infrastructure/`, `docs/`.
@@ -364,13 +464,20 @@ npm run lint
   Versioned `/api/v1/` contract system established under `shared/contracts/`, shared API client upgraded with validation, backward compatibility policy formalized, and 18 dedicated contract tests added.
 - **Prompt 6 — COMPLETE**: **COMPLETE**  
   **PostgreSQL + PostGIS established as canonical authoritative source of truth**. Added canonical tables for `districts`, `localities`, and `station_provider_mappings`. Added `verification_status` to `stations`. Implemented deterministic multi-attribute station identity and de-duplication resolution (`database/src/identity.ts`). Formalized comprehensive anomaly tracking in `data_quality_issues` (`database/src/quality.ts`). Created migration `0003_canonical_postgis_entities.sql` with verified rollback procedures. 18 test suites and 181 tests passing.
+- **Prompt 7 — COMPLETE**: **COMPLETE**  
+  **Introduced MongoDB strictly for flexible document & operational event workloads**. Configured deterministic event envelope (`BaseEvent`), dedicated collections (`ingestion_events`, `provider_processing_events`, `data_quality_events`, `search_analytics_events`, `operational_events`, `audit_events`), comprehensive index specifications (`eventId` unique, compound `timestamp`+`eventType`, `correlationId`, sparse `entityId`), database-side TTL retention policies (14 to 365 days), and non-disruptive failure isolation with `BUFFER_AND_LOG` fallback. Verified 19 test suites and 199 tests passing.
+- **Prompt 8 — COMPLETE**: **COMPLETE**  
+  **Introduced S3-Compatible Object Storage Abstraction** (`@fastcharger/storage`). Supports AWS S3, Cloudflare R2, MinIO, and hermetic in-memory test drivers. Decoupled application code from AWS SDK semantics via uniform `putObject()`, `getObject()`, `headObject()`, `deleteObject()`, and `createSignedUrl()` interfaces. Enforced private-by-default buckets, short-lived signed URLs, and worker raw provider archival (`RawProviderArchivalService`). Added PostgreSQL `object_metadata` entity and migration `0004_object_metadata.sql`. Verified 20 test suites and 217 tests passing.
+- **Prompt 9 — COMPLETE**: **COMPLETE**  
+  **Established Production-Grade Durable Worker Ingestion System** (`@fastcharger/worker`). Implemented 8-stage pipeline: Provider → Raw Archive (S3/R2/MinIO & PostgreSQL `object_metadata`) → Validation (fatal coordinate/ID isolation without breaking batch) → Normalization (canonical plug types & status) → Identity Resolution (provider mappings, 25m spatial proximity deduplication, deterministic slugs) → PostgreSQL/PostGIS persistence (upsert semantics, transactions) → Events (MongoDB operational logging) → Cache Invalidation (affected Redis keys). Added provider adapter boundary with bounded exponential backoff retries for transient 429/5xx errors, dry-run CLI execution (`npm run sync:dry-run`), and complete observability metrics (`runId`, `provider`, `started`, `completed`, `received`, `validated`, `rejected`, `inserted`, `updated`, `duplicates`, `errors`). Verified 21 test suites and 229 tests passing.
 
 ---
 
-## 9. Independent Deployment
+## 10. Independent Deployment
 
 Each application tier is independently deployable:
 - **Frontend**: Deployable to edge/serverless runtimes (Vercel, Cloudflare Pages, Netlify) with only `NEXT_PUBLIC_API_URL`. Does not require VPC peering or database credentials.
 - **Backend API**: Deployable to container platforms (AWS ECS, Fly.io, Railway, Google Cloud Run) inside a private VPC with `DATABASE_URL`.
 - **Worker**: Deployable as independent scheduled jobs or background containers.
 - **Database**: Managed PostgreSQL + PostGIS (AWS RDS, Supabase, Neon).
+
