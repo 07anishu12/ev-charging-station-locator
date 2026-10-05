@@ -13,7 +13,7 @@ export function StatusBadge({ status, className = "", size = "md", pulse = false
   let dotClass = "bg-[#8A9490]";
 
   if (normalized === "operational" || normalized === "available") {
-    label = "Operational";
+    label = normalized === "available" ? "Available now" : "Operational";
     bgClass = "bg-[var(--color-light-green)] text-[var(--color-secondary-green)] border-[var(--color-primary)]/30";
     dotClass = "bg-[var(--color-primary)]";
   } else if (normalized === "busy") {
@@ -27,7 +27,7 @@ export function StatusBadge({ status, className = "", size = "md", pulse = false
   }
 
   const sizeClass = size === "sm" ? "px-2 py-0.5 text-xs gap-1.5" : "px-2.5 py-1 text-xs sm:text-sm gap-2";
-  const isOperational = normalized === "operational" || normalized === "available";
+  const isOperational = normalized === "available";
 
   return (
     <span

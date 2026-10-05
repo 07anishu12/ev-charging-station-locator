@@ -77,6 +77,8 @@ function MapPageContent() {
   const [cities, setCities] = useState<City[]>([]);
   const [allRawStations, setAllRawStations] = useState<Station[]>([]);
   const [isLoadingStations, setIsLoadingStations] = useState(true);
+  const [stationError, setStationError] = useState<string | null>(null);
+  const [retryEpoch,setRetryEpoch]=useState(0);
 
   // 1. Initial location request if page was loaded with ?nearby=true
   useEffect(() => {
@@ -149,32 +151,53 @@ function MapPageContent() {
 
     async function fetchStations() {
       setIsLoadingStations(true);
+      setStationError(null);
       try {
         if (locationMode === "user" && userLocation) {
           const res = await apiClient.getNearbyStations({
             latitude: userLocation.lat,
             longitude: userLocation.lng,
             radiusKm: NEARBY_DISCOVERY_RADIUS_KM,
+            operator: filters.operatorSlug,
+            minPowerKw: filters.minPowerKw,
+            connectorType: filters.connectorType,
             pageSize: 100,
           });
           if (isMounted) {
-            setAllRawStations(res.items);
+            if (res.status === "error") {
+              setStationError(res.error.message || "Failed to load nearby stations.");
+              setAllRawStations([]);
+            } else {
+              setAllRawStations(res.items);
+              setStationError(null);
+            }
             setIsLoadingStations(false);
           }
         } else {
           const res = await apiClient.getStations({
             pageSize: 100,
             operator: filters.operatorSlug,
+            search: searchQuery.trim() || undefined,
+            minPowerKw: filters.minPowerKw,
+            connectorType: filters.connectorType,
             status: filters.operationalOnly ? "Operational" : undefined,
           });
           if (isMounted) {
-            setAllRawStations(res.items);
+            if (res.status === "error") {
+              setStationError(res.error.message || "Failed to load charging stations.");
+              setAllRawStations([]);
+            } else {
+              setAllRawStations(res.items);
+              setStationError(null);
+            }
             setIsLoadingStations(false);
           }
         }
       } catch (err) {
         console.error("Failed to fetch map stations:", err);
         if (isMounted) {
+          setStationError(err instanceof Error ? err.message : "Failed to load charging stations.");
+          setAllRawStations([]);
           setIsLoadingStations(false);
         }
       }
@@ -185,7 +208,7 @@ function MapPageContent() {
     return () => {
       isMounted = false;
     };
-  }, [locationMode, userLocation, filters.operatorSlug, filters.operationalOnly]);
+  }, [locationMode, userLocation, filters.operatorSlug, filters.operationalOnly, filters.minPowerKw, filters.connectorType, searchQuery, retryEpoch]);
 
   // 3. Compute ONE canonical filtered station array
   const stations = useMemo(() => {
@@ -283,8 +306,8 @@ function MapPageContent() {
     if (matchedCity) {
       setCameraTrigger({
         type: "city",
-        lat: matchedCity.latitude,
-        lng: matchedCity.longitude,
+        lat: matchedCity.latitude ?? undefined,
+        lng: matchedCity.longitude ?? undefined,
         zoom: 12,
         timestamp: Date.now(),
       });
@@ -357,14 +380,36 @@ function MapPageContent() {
             </div>
           )}
 
+          {/* API / Service Error Alert */}
+          {stationError && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50/80 p-3.5 text-xs text-red-900">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-bold text-red-900 mb-0.5">Unable to load charging stations</p>
+                  <p className="text-[11px] text-red-700">{stationError}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStationError(null);
+                    setRetryEpoch((prev) => prev+1);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 text-xs transition-colors shrink-0 cursor-pointer"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* No nearby stations notice */}
-          {filters.nearby && locationStatus === "granted" && stations.length === 0 && (
+          {filters.nearby && locationStatus === "granted" && !stationError && !isLoadingStations && stations.length === 0 && (
             <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs text-emerald-900">
               <p className="font-semibold mb-1">
                 No stations found within {NEARBY_DISCOVERY_RADIUS_KM} km of your detected location.
               </p>
               <p className="text-[11px] text-emerald-800 mb-2.5">
-                Our fast-charging database currently covers 8 primary metropolitan EV corridors.
+                Source coverage varies by region. Try a wider search or another location.
               </p>
               <div className="flex items-center gap-2 flex-wrap">
                 <button
@@ -392,9 +437,11 @@ function MapPageContent() {
             <span className="text-sm font-bold text-[var(--color-dark-green)]">
               {isLocating
                 ? "Locating chargers near you..."
+                : stationError
+                ? "Connection error"
                 : `${stations.length} ${stations.length === 1 ? "Station found" : "Stations found"}`}
             </span>
-            {filters.nearby && locationStatus === "granted" && (
+            {filters.nearby && locationStatus === "granted" && !stationError && (
               <span className="text-xs font-semibold text-[var(--color-secondary-green)]">
                 Near you (within {NEARBY_DISCOVERY_RADIUS_KM} km)
               </span>
@@ -405,8 +452,8 @@ function MapPageContent() {
             <StationList
               stations={stations}
               isLoading={isLocating || isLoadingStations}
-              emptyTitle="No charging stations match the selected filters"
-              emptyDescription="Try clearing one or more filters or expanding your search."
+              emptyTitle={stationError ? "Charging data unavailable" : "No charging stations match the selected filters"}
+              emptyDescription={stationError ? "Retry when the data service is reachable." : "Try clearing one or more filters or expanding your search."}
               selectedStationId={activeSelectedStation?.id}
               onSelectStation={(s) => {
                 setSelectedStation(s);

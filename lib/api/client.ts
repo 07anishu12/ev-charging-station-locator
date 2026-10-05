@@ -118,16 +118,8 @@ export function getBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
   }
-  // In production browser runtime, missing NEXT_PUBLIC_API_URL is an explicit configuration defect
-  if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
-    throw new Error(
-      "Configuration Error: NEXT_PUBLIC_API_URL is required in production environment but was not defined.",
-    );
-  }
-  if (typeof window === "undefined") {
-    return process.env.API_URL?.replace(/\/$/, "") || "http://localhost:4000";
-  }
-  return "http://localhost:4000";
+  if (typeof window !== "undefined") return "";
+  return process.env.API_URL?.replace(/\/$/, "") || "http://localhost:4000";
 }
 
 class FrontendApiClient {
@@ -160,6 +152,8 @@ class FrontendApiClient {
       status: 0,
     };
   }
+
+  async getStatistics() { return this.client.getStatistics(); }
 
   async getStations(params: {
     page?: number;
@@ -197,6 +191,8 @@ class FrontendApiClient {
     latitude: number;
     longitude: number;
     radiusKm?: number;
+    operator?: string;
+    status?: "Operational" | "Not Operational" | "Unknown";
     connectorType?: string;
     minPowerKw?: number;
     page?: number;
@@ -226,8 +222,8 @@ class FrontendApiClient {
   async getStation(idOrSlug: string): Promise<Station | null> {
     try {
       return (await this.client.getStation(idOrSlug)) as Station | null;
-    } catch {
-      return null;
+    } catch(err) {
+      throw err;
     }
   }
 
@@ -259,16 +255,16 @@ class FrontendApiClient {
   ): Promise<CityDetailResponse | null> {
     try {
       return await this.client.getCity(slug, params);
-    } catch {
-      return null;
+    } catch(err) {
+      throw err;
     }
   }
 
   async getCityStatistics(slug: string): Promise<CityStatistics | null> {
     try {
       return await this.client.getCityStatistics(slug);
-    } catch {
-      return null;
+    } catch(err) {
+      throw err;
     }
   }
 
@@ -278,8 +274,8 @@ class FrontendApiClient {
   ): Promise<PincodeDetailResponse | null> {
     try {
       return await this.client.getPincode(pincode, params);
-    } catch {
-      return null;
+    } catch(err) {
+      throw err;
     }
   }
 
@@ -292,8 +288,8 @@ class FrontendApiClient {
     try {
       const result = await this.client.search(params);
       return result as SearchResultResponse | null;
-    } catch {
-      return null;
+    } catch(err) {
+      throw err;
     }
   }
 }

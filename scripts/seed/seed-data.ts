@@ -7,10 +7,12 @@ import { CANONICAL_CITIES } from "../../lib/geo/canonical-data";
 import { MOCK_CITIES, MOCK_OPERATORS, MOCK_STATES, MOCK_STATIONS } from "../../lib/mock/data";
 
 async function seed() {
-  const dbUrl = process.env.DATABASE_URL || "postgresql://localhost:5433/fastcharger";
+  const dbUrl = process.env.DATABASE_URL;
+  if(!dbUrl)throw new Error("DATABASE_URL is required for disposable test seeding");
+  if(process.env.ALLOW_SYNTHETIC_SEED !== "true" || !/^\/(?:test_|fastcharger_activation_test_)/.test(new URL(dbUrl).pathname)) throw new Error("Synthetic seeds require an explicitly enabled disposable test database");
   const pool = new Pool({ connectionString: dbUrl });
 
-  console.log("Connecting to database:", dbUrl);
+  console.log("Connecting to explicitly authorized disposable seed database");
 
   try {
     // 1. Seed States
@@ -190,8 +192,9 @@ async function seed() {
     }
 
     console.log("Database seeded successfully!");
-  } catch (error) {
-    console.error("Seeding failed:", error);
+  } catch {
+    console.error("Seeding failed; credentials suppressed");
+    process.exitCode=1;
   } finally {
     await pool.end();
   }

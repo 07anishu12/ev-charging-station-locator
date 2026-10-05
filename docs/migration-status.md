@@ -1,5 +1,7 @@
 # Migration Status & Technical Roadmap
 
+Prompt 11.7 supersedes earlier data-completion assumptions. Real research activation, source/status reconciliation and scheduled refresh verification are recorded in [the data activation report](operations/data-activation-report.md). Prompt 12 has not started.
+
 ## Migration Status Summary
 
 | Area | Status | Description |

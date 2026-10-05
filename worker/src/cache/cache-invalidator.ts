@@ -7,6 +7,7 @@
  * - Failure Isolation: Redis unavailability must NEVER break the core ingestion pipeline.
  */
 
+import { createClient } from "redis";
 import { EVENT_TYPES, getEventStore } from "@fastcharger/database";
 
 export interface CacheInvalidationOptions {
@@ -81,9 +82,18 @@ export class RedisCacheInvalidator implements CacheInvalidator {
     try {
       if (this.redisClient) {
         await this.redisClient.del(...keys);
-      } else if (process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL) {
-        // Log key invalidation intent when standard redis transport is environment-configured
-        // (Ensures zero hard-crashes if Redis network is unrouted during local worker run)
+      } else if (process.env.REDIS_URL) {
+        const client=createClient({url:process.env.REDIS_URL,socket:{connectTimeout:2000,reconnectStrategy:false}});
+        client.on("error",()=>{});
+        try {
+          await client.connect();
+          for(const pattern of keys) {
+            if(pattern.includes("*")) {for await(const matches of client.scanIterator({MATCH:pattern,COUNT:200}))if(matches.length)await client.del(matches);}
+            else await client.del(pattern);
+          }
+        } finally {if(client.isOpen)client.destroy();}
+      } else {
+        return {success:true,skipped:true,invalidatedKeys:[]};
       }
 
       // Record operational event in MongoEventStore (failure-isolated)
@@ -109,8 +119,8 @@ export class RedisCacheInvalidator implements CacheInvalidator {
         success: true,
         invalidatedKeys: keys,
       };
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Redis cache invalidation failed";
+    } catch {
+      const errorMsg = "Redis cache unavailable; PostgreSQL remains authoritative";
       console.warn(`[WARN] Cache invalidation skipped or encountered error: ${errorMsg}`);
 
       return {
@@ -130,6 +140,12 @@ export function buildInvalidationKeys(options: CacheInvalidationOptions): string
   keys.add("stations:all");
   keys.add("stations:summary");
   keys.add("stations:nearby:*");
+  keys.add("stations:*");
+  keys.add("cities:*");
+  keys.add("states:*");
+  keys.add("map:*");
+  keys.add("nearby:*");
+  keys.add("search:*");
 
   for (const slug of options.stationSlugs || []) {
     if (slug) keys.add(`station:${slug}`);

@@ -24,7 +24,7 @@ export function HeroMetricsBar({
           </svg>
         </div>
         <span className="text-base sm:text-xl font-black text-[var(--color-dark-green)] tracking-tight">
-          {totalStations.toLocaleString()}+
+          {totalStations.toLocaleString()}
         </span>
         <span className="text-[11px] font-medium text-[var(--color-muted)]">
           Charging Stations
@@ -39,7 +39,7 @@ export function HeroMetricsBar({
           </svg>
         </div>
         <span className="text-base sm:text-xl font-black text-[var(--color-dark-green)] tracking-tight">
-          {totalCities.toLocaleString()}+
+          {totalCities.toLocaleString()}
         </span>
         <span className="text-[11px] font-medium text-[var(--color-muted)]">
           Cities Covered

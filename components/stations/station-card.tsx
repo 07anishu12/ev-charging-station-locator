@@ -6,7 +6,7 @@ import React from "react";
 import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { PowerBadge } from "@/components/ui/power-badge";
 import { SavedButton } from "@/components/ui/saved-button";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StationStatus } from "@/components/ui/station-status";
 import type { Station } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
@@ -59,7 +59,7 @@ export function StationCard({
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
-              <StatusBadge status={station.status} size="sm" pulse={selected} />
+              <StationStatus station={station} />
               <SavedButton stationSlug={station.slug} stationName={station.name} compact />
             </div>
           </div>
@@ -96,7 +96,7 @@ export function StationCard({
 
       {/* Footer Actions */}
       <div className="pt-3 border-t border-[var(--color-border)]/70 flex items-center justify-between gap-2 text-xs text-[var(--color-muted)]">
-        <span className="truncate text-[11px] font-medium">🕒 Open 24/7</span>
+        <span className="truncate text-[11px] font-medium">🕒 Hours not verified</span>
         <div className="flex items-center gap-2 shrink-0">
           <a
             href={directionsUrl}

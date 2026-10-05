@@ -22,8 +22,8 @@ export const citySummarySchema = z.object({
   stationCount: z.number().int().nonnegative(),
   fastChargerCount: z.number().int().nonnegative().default(0),
   networkCount: z.number().int().nonnegative().optional(),
-  latitude: latitudeSchema,
-  longitude: longitudeSchema,
+  latitude: latitudeSchema.nullable(),
+  longitude: longitudeSchema.nullable(),
   popularPincodes: z.array(z.string()).default([]),
 });
 

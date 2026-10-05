@@ -6,7 +6,7 @@ CREATE TABLE "stations" (
 	"slug" text NOT NULL,
 	"name" text NOT NULL,
 	"address" text,
-	"location" "geography(Point,4326)" NOT NULL,
+	"location" geography(Point,4326) NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "stations_external_id_unique" UNIQUE("external_id"),

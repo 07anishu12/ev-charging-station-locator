@@ -20,6 +20,14 @@ export interface ProviderValidationResult {
 
 export interface ProviderAdapter extends ChargingDataProvider {
   readonly providerName: string;
+  fetchStatuses?(): Promise<Array<{
+    providerStationId: string;
+    providerConnectorId?: string;
+    availability: 'AVAILABLE' | 'PARTIALLY_AVAILABLE' | 'UNAVAILABLE' | 'UNKNOWN';
+    observedAt: Date;
+    confidence: number;
+    rawStatus: unknown;
+  }>>;
 
   /**
    * Fetches the raw provider payload before any normalization.

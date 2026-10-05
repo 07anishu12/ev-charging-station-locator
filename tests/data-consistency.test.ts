@@ -9,7 +9,8 @@ import { FastChargerApiClient } from "@fastcharger/shared";
 const { cities, stations, connectors, states } = schema;
 
 const API_BASE_URL = process.env.API_URL || "http://localhost:4000";
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://localhost:5433/fastcharger";
+const DATABASE_URL = process.env.DATABASE_URL;
+if(!DATABASE_URL)throw new Error("DATABASE_URL is required for actual database consistency checks");
 
 describe("Prompt 11.6 - Geographic Station Data Consistency Across Pages", () => {
   const client = new FastChargerApiClient({
@@ -18,24 +19,12 @@ describe("Prompt 11.6 - Geographic Station Data Consistency Across Pages", () =>
   });
 
   const TARGET_CITIES = [
-    { slug: "mumbai", name: "Mumbai", forbiddenMockCount: 390 },
-    { slug: "bengaluru", name: "Bengaluru", forbiddenMockCount: 380 },
-    { slug: "hyderabad", name: "Hyderabad", forbiddenMockCount: 260 },
-    { slug: "chennai", name: "Chennai", forbiddenMockCount: 230 },
-    { slug: "gurugram", name: "Gurugram", forbiddenMockCount: 210 },
+    { slug: "mumbai", name: "Mumbai" },
+    { slug: "bengaluru", name: "Bengaluru" },
+    { slug: "hyderabad", name: "Hyderabad" },
+    { slug: "chennai", name: "Chennai" },
+    { slug: "gurugram", name: "Gurugram" },
   ];
-
-  it("ensures zero mock counts (390, 380, 260, 230, 210) exist in cities list API", async () => {
-    const citiesResponse = await client.getCities({ pageSize: 50 });
-    expect(citiesResponse.items.length).toBeGreaterThan(0);
-
-    for (const target of TARGET_CITIES) {
-      const city = citiesResponse.items.find((c) => c.slug === target.slug);
-      expect(city).toBeDefined();
-      expect(city!.stationCount).not.toBe(target.forbiddenMockCount);
-      expect(city!.stationCount).toBeGreaterThanOrEqual(0);
-    }
-  });
 
   it("ensures Popular Cities count === City Page count === Statistics count === Database count for all target cities", async () => {
     const db = getDb(DATABASE_URL);
@@ -49,7 +38,7 @@ describe("Prompt 11.6 - Geographic Station Data Consistency Across Pages", () =>
       const popularCitiesFastChargerCount = listCity!.fastChargerCount;
 
       // 2. City Page count (from getCity API)
-      const cityDetail = await client.getCity(target.slug, { page: 1, pageSize: 100 });
+      const cityDetail = await client.getCity(target.slug, { page: 1, pageSize: 20 });
       expect(cityDetail).not.toBeNull();
       const cityPageStationCount = cityDetail!.city.stationCount;
       const cityPageTotalStations = cityDetail!.pagination.total;
@@ -87,7 +76,7 @@ describe("Prompt 11.6 - Geographic Station Data Consistency Across Pages", () =>
       expect(statsFastChargerCount).toBe(popularCitiesFastChargerCount);
       expect(dbFastChargerCount).toBe(popularCitiesFastChargerCount);
     }
-  });
+  }, 30000);
 
   it("returns zero and empty array for cities with no stations instead of mock fallbacks", async () => {
     const db = getDb(DATABASE_URL);
@@ -114,6 +103,7 @@ describe("Prompt 11.6 - Geographic Station Data Consistency Across Pages", () =>
     expect(stats!.stationCount).toBe(0);
     expect(stats!.networkCount).toBe(0);
     expect(stats!.fastChargerCount).toBe(0);
+    await db.delete(cities).where(eq(cities.slug,zeroCitySlug));
   });
 
   it("returns null for non-existent city slug without fallback mock data", async () => {

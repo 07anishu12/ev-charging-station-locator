@@ -5,7 +5,7 @@ import React from "react";
 
 import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { PowerBadge } from "@/components/ui/power-badge";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StationStatus } from "@/components/ui/station-status";
 import type { Station } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
@@ -57,7 +57,7 @@ export function CompactStationCard({
       </div>
 
       <div className="flex flex-col items-end gap-2 shrink-0">
-        <StatusBadge status={station.status} size="sm" />
+        <StationStatus station={station} />
         <span className="w-7 h-7 rounded-full bg-emerald-50 text-[var(--color-secondary-green)] flex items-center justify-center group-hover:bg-[var(--color-primary)] group-hover:text-white transition-colors">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />

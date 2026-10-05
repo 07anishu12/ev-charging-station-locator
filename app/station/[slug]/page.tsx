@@ -17,7 +17,7 @@ import { StationConnectorsCard } from "@/components/stations/station-connectors-
 import { StationHeroBanner } from "@/components/stations/station-hero-banner";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { PowerBadge } from "@/components/ui/power-badge";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StationStatus } from "@/components/ui/station-status";
 import { apiClient } from "@/lib/api";
 import { absoluteUrl } from "@/lib/seo/config";
 import { routeUrls } from "@/lib/utils/url";
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: StationPageProps): Promise<Me
   }
 
   const title = `${station.name} | FastCharger`;
-  const description = `${station.name} is a verified ${station.fastestPowerKw}kW EV charging station operated by ${station.operator.name} in ${station.city.name}, ${station.state.name}. View real-time speeds, connector compatibility, and GPS directions.`;
+  const description = `${station.name} is a provider-reported EV charging station operated by ${station.operator.name} in ${station.city.name}, ${station.state.name}. View reported power, connector compatibility, and GPS directions.`;
   const canonicalPath = routeUrls.station(station.slug);
 
   return {
@@ -144,7 +144,7 @@ export default async function StationPage({ params }: StationPageProps) {
             </span>
             <span className="text-[var(--color-border)]">·</span>
             <span className="text-xs font-semibold text-[var(--color-muted)]">
-              ★ 4.8 (Verified Hub)
+              Provider-reported location
             </span>
           </div>
 
@@ -159,10 +159,10 @@ export default async function StationPage({ params }: StationPageProps) {
 
           {/* Status Pills */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <StatusBadge status={station.status} pulse={true} />
+            <StationStatus station={station} />
             <PowerBadge powerKw={station.fastestPowerKw} />
             <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-[var(--color-secondary-green)]">
-              <span>🕒 Open 24/7</span>
+              <span>🕒 Hours not verified</span>
             </span>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default async function StationPage({ params }: StationPageProps) {
             </div>
             <div>
               <dt className="text-xs font-semibold text-[var(--color-muted)]">Max Charging Speed</dt>
-              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">{station.fastestPowerKw} kW DC</dd>
+              <dd className="font-bold text-[var(--color-dark-green)] mt-0.5">{station.fastestPowerKw > 0 ? `${station.fastestPowerKw} kW` : "Power unknown"}</dd>
             </div>
             <div>
               <dt className="text-xs font-semibold text-[var(--color-muted)]">Connector Standards</dt>

@@ -1,0 +1,2733 @@
+# API directory
+
+VERIFIED requires a successful station payload, not merely HTTP 200. DOCUMENTED is an official published specification. OBSERVED means present in page/script or unsuccessful reproduction. UNVERIFIED means no station endpoint was established. Permissions are a separate gate.
+
+## Open Charge Map
+
+- **id:** ocm
+- **name:** Open Charge Map
+- **organization:** Open Charge Map
+- **organization_country:** unknown / not obtained
+- **coverage:** India/global
+- **covers_india:** True
+- **covers_delhi_ncr:** True
+- **data_type:** station discovery
+- **api_availability:** REST
+- **endpoint:** https://api.openchargemap.io/v3/poi/
+- **endpoint_class:** VERIFIED
+- **http_method:** GET
+- **parameters:** {"countrycode": "IN", "maxresults": 10000, "compact": false, "verbose": true, "latitude": "optional", "longitude": "optional", "distance": "optional", "distanceunit": "KM", "boundingbox": "(south,west),(north,east)", "chargepointid": "optional"}
+- **authentication:** X-API-Key header; existing workspace credential used without disclosure
+- **api_key_required:** True
+- **rate_limits:** unknown
+- **pagination:** No verified offset pagination. Recursively subdivide saturated geographic cells.
+- **geographic_filtering:** country, tested radius, tested boundingbox
+- **station_filtering:** chargepointid tested
+- **realtime:** STATIC
+- **realtime_evidence:** OCM inventory status and modification dates are not a heartbeat.
+- **update_frequency:** unknown
+- **data_format:** JSON array
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** dynamic inventory
+- **provenance_type:** aggregated/community
+- **terms_url:** https://openchargemap.io/develop
+- **license:** CC BY 4.0 for community data; imported records retain provider licenses
+- **automation_permission:** allowed subject to API and per-record license terms
+- **reliability:** not measured
+- **station_count:** 1979
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "GET", "url": "https://api.openchargemap.io/v3/poi/", "parameters": {"countrycode": "IN", "maxresults": 10000, "compact": false, "verbose": true, "latitude": "optional", "longitude": "optional", "distance": "optional", "distanceunit": "KM", "boundingbox": "(south,west),(north,east)", "chargepointid": "optional"}}
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** {"method": "GET", "url": "https://api.openchargemap.io/v3/poi/", "parameters": {"countrycode": "IN", "maxresults": 10000, "compact": false, "verbose": true, "latitude": "optional", "longitude": "optional", "distance": "optional", "distanceunit": "KM", "boundingbox": "(south,west),(north,east)", "chargepointid": "optional"}}
+- **recommended_ingestion:** Daily bounded incremental pulls plus adaptive geographic reconciliation; preserve attribution.
+- **source_url:** https://openchargemap.io/develop
+
+## OCM reference data
+
+- **id:** ocm-reference
+- **name:** OCM reference data
+- **organization:** Open Charge Map
+- **organization_country:** unknown / not obtained
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** operators, countries, connection types, usage types, status types
+- **api_availability:** REST
+- **endpoint:** https://api.openchargemap.io/v3/referencedata/
+- **endpoint_class:** VERIFIED
+- **http_method:** GET
+- **parameters:** unknown / not obtained
+- **authentication:** X-API-Key
+- **api_key_required:** True
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** STATIC
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** JSON
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "GET", "url": "https://api.openchargemap.io/v3/referencedata/", "parameters": null}
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** {"method": "GET", "url": "https://api.openchargemap.io/v3/referencedata/", "parameters": null}
+- **recommended_ingestion:** Cache reference dictionaries; retain raw IDs and titles.
+- **source_url:** https://openchargemap.io/develop
+
+## Delhi EV map
+
+- **id:** delhi-ev
+- **name:** Delhi EV map
+- **organization:** Delhi Transport Department
+- **organization_country:** IN
+- **coverage:** Delhi NCT advertised; coordinates validate individually
+- **covers_india:** True
+- **covers_delhi_ncr:** True
+- **data_type:** charging and swapping inventory
+- **api_availability:** No station API observed; SSR embedded Python literal
+- **endpoint:** http://ev.delhi.gov.in/charging_station
+- **endpoint_class:** VERIFIED
+- **http_method:** GET
+- **parameters:** unknown / not obtained
+- **authentication:** none
+- **api_key_required:** False
+- **rate_limits:** unknown
+- **pagination:** All 891 embedded rows in one response; no pagination observed
+- **geographic_filtering:** Client-side region/pincode maps
+- **station_filtering:** Client-side markers
+- **realtime:** STATIC
+- **realtime_evidence:** No status timestamps; available mirrors no_of_chargers. Display totals hardcoded.
+- **update_frequency:** unknown
+- **data_format:** HTML with let all_locations = Python literal
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** undated inventory snapshot
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** EV portal license not established; general GNCTD policy is not automatically an EV feed license
+- **automation_permission:** unknown
+- **reliability:** HTTP page returned 200; HTTPS certificate expired 2025-08-27
+- **station_count:** 573
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "GET", "url": "http://ev.delhi.gov.in/charging_station", "parameters": null}
+- **example_response:** unknown / not obtained
+- **curl:** curl --fail-with-body 'http://ev.delhi.gov.in/charging_station'
+- **postman_request:** {"method": "GET", "url": "http://ev.delhi.gov.in/charging_station", "parameters": null}
+- **recommended_ingestion:** Research extraction verified. Production needs repaired HTTPS and portal-specific reuse terms; ast.literal_eval only, never eval.
+- **source_url:** https://ev.delhi.gov.in/charging_station
+
+## Delhi OpenEV database link
+
+- **id:** delhi-openev
+- **name:** Delhi OpenEV database link
+- **organization:** Delhi Transport Department
+- **organization_country:** IN
+- **coverage:** Delhi
+- **covers_india:** True
+- **covers_delhi_ncr:** True
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** http://ev.delhi.gov.in/openev/
+- **endpoint_class:** OBSERVED
+- **http_method:** GET
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** HTTP request redirected to /openev then returned 404
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "GET", "url": "http://ev.delhi.gov.in/openev/", "parameters": null}
+- **example_response:** unknown / not obtained
+- **curl:** curl --fail-with-body 'http://ev.delhi.gov.in/openev/'
+- **postman_request:** {"method": "GET", "url": "http://ev.delhi.gov.in/openev/", "parameters": null}
+- **recommended_ingestion:** No list/detail/status/DocType verified. Ask authority for current open feed; do not guess Frappe resources.
+- **source_url:** https://ev.delhi.gov.in/openev/
+
+## BEE public charging dataset
+
+- **id:** bee
+- **name:** BEE public charging dataset
+- **organization:** Bureau of Energy Efficiency / Ministry of Power
+- **organization_country:** IN
+- **coverage:** India, all states/UTs represented in collected rows
+- **covers_india:** True
+- **covers_delhi_ncr:** True
+- **data_type:** charger/connector rows with station addresses and coordinates
+- **api_availability:** downloadable PDF, not live API
+- **endpoint:** https://www.beeindia.gov.in/WriteReadData/RTF1984/EV_PCS_Data_29277.pdf
+- **endpoint_class:** VERIFIED
+- **http_method:** GET
+- **parameters:** unknown / not obtained
+- **authentication:** none
+- **api_key_required:** False
+- **rate_limits:** unknown
+- **pagination:** 1159 PDF pages; all extracted
+- **geographic_filtering:** Offline state/district/coordinates
+- **station_filtering:** unknown
+- **realtime:** STATIC
+- **realtime_evidence:** not tested
+- **update_frequency:** publication-dependent, not established
+- **data_format:** Excel-export PDF
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** static
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** Public download; explicit dataset redistribution license not established
+- **automation_permission:** unknown
+- **reliability:** 200 application/pdf; 39641 rows extracted; invalid XRef warnings recovered by Poppler
+- **station_count:** 29366
+- **last_observed_update:** Dataset labeled through 2025-10-26; PDF metadata creation 2026-02-17
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "GET", "url": "https://www.beeindia.gov.in/WriteReadData/RTF1984/EV_PCS_Data_29277.pdf", "parameters": null}
+- **example_response:** unknown / not obtained
+- **curl:** curl --fail-with-body 'https://www.beeindia.gov.in/WriteReadData/RTF1984/EV_PCS_Data_29277.pdf'
+- **postman_request:** {"method": "GET", "url": "https://www.beeindia.gov.in/WriteReadData/RTF1984/EV_PCS_Data_29277.pdf", "parameters": null}
+- **recommended_ingestion:** Daily check official index for changed download; hash PDF; preserve dataset date, PDF page/row, repeated connector rows, coordinate quarantine.
+- **source_url:** https://www.beeindia.gov.in/WriteReadData/RTF1984/EV_PCS_Data_29277.pdf
+
+## EV Yatra
+
+- **id:** evyatra
+- **name:** EV Yatra
+- **organization:** Bureau of Energy Efficiency
+- **organization_country:** IN
+- **coverage:** India
+- **covers_india:** True
+- **covers_delhi_ncr:** True
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** Official app advertises real-time, but no timestamped feed obtained
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** CPO submissions aggregated by government
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** Direct HTTPS and HTTP requests timed out
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Use BEE published inventory now; seek authorized EV Yatra export/availability feed.
+- **source_url:** https://evyatra.beeindia.gov.in/
+
+## Delhi Transco 78-site list
+
+- **id:** dtl
+- **name:** Delhi Transco 78-site list
+- **organization:** Delhi Transco Limited
+- **organization_country:** IN
+- **coverage:** Delhi
+- **covers_india:** True
+- **covers_delhi_ncr:** True
+- **data_type:** reported operational project sites, charger counts, swapping counts
+- **api_availability:** not established
+- **endpoint:** https://dtl.gov.in/WriteReadData/Marquee/Total%20EV%20Charging%20Stations%20under%20DTL%20EV%20Tender%20-%2078%20sites.pdf
+- **endpoint_class:** VERIFIED
+- **http_method:** GET
+- **parameters:** unknown / not obtained
+- **authentication:** none
+- **api_key_required:** False
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** STATIC
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** PDF, 2 pages
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** 78
+- **last_observed_update:** Header references inauguration 2024-12-04; publication date not established
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "GET", "url": "https://dtl.gov.in/WriteReadData/Marquee/Total%20EV%20Charging%20Stations%20under%20DTL%20EV%20Tender%20-%2078%20sites.pdf", "parameters": null}
+- **example_response:** unknown / not obtained
+- **curl:** curl --fail-with-body 'https://dtl.gov.in/WriteReadData/Marquee/Total%20EV%20Charging%20Stations%20under%20DTL%20EV%20Tender%20-%2078%20sites.pdf'
+- **postman_request:** {"method": "GET", "url": "https://dtl.gov.in/WriteReadData/Marquee/Total%20EV%20Charging%20Stations%20under%20DTL%20EV%20Tender%20-%2078%20sites.pdf", "parameters": null}
+- **recommended_ingestion:** Static project evidence; extract address/coordinates and validate historical status. Some include swapping; never add tender totals blindly.
+- **source_url:** https://dtl.gov.in/WriteReadData/Marquee/Total%20EV%20Charging%20Stations%20under%20DTL%20EV%20Tender%20-%2078%20sites.pdf
+
+## MoP installed-site list
+
+- **id:** mop-installed
+- **name:** MoP installed-site list
+- **organization:** Ministry of Power
+- **organization_country:** IN
+- **coverage:** India including NCR
+- **covers_india:** True
+- **covers_delhi_ncr:** True
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** https://powermin.gov.in/sites/default/files/uploads/Details_of_Public_Charging_Stations_Installed.pdf
+- **endpoint_class:** DOCUMENTED
+- **http_method:** GET
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** STATIC
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** PDF
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "GET", "url": "https://powermin.gov.in/sites/default/files/uploads/Details_of_Public_Charging_Stations_Installed.pdf", "parameters": null}
+- **example_response:** unknown / not obtained
+- **curl:** curl --fail-with-body 'https://powermin.gov.in/sites/default/files/uploads/Details_of_Public_Charging_Stations_Installed.pdf'
+- **postman_request:** {"method": "GET", "url": "https://powermin.gov.in/sites/default/files/uploads/Details_of_Public_Charging_Stations_Installed.pdf", "parameters": null}
+- **recommended_ingestion:** Historical site leads; preserve authority and unknown dataset date; compare to BEE before adding.
+- **source_url:** https://powermin.gov.in/sites/default/files/uploads/Details_of_Public_Charging_Stations_Installed.pdf
+
+## FAME allocation tables
+
+- **id:** mhi-sanctions
+- **name:** FAME allocation tables
+- **organization:** Ministry of Heavy Industries
+- **organization_country:** IN
+- **coverage:** India
+- **covers_india:** True
+- **covers_delhi_ncr:** True
+- **data_type:** sanctioned allocations, not verified station existence
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** STATIC
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** PDF
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Store project/planned evidence only; promote after commissioning proof.
+- **source_url:** https://heavyindustries.gov.in/sites/default/files/2023-09/2-e_didm_writereaddata_userfiles_press_release_for_charging_infrastructiure.pdf
+
+## e-AMRIT map and locator directory
+
+- **id:** eamrit
+- **name:** e-AMRIT map and locator directory
+- **organization:** NITI Aayog
+- **organization_country:** IN
+- **coverage:** India
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Trace map source and dates; do not treat headline counts as a current census.
+- **source_url:** https://e-amrit.niti.gov.in/charging-map
+
+## Open Government Data EVPCS catalog
+
+- **id:** data-gov
+- **name:** Open Government Data EVPCS catalog
+- **organization:** OGD Platform India / state catalogs
+- **organization_country:** IN
+- **coverage:** India/state catalog
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** dataset discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Locate resource-specific downloads/API IDs and license; do not invent api.data.gov.in resource UUIDs.
+- **source_url:** https://tn.data.gov.in/keywords/EVPCS
+
+## Haryana HAREDA
+
+- **id:** hareda
+- **name:** Haryana HAREDA
+- **organization:** Haryana New & Renewable Energy Department
+- **organization_country:** IN
+- **coverage:** Haryana; advisory directs CPO weekly reporting
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://hareda.gov.in/about-department/electric-vehicle/
+
+## MSEDCL EVCS connections
+
+- **id:** msedcl
+- **name:** MSEDCL EVCS connections
+- **organization:** Maharashtra State Electricity Distribution Co.
+- **organization_country:** IN
+- **coverage:** Maharashtra; electricity connections may include captive sites
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://evincentive.mahadiscom.in/EVCS/evcs?uiActionName=getEvcsConnList
+
+## BESCOM EV land aggregator / EV Mithra
+
+- **id:** bescom
+- **name:** BESCOM EV land aggregator / EV Mithra
+- **organization:** BESCOM
+- **organization_country:** IN
+- **coverage:** Karnataka; land offers are not operational stations
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://evkarnataka.bescom.org/
+
+## KSEB PM E-DRIVE
+
+- **id:** kseb
+- **name:** KSEB PM E-DRIVE
+- **organization:** Kerala State Electricity Board
+- **organization_country:** IN
+- **coverage:** Kerala; operational/proposed project evidence
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://pmedrivekerala.kseb.in/
+
+## ANERT EV tender
+
+- **id:** anert
+- **name:** ANERT EV tender
+- **organization:** ANERT Kerala
+- **organization_country:** IN
+- **coverage:** Kerala; tender evidence
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.anert.gov.in/sites/default/files/inline-files/EVCS_1.pdf
+
+## TGREDCO charging infrastructure
+
+- **id:** tgredco
+- **name:** TGREDCO charging infrastructure
+- **organization:** Telangana Renewable Energy Development Corporation
+- **organization_country:** IN
+- **coverage:** Telangana; distinguish proposed/sanctioned from available
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://tgredco.telangana.gov.in/ChargingInfrastructure.aspx
+
+## NREDCAP
+
+- **id:** nredcap
+- **name:** NREDCAP
+- **organization:** New & Renewable Energy Development Corporation AP
+- **organization_country:** IN
+- **coverage:** Andhra Pradesh
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.nredcap.in/Default.aspx
+
+## WBSEDCL EV
+
+- **id:** wbsedcl
+- **name:** WBSEDCL EV
+- **organization:** West Bengal State Electricity Distribution Co.
+- **organization_country:** IN
+- **coverage:** West Bengal
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://wbsedcl.in/irj/go/km/docs/internet/new_website/EV.html
+
+## Odisha EV tenders
+
+- **id:** odisha
+- **name:** Odisha EV tenders
+- **organization:** Odisha Transport
+- **organization_country:** IN
+- **coverage:** Odisha; tender inventory is planned evidence
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://odishatransport.gov.in/tender/14/68
+
+## EVolute Surat
+
+- **id:** surat
+- **name:** EVolute Surat
+- **organization:** Surat Municipal Corporation
+- **organization_country:** IN
+- **coverage:** Surat, Gujarat; app discovery
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.smc.gov.in/EServices/EVoluteSurat
+
+## Ladakh charging inauguration
+
+- **id:** ladakh
+- **name:** Ladakh charging inauguration
+- **organization:** Administration of Ladakh
+- **organization_country:** IN
+- **coverage:** Ladakh; date-specific commissioning evidence
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://ladakh.gov.in/in-a-first-l-g-vk-saxena-inaugurates-five-ev-charging-stations-across-ladakh/
+
+## One Map Goa
+
+- **id:** goa-gis
+- **name:** One Map Goa
+- **organization:** Government of Goa
+- **organization_country:** IN
+- **coverage:** Goa; no EV-specific layer verified
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://onemapgoagis.goa.gov.in/
+
+## Rajdharaa
+
+- **id:** rajasthan-gis
+- **name:** Rajdharaa
+- **organization:** Government of Rajasthan
+- **organization_country:** IN
+- **coverage:** Rajasthan; no EV layer verified
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** regional inventory/project/discovery leads
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://gisportal.rajasthan.gov.in/citizen/Help/Citizen_help/index.html
+
+## Statiq
+
+- **id:** statiq
+- **name:** Statiq
+- **organization:** Sharify Services
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** One connector detail reported faulted, without source status timestamp
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party and roaming/aggregated
+- **terms_url:** https://www.statiq.in/termsandconditions-page
+- **license:** not established
+- **automation_permission:** prohibited without express written permission
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** STOP. Excluded from master datasets; obtain licensed feed / written permission.
+- **source_url:** https://www.statiq.in/ev-charging-station
+
+## Tata Power EZ Charge
+
+- **id:** tata-power
+- **name:** Tata Power EZ Charge
+- **organization:** Tata Power
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.tatapower.com/ezcharge/knowledge-hub
+
+## ChargeZone
+
+- **id:** chargezone
+- **name:** ChargeZone
+- **organization:** ChargeZone
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://chargezone.co.in/app-download
+
+## Jio-bp pulse
+
+- **id:** jiobp
+- **name:** Jio-bp pulse
+- **organization:** Reliance BP Mobility
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.jiobp.com/products-and-services/EV-charging
+
+## Zeon Charging
+
+- **id:** zeon
+- **name:** Zeon Charging
+- **organization:** Zeon Electric
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.zeoncharging.com/
+
+## GLIDA
+
+- **id:** glida
+- **name:** GLIDA
+- **organization:** GLIDA / former Fortum Charge & Drive India
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** Observed REST-like PHP JSON
+- **endpoint:** https://www.glida.in/glidachargersapi.php
+- **endpoint_class:** OBSERVED
+- **http_method:** GET
+- **parameters:** unknown / not obtained
+- **authentication:** no authentication presented in page request
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** JSON
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** Two 200 responses contained Internal server error; zero station records obtained
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "GET", "url": "https://www.glida.in/glidachargersapi.php", "parameters": null}
+- **example_response:** unknown / not obtained
+- **curl:** curl --fail-with-body 'https://www.glida.in/glidachargersapi.php'
+- **postman_request:** {"method": "GET", "url": "https://www.glida.in/glidachargersapi.php", "parameters": null}
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.glida.in/locations/
+
+## Kazam
+
+- **id:** kazam
+- **name:** Kazam
+- **organization:** Kazam Energy
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.kazam.in/
+
+## Bolt.Earth
+
+- **id:** bolt
+- **name:** Bolt.Earth
+- **organization:** Bolt.Earth / Revos
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** Official Discovery API product; endpoint and credentials not public in reviewed page
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** Official product advertises availability/pricing/functionality; not verified by timestamped response
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://bolt.earth/discovery-api
+
+## chargeMOD
+
+- **id:** chargemod
+- **name:** chargeMOD
+- **organization:** chargeMOD
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.chargemod.com/
+
+## E-Fill
+
+- **id:** efill
+- **name:** E-Fill
+- **organization:** Efill Electric
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://iot.efillelectric.com/
+
+## SunFuel
+
+- **id:** sunfuel
+- **name:** SunFuel
+- **organization:** SunFuel Electric
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.sunfuelelectric.com/
+
+## EESL/CESL
+
+- **id:** eesl
+- **name:** EESL/CESL
+- **organization:** Energy Efficiency Services Limited
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://eeslindia.org/img/news_m/EESL_May_Newsletter.pdf
+
+## REIL
+
+- **id:** reil
+- **name:** REIL
+- **organization:** Rajasthan Electronics and Instruments
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.reiljp.com/pressrelease/prel170.aspx
+
+## NTPC
+
+- **id:** ntpc
+- **name:** NTPC
+- **organization:** NTPC
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** government allocation evidence; CPO own feed not verified
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://tgredco.telangana.gov.in/GOISanctionedEVCS.aspx
+
+## Fortum India legacy
+
+- **id:** fortum
+- **name:** Fortum India legacy
+- **organization:** Fortum / GLIDA
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Resolve legacy operator alias to GLIDA; do not double-count old and new brands.
+- **source_url:** https://www.glida.in/glida-near-you/
+
+## BPCL eDrive
+
+- **id:** bpcl
+- **name:** BPCL eDrive
+- **organization:** Bharat Petroleum
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.bharatpetroleum.in/our-businesses/fuels-and-services/edrive
+
+## HPCL
+
+- **id:** hpcl
+- **name:** HPCL
+- **organization:** Hindustan Petroleum
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.hindustanpetroleum.com/hp-retail
+
+## IOCL
+
+- **id:** iocl
+- **name:** IOCL
+- **organization:** Indian Oil Corporation
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://locator.iocl.com/
+
+## Adani TotalEnergies E-Mobility
+
+- **id:** adani
+- **name:** Adani TotalEnergies E-Mobility
+- **organization:** Adani TotalEnergies
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.adanigas.com/
+
+## Hyundai charging ecosystem
+
+- **id:** hyundai
+- **name:** Hyundai charging ecosystem
+- **organization:** Hyundai Motor India
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party and roaming/aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.hyundai.com/in/en/hyundai-story/media-center/press-release/hmi-jio-bp-join-hands-integrate-ev-charging-network
+
+## eHUB by MG
+
+- **id:** mg
+- **name:** eHUB by MG
+- **organization:** JSW MG Motor India
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party and roaming/aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.mgmotor.co.in/media-center/newsroom/e-hub-by-mg-becomes-indias-largest-unified-ev-charging-app
+
+## CHARGE_iN
+
+- **id:** mahindra
+- **name:** CHARGE_iN
+- **organization:** Mahindra
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.mahindraelectricsuv.com/technology/Charge_IN.html
+
+## Gentari Go
+
+- **id:** gentari
+- **name:** Gentari Go
+- **organization:** Gentari
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party and roaming/aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.gentari.in/go/charging-network
+
+## Shell Recharge India
+
+- **id:** shell
+- **name:** Shell Recharge India
+- **organization:** Shell India
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.shell.in/shell-recharge.html
+
+## Ather Grid
+
+- **id:** ather
+- **name:** Ather Grid
+- **organization:** Ather Energy
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.atherenergy.com/faq/charging-grid/grid-payments
+
+## EVRE
+
+- **id:** evre
+- **name:** EVRE
+- **organization:** EVRE
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://www.evre.in/netra-one
+
+## Relux Electric
+
+- **id:** relux
+- **name:** Relux Electric
+- **organization:** Relux Electric
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://reluxelectric.com/location
+
+## Volttic
+
+- **id:** volttic
+- **name:** Volttic
+- **organization:** Volttic
+- **organization_country:** IN
+- **coverage:** India; Delhi/NCR coverage must be measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Obtain a documented feed and permitted reuse before scheduling.
+- **source_url:** https://volttic.com/category/projects/
+
+## Tata XPRES-T station table
+
+- **id:** tata-xprest
+- **name:** Tata XPRES-T station table
+- **organization:** Tata Motors
+- **organization_country:** IN
+- **coverage:** India
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station names and addresses; no coordinates
+- **api_availability:** not established
+- **endpoint:** https://xprest.tatamotors.com/electric/chargingpoint
+- **endpoint_class:** VERIFIED
+- **http_method:** GET
+- **parameters:** unknown / not obtained
+- **authentication:** none
+- **api_key_required:** False
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** STATIC
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML table
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "GET", "url": "https://xprest.tatamotors.com/electric/chargingpoint", "parameters": null}
+- **example_response:** unknown / not obtained
+- **curl:** curl --fail-with-body 'https://xprest.tatamotors.com/electric/chargingpoint'
+- **postman_request:** {"method": "GET", "url": "https://xprest.tatamotors.com/electric/chargingpoint", "parameters": null}
+- **recommended_ingestion:** Address-only discovery queue; publisher warns information may not be up to date. Do not geocode automatically under unverified license.
+- **source_url:** https://xprest.tatamotors.com/electric/chargingpoint
+
+## OpenStreetMap / Overpass
+
+- **id:** osm
+- **name:** OpenStreetMap / Overpass
+- **organization:** OSM contributors; VK Maps public Overpass
+- **organization_country:** unknown / not obtained
+- **coverage:** India/global
+- **covers_india:** True
+- **covers_delhi_ncr:** True
+- **data_type:** station discovery
+- **api_availability:** Overpass QL
+- **endpoint:** https://maps.mail.ru/osm/tools/overpass/api/interpreter
+- **endpoint_class:** VERIFIED
+- **http_method:** POST
+- **parameters:** {"data": "[out:json][timeout:90];area[\"ISO3166-1\"=\"IN\"][\"admin_level\"=\"2\"]->.india;nwr[\"amenity\"=\"charging_station\"](area.india);out center meta;"}
+- **authentication:** none
+- **api_key_required:** False
+- **rate_limits:** unknown
+- **pagination:** No cursor; complete query or split by geographic scope
+- **geographic_filtering:** area, bbox, around
+- **station_filtering:** OSM node/way/relation ID
+- **realtime:** STATIC
+- **realtime_evidence:** OSM edit timestamps describe edits, not charger heartbeat
+- **update_frequency:** unknown
+- **data_format:** JSON elements
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** dynamic inventory
+- **provenance_type:** community
+- **terms_url:** unknown / not obtained
+- **license:** ODbL-1.0
+- **automation_permission:** allowed subject to instance policy and ODbL
+- **reliability:** not measured
+- **station_count:** 600
+- **last_observed_update:** OSM base 2026-10-04T18:55:04Z; per-feature edit timestamps retained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** {"method": "POST", "url": "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "parameters": {"data": "[out:json][timeout:90];area[\"ISO3166-1\"=\"IN\"][\"admin_level\"=\"2\"]->.india;nwr[\"amenity\"=\"charging_station\"](area.india);out center meta;"}}
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** {"method": "POST", "url": "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "parameters": {"data": "[out:json][timeout:90];area[\"ISO3166-1\"=\"IN\"][\"admin_level\"=\"2\"]->.india;nwr[\"amenity\"=\"charging_station\"](area.india);out center meta;"}}
+- **recommended_ingestion:** Weekly national extract/diff and daily priority-area changes; attribute OSM and keep license-aware derived databases.
+- **source_url:** https://wiki.openstreetmap.org/wiki/Overpass_API
+
+## Google Places API
+
+- **id:** google
+- **name:** Google Places API
+- **organization:** Google
+- **organization_country:** unknown / not obtained
+- **coverage:** Global; India/NCR station-level coverage unmeasured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_or_terms_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Licensed discovery and cross-validation only; examine storage, caching and attribution restrictions.
+- **source_url:** https://developers.google.com/maps/documentation/places/web-service/reference/rest/v1/places
+
+## Mappls/MapmyIndia
+
+- **id:** mappls
+- **name:** Mappls/MapmyIndia
+- **organization:** CE Info Systems
+- **organization_country:** unknown / not obtained
+- **coverage:** Global; India/NCR station-level coverage unmeasured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_or_terms_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Licensed discovery and cross-validation only; examine storage, caching and attribution restrictions.
+- **source_url:** https://mapmyindia.github.io/mapmyindia-rest-api/
+
+## Apple Maps Server API
+
+- **id:** apple
+- **name:** Apple Maps Server API
+- **organization:** Apple
+- **organization_country:** unknown / not obtained
+- **coverage:** Global; India/NCR station-level coverage unmeasured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_or_terms_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Licensed discovery and cross-validation only; examine storage, caching and attribution restrictions.
+- **source_url:** https://developer.apple.com/documentation/applemapsserverapi/-v1-search
+
+## Bing/Azure Maps
+
+- **id:** bing-azure
+- **name:** Bing/Azure Maps
+- **organization:** Microsoft
+- **organization_country:** unknown / not obtained
+- **coverage:** Global; India/NCR station-level coverage unmeasured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_or_terms_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Licensed discovery and cross-validation only; examine storage, caching and attribution restrictions.
+- **source_url:** https://learn.microsoft.com/en-us/rest/api/maps/search/get-search-poi-category?view=rest-maps-1.0
+
+## PlugShare
+
+- **id:** plugshare
+- **name:** PlugShare
+- **organization:** PlugShare / Recargo
+- **organization_country:** unknown / not obtained
+- **coverage:** Global; India/NCR station-level coverage unmeasured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_or_terms_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Licensed discovery and cross-validation only; examine storage, caching and attribution restrictions.
+- **source_url:** https://help.plugshare.com/hc/en-us/articles/4418950880659-PlugShare-Charging-Stations-API-Documentation-Access
+
+## ChargeHub
+
+- **id:** chargehub
+- **name:** ChargeHub
+- **organization:** ChargeHub
+- **organization_country:** unknown / not obtained
+- **coverage:** Global; India/NCR station-level coverage unmeasured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_or_terms_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Licensed discovery and cross-validation only; examine storage, caching and attribution restrictions.
+- **source_url:** https://developer.chargehub.com/
+
+## EVMap
+
+- **id:** evmap
+- **name:** EVMap
+- **organization:** EVMap open-source project
+- **organization_country:** unknown / not obtained
+- **coverage:** Global; India/NCR station-level coverage unmeasured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_or_terms_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Licensed discovery and cross-validation only; examine storage, caching and attribution restrictions.
+- **source_url:** https://github.com/ev-map/EVMap/blob/master/README.md
+
+## Electromaps
+
+- **id:** electromaps
+- **name:** Electromaps
+- **organization:** Electromaps
+- **organization_country:** unknown / not obtained
+- **coverage:** Global; India/NCR station-level coverage unmeasured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_or_terms_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Licensed discovery and cross-validation only; examine storage, caching and attribution restrictions.
+- **source_url:** https://www.electromaps.com/en/for-partners
+
+## ChargeFinder
+
+- **id:** chargefinder
+- **name:** ChargeFinder
+- **organization:** ChargeFinder
+- **organization_country:** unknown / not obtained
+- **coverage:** Global; India/NCR station-level coverage unmeasured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** station discovery
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** UNVERIFIED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** aggregated
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_or_terms_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Licensed discovery and cross-validation only; examine storage, caching and attribution restrictions.
+- **source_url:** https://chargefinder.com/terms
+
+## OCPI specification
+
+- **id:** ocpi
+- **name:** OCPI specification
+- **organization:** EV Roaming Foundation
+- **organization_country:** unknown / not obtained
+- **coverage:** Protocol; no geographic dataset
+- **covers_india:** unknown / not obtained
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** protocol documentation
+- **api_availability:** not established
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** DOCUMENTED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** unknown
+- **api_key_required:** unknown / not obtained
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** unknown
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Discover version and module URLs from authorized CPO feed; no Indian anonymous OCPI feed verified.
+- **source_url:** https://ocpi.github.io/openapi-specification/ocpi/2.2.1/
+
+## ChargeIndia Hub
+
+- **id:** chargeindia
+- **name:** ChargeIndia Hub
+- **organization:** ChargeIndia
+- **organization_country:** IN
+- **coverage:** India advertised; participating CPO station coverage not measured
+- **covers_india:** True
+- **covers_delhi_ncr:** unknown / not obtained
+- **data_type:** OCPI partner feed
+- **api_availability:** OCPI 2.2.1 documented
+- **endpoint:** unknown / not obtained
+- **endpoint_class:** DOCUMENTED
+- **http_method:** unknown / not obtained
+- **parameters:** unknown / not obtained
+- **authentication:** Authorization: Token; partner onboarding
+- **api_key_required:** True
+- **rate_limits:** unknown
+- **pagination:** unknown
+- **geographic_filtering:** unknown
+- **station_filtering:** unknown
+- **realtime:** UNKNOWN
+- **realtime_evidence:** not tested
+- **update_frequency:** unknown
+- **data_format:** HTML/app
+- **json_schema:** unknown / not obtained
+- **static_or_dynamic:** unknown
+- **provenance_type:** first-party
+- **terms_url:** unknown / not obtained
+- **license:** not established
+- **automation_permission:** contract_required
+- **reliability:** not measured
+- **station_count:** unknown / not obtained
+- **last_observed_update:** unknown / not obtained
+- **observed_on:** 2026-10-04 UTC / 2026-10-05 IST
+- **example_request:** unknown / not obtained
+- **example_response:** unknown / not obtained
+- **curl:** unknown / not obtained
+- **postman_request:** unknown / not obtained
+- **recommended_ingestion:** Published paths use {hub-domain}; deployment URL not established. Obtain token and advertised module endpoints; no guessed URL.
+- **source_url:** https://docs.hub.chargeindia.com/api-reference

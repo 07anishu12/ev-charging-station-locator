@@ -107,6 +107,8 @@ export class FastChargerApiClient {
           ...options?.headers,
         },
         ...options,
+        signal:options?.signal??AbortSignal.timeout(15000),
+        cache:"no-store",
       });
     } catch (networkError) {
       if (networkError instanceof Error && (networkError.name === "AbortError" || networkError.name === "TimeoutError")) {
@@ -217,6 +219,10 @@ export class FastChargerApiClient {
       }
       throw err;
     }
+  }
+
+  async getStatistics():Promise<{totalStations:number;totalCities:number;totalOperators:number;states:Array<{slug:string;name:string;code:string;stationCount:number;cityCount:number}>}> {
+    return this.request('/api/v1/statistics');
   }
 
   // --- Cities ---

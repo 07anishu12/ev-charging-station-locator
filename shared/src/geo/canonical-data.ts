@@ -4,8 +4,8 @@ export interface CanonicalState {
   name: string;
   slug: string;
   code: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface CanonicalCityMapping {
@@ -21,6 +21,7 @@ export interface CanonicalCityMapping {
  * Standard Indian States and Union Territories.
  */
 export const INDIAN_STATES: CanonicalState[] = [
+  { name:"Andaman and Nicobar Islands",slug:"andaman-and-nicobar-islands",code:"AN" },
   { name: "Andhra Pradesh", slug: "andhra-pradesh", code: "AP", latitude: 15.9129, longitude: 79.74 },
   { name: "Arunachal Pradesh", slug: "arunachal-pradesh", code: "AR", latitude: 28.218, longitude: 94.7278 },
   { name: "Assam", slug: "assam", code: "AS", latitude: 26.2006, longitude: 92.9376 },

@@ -7,7 +7,7 @@ import { ChargingPulse } from "@/components/ui/charging-pulse";
 import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { PowerBadge } from "@/components/ui/power-badge";
 import { SavedButton } from "@/components/ui/saved-button";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StationStatus } from "@/components/ui/station-status";
 import type { Station } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
@@ -40,7 +40,7 @@ export function FeaturedStationCard({
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
             FEATURED FAST HUB
           </span>
-          <StatusBadge status={station.status} />
+          <StationStatus station={station} />
         </div>
         <SavedButton stationSlug={station.slug} stationName={station.name} />
       </div>
@@ -77,14 +77,14 @@ export function FeaturedStationCard({
               High Voltage Rapid Charge
             </span>
           </div>
-          <ChargingPulse size="sm" theme="emerald" label="Live Ready" />
+          <ChargingPulse size="sm" theme="emerald" label="Provider Inventory" />
         </div>
       </div>
 
       {/* Connectors */}
       <div className="relative z-10 mt-4 mb-6">
         <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-2">
-          Available Connectors
+          Reported Connectors
         </div>
         <div className="flex flex-wrap gap-1.5">
           {station.connectors.map((c) => (

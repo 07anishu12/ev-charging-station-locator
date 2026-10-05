@@ -92,7 +92,7 @@ export function WhyFastChargerStory() {
                     Search by PIN Code
                   </h3>
                   <p className="mt-2 text-sm text-[var(--color-muted)] leading-relaxed">
-                    Quickly locate charging hubs in any specific 6-digit Indian postal code area. Supports prefix matching, nearby pincodes, and coordinates resolution across 19,000+ pin areas.
+                    Quickly locate charging hubs in any specific 6-digit Indian postal code area. Search exact and nearby PIN codes using the canonical geographic database.
                   </p>
                 </div>
 

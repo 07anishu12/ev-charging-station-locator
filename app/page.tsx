@@ -87,10 +87,10 @@ const chargingStories: StoryCardItem[] = [
   {
     id: "operational-verified",
     tag: "Active Only",
-    title: "Live Operational Status",
-    description: "Stations checked for live power output, functional guns, and zero downtime.",
-    stat: "99.2%",
-    statLabel: "Live Uptime",
+    title: "Provider Operational Reports",
+    description: "Provider-reported operation is separate from current connector availability.",
+    stat: "Unknown",
+    statLabel: "Live Availability",
     href: "/search?status=operational",
     accent: "forest",
     icon: (
@@ -116,25 +116,24 @@ const chargingStories: StoryCardItem[] = [
   },
 ];
 
+export const dynamic="force-dynamic";
+
 export default async function HomePage() {
-  const [citiesData, fastChargersData, recentStationsData] = await Promise.all([
+  const [citiesData, fastChargersData, recentStationsData, canonicalStats] = await Promise.all([
     apiClient.getCities({ pageSize: 10 }),
     apiClient.getStations({ minPowerKw: 60, pageSize: 4 }),
     apiClient.getStations({ pageSize: 4 }),
+    apiClient.getStatistics(),
   ]);
 
+  if(citiesData.status === "error" || fastChargersData.status === "error" || recentStationsData.status === "error") {
+    return <><SiteHeader /><main className="mx-auto max-w-3xl p-8"><h1>Charging data unavailable</h1><p role="alert">We could not reach the charging data service. Please retry shortly.</p><Link href="/">Retry</Link></main></>;
+  }
   const allCities = citiesData.items;
   const popularCities = allCities.slice(0, 7);
   const fastChargers = fastChargersData.items;
   const recentStations = recentStationsData.items;
-  const uniqueOperatorsCount = new Set(
-    recentStations.map((s) => s.operator?.slug || s.operator?.id).filter(Boolean),
-  ).size;
-  const stats = {
-    totalStations: recentStationsData.pagination?.total ?? recentStations.length,
-    totalCities: citiesData.pagination?.total ?? allCities.length,
-    totalOperators: uniqueOperatorsCount,
-  };
+  const stats = canonicalStats;
 
   return (
     <>
@@ -360,13 +359,13 @@ export default async function HomePage() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary-green)]">
-                    Live Verification
+                    Provider Updates
                   </span>
                   <h2 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--color-dark-green)] mt-1">
                     Recently Updated
                   </h2>
                   <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-0.5">
-                    Verified charging points with updated status and connector availability
+                    Station inventory updates with source attribution; current availability may be unknown
                   </p>
                 </div>
                 <Link
@@ -416,7 +415,7 @@ export default async function HomePage() {
               Find a charger near you
             </h2>
             <p className="mt-4 text-sm sm:text-base text-emerald-200/90 max-w-lg leading-relaxed">
-              Never experience range anxiety. Explore thousands of verified electric vehicle charging points.
+              Never experience range anxiety. Explore charging locations reported by government and public data sources.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

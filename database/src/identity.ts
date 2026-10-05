@@ -25,6 +25,7 @@ export interface StationProximityCandidate {
   longitude: number;
   name?: string | null;
   operatorSlug?: string | null;
+  address?: string | null;
 }
 
 /**
@@ -112,20 +113,8 @@ export function isProximityDuplicate(
     return false;
   }
 
-  // If both have operator slugs, verify they match
-  if (candidateA.operatorSlug && candidateB.operatorSlug) {
-    return candidateA.operatorSlug.toLowerCase() === candidateB.operatorSlug.toLowerCase();
-  }
-
-  // If either has no operator, compare normalized names
-  const nameA = candidateA.name?.trim().toLowerCase() || "";
-  const nameB = candidateB.name?.trim().toLowerCase() || "";
-
-  if (nameA && nameB) {
-    if (nameA === nameB) return true;
-    if (nameA.includes(nameB) || nameB.includes(nameA)) return true;
-  }
-
-  // When within 10 meters, consider it the same physical site even if operator is missing
-  return distance <= 10;
+  const clean=(value?:string|null)=>(value??"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  return !!clean(candidateA.operatorSlug) && clean(candidateA.operatorSlug)===clean(candidateB.operatorSlug)
+    && !!clean(candidateA.name) && clean(candidateA.name)===clean(candidateB.name)
+    && !!clean(candidateA.address) && clean(candidateA.address)===clean(candidateB.address);
 }

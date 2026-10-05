@@ -182,6 +182,10 @@ export const stations = pgTable(
   "stations",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    researchCanonicalId: uuid("research_canonical_id").unique(),
+    lifecycleState: text("lifecycle_state").default("ACTIVE").notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    lastProviderUpdateAt: timestamp("last_provider_update_at", { withTimezone: true }),
     externalId: text("external_id").unique(),
     ocmId: integer("ocm_id").unique(),
     name: text("name").notNull(),
@@ -230,6 +234,14 @@ export const stationProviderMappings = pgTable(
       .references(() => stations.id, { onDelete: "cascade" }),
     providerName: text("provider_name").notNull(),
     providerStationId: text("provider_station_id").notNull(),
+    sourceType: text("source_type").default("OTHER_LICENSED_PROVIDER").notNull(),
+    sourceUrl: text("source_url"),
+    sourceUpdatedAt: timestamp("source_updated_at", { withTimezone: true }),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).defaultNow().notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+    ingestionRunId: uuid("ingestion_run_id"),
+    missingFromSnapshot: boolean("missing_from_snapshot").default(false).notNull(),
+    payloadHash: text("payload_hash"),
     rawData: jsonb("raw_data"),
     lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }).defaultNow().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -251,6 +263,8 @@ export const connectors = pgTable(
     stationId: uuid("station_id")
       .notNull()
       .references(() => stations.id, { onDelete: "cascade" }),
+    providerName: text("provider_name"),
+    providerConnectorId: text("provider_connector_id"),
     ocmConnectionId: integer("ocm_connection_id").unique(),
     connectionType: text("connection_type").notNull(),
     normalizedType: text("normalized_type").notNull(),
@@ -264,6 +278,7 @@ export const connectors = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
+    uniqueIndex("connector_provider_identity_idx").on(table.stationId, table.providerName, table.providerConnectorId),
     index("connectors_station_id_idx").on(table.stationId),
     index("connectors_normalized_type_idx").on(table.normalizedType),
     index("connectors_ocm_connection_id_idx").on(table.ocmConnectionId),
@@ -288,6 +303,10 @@ export const syncLogs = pgTable(
     recordsFailed: integer("records_failed").default(0).notNull(),
     errorCount: integer("error_count").default(0).notNull(),
     status: text("status").default("pending").notNull(),
+    recordsUnchanged: integer("records_unchanged").default(0).notNull(),
+    recordsMissing: integer("records_missing").default(0).notNull(),
+    statusUpdates: integer("status_updates").default(0).notNull(),
+    fullSnapshot: boolean("full_snapshot").default(false).notNull(),
     details: jsonb("details"),
   },
   (table) => [
@@ -356,6 +375,33 @@ export const objectMetadata = pgTable(
 // ---------------------------------------------------------------------------
 // Drizzle Relations
 // ---------------------------------------------------------------------------
+export const providers=pgTable('providers',{
+  providerId:text('provider_id').primaryKey(),providerName:text('provider_name').notNull(),providerType:text('provider_type').notNull(),
+  enabled:boolean('enabled').default(false).notNull(),providerStatus:text('provider_status').notNull(),
+  supportsStationData:boolean('supports_station_data').notNull(),supportsStatusData:boolean('supports_status_data').notNull(),
+  supportsConnectorData:boolean('supports_connector_data').notNull(),supportsPricing:boolean('supports_pricing').notNull(),
+  supportsLiveAvailability:boolean('supports_live_availability').notNull(),refreshIntervalSeconds:integer('refresh_interval_seconds').notNull(),
+  statusIntervalSeconds:integer('status_interval_seconds'),termsNotes:text('terms_notes').notNull(),
+  lastSuccessfulSyncAt:timestamp('last_successful_sync_at',{withTimezone:true}),lastStatusSyncAt:timestamp('last_status_sync_at',{withTimezone:true}),
+});
+export const statusObservations=pgTable('status_observations',{
+  id:uuid('id').defaultRandom().primaryKey(),stationId:uuid('station_id').notNull().references(()=>stations.id),
+  connectorId:uuid('connector_id').references(()=>connectors.id),statusKind:text('status_kind').notNull(),status:text('status').notNull(),
+  sourceProvider:text('source_provider').notNull(),sourceType:text('source_type').notNull(),
+  observedAt:timestamp('observed_at',{withTimezone:true}).notNull(),receivedAt:timestamp('received_at',{withTimezone:true}).defaultNow().notNull(),
+  confidence:numeric('confidence').notNull(),rawStatus:jsonb('raw_status').notNull(),ingestionRunId:uuid('ingestion_run_id').references(()=>syncLogs.id),
+  priority:integer('priority').notNull(),freshnessSeconds:integer('freshness_seconds').notNull(),
+},t=>[index('observations_station_time_idx').on(t.stationId,t.observedAt.desc())]);
+export const manualStatusOverrides=pgTable('manual_status_overrides',{
+  id:uuid('id').defaultRandom().primaryKey(),stationId:uuid('station_id').notNull().references(()=>stations.id),
+  previousStatus:text('previous_status').notNull(),newStatus:text('new_status').notNull(),reason:text('reason').notNull(),changedBy:text('changed_by').notNull(),
+  changedAt:timestamp('changed_at',{withTimezone:true}).defaultNow().notNull(),expiresAt:timestamp('expires_at',{withTimezone:true}),
+},t=>[index('overrides_station_time_idx').on(t.stationId,t.changedAt.desc())]);
+export const quarantinedStationRecords=pgTable('quarantined_station_records',{
+  stationId:uuid('station_id').primaryKey(),quarantinedAt:timestamp('quarantined_at',{withTimezone:true}).defaultNow().notNull(),
+  reason:text('reason').notNull(),stationRecord:jsonb('station_record').notNull(),connectorRecords:jsonb('connector_records').notNull(),qualityRecords:jsonb('quality_records').notNull(),
+});
+
 export const statesRelations = relations(states, ({ many }) => ({
   districts: many(districts),
   cities: many(cities),

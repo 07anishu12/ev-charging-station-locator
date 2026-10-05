@@ -62,11 +62,13 @@ export default async function StatePage({ params }: StatePageProps) {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
 
-  const [stationsData, citiesData] = await Promise.all([
+  const [stationsData, citiesData, canonicalStats] = await Promise.all([
     apiClient.getStations({ state: stateSlug, pageSize: 20 }),
     apiClient.getCities({ pageSize: 50 }),
+    apiClient.getStatistics(),
   ]);
 
+  if(stationsData.status === "error" || citiesData.status === "error") throw new Error("Charging data service is unavailable");
   const stationsInState = stationsData.items;
   const citiesInState = citiesData.items.filter(
     (c) => c.stateSlug === stateSlug || c.stateName?.toLowerCase() === stateName.toLowerCase(),
@@ -74,15 +76,15 @@ export default async function StatePage({ params }: StatePageProps) {
   const otherStates = CANONICAL_STATES.filter((s) => s.slug !== stateSlug)
     .slice(0, 3)
     .map((s) => {
-      const stateCities = citiesData.items.filter((c) => c.stateSlug === s.slug);
-      const stCount = stateCities.reduce((sum, c) => sum + c.stationCount, 0);
+      const aggregate=canonicalStats.states.find(st=>st.slug===s.slug);
+      const stCount = aggregate?.stationCount??0;
       return {
         id: s.slug,
         name: s.name,
         slug: s.slug,
         code: s.code,
         stationCount: stCount,
-        cityCount: stateCities.length,
+        cityCount:aggregate?.cityCount??0,
         latitude: s.latitude,
         longitude: s.longitude,
       };
@@ -189,7 +191,7 @@ export default async function StatePage({ params }: StatePageProps) {
             <MapView
               stations={stationsInState}
               initialCenter={
-                canonicalState ? { lat: canonicalState.latitude, lng: canonicalState.longitude } : { lat: 28.6139, lng: 77.209 }
+                canonicalState?.latitude !== undefined && canonicalState?.longitude !== undefined ? { lat:canonicalState.latitude,lng:canonicalState.longitude } : stationsInState[0] ? {lat:stationsInState[0].latitude,lng:stationsInState[0].longitude} : undefined
               }
               initialZoom={canonicalState ? 8 : 7}
             />
@@ -231,7 +233,7 @@ export default async function StatePage({ params }: StatePageProps) {
 
           <StationList
             stations={stationsInState}
-            error={stationsData.status === "error" ? stationsData.error.message : null}
+            error={null}
             emptyTitle={`No stations found in ${stateName}`}
             emptyDescription="Explore other Indian states or find chargers near your current location on the map."
           />

@@ -26,8 +26,8 @@ export interface MockCity {
   stateSlug: string;
   stationCount: number;
   fastChargerCount: number;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   popularPincodes: string[];
 }
 

@@ -6,7 +6,7 @@ import React from "react";
 import { ConnectorBadge } from "@/components/ui/connector-badge";
 import { PowerBadge } from "@/components/ui/power-badge";
 import { SavedButton } from "@/components/ui/saved-button";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StationStatus } from "@/components/ui/station-status";
 import type { Station } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
@@ -76,9 +76,9 @@ export function StationBottomSheet({ station, onClose, className = "" }: Station
 
         {/* Badges row: Status + 24/7 + Power + Connectors */}
         <div className="flex flex-wrap items-center gap-1.5 my-3">
-          <StatusBadge status={station.status} size="sm" pulse={true} />
+          <StationStatus station={station} />
           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-[var(--color-secondary-green)]">
-            🕒 24/7
+            🕒 Hours unknown
           </span>
           <PowerBadge powerKw={station.fastestPowerKw} />
           {station.connectors.map((c) => (

@@ -54,3 +54,43 @@ next-env.d.ts
 .codex/
 graphify-out/*
 !graphify-out/3d/
+
+# Large research/provider datasets
+research/ev-india/evidence/*.xml
+research/ev-india/evidence/*.json
+research/ev-india/evidence/*.csv
+research/ev-india/evidence/*.zip
+research/ev-india/evidence/*.gz
+
+# Raw ingestion/provider artifacts
+data/raw/
+data/ingestion/
+
+# Provider payloads and local ingestion staging (keep local data)
+research/ev-india/evidence/
+research/ev-india/datasets/
+research/ev-india/source-inventory.json
+research/ev-india/source-inventory.csv
+research/ev-india/postman_collection.json
+.ingestion/
+__pycache__/
+*.pyc
+*.sql.dump
+*.dump
+
+# EV India research generated data
+research/ev-india/evidence/
+research/ev-india/datasets/
+research/ev-india/__pycache__/
+
+.next-*/
+**/.next-*/
+
+raw/
+data/raw/
+staging/
+research/**/evidence/
+research/**/datasets/
+research/**/*.xml
+*.raw.json
+*.raw.csv

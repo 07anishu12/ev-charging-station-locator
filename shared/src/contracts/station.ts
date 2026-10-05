@@ -19,6 +19,8 @@ export const stationConnectorSchema = z.object({
   amps: z.number().positive().optional(),
   status: chargerStatusSchema.or(stationOperationalStatusSchema).or(z.string()),
   quantity: z.number().int().positive().optional(),
+  availability:z.enum(["AVAILABLE","PARTIALLY_AVAILABLE","UNAVAILABLE","UNKNOWN","STALE"]).optional(),
+  statusSource:z.string().nullable().optional(),statusObservedAt:z.string().nullable().optional(),statusFreshness:z.string().optional(),
 });
 
 // Operator Schema
@@ -38,7 +40,16 @@ export const stationSummarySchema = z.object({
   longitude: longitudeSchema,
   address: z.string().nullable(),
   status: stationOperationalStatusSchema.or(chargerStatusSchema),
-  operationalStatus: chargerStatusSchema.optional(),
+  operationalStatus: z.enum(["OPERATIONAL","NON_OPERATIONAL","TEMPORARILY_UNAVAILABLE","UNKNOWN","DECOMMISSIONED"]).or(chargerStatusSchema).optional(),
+  availability:z.enum(["AVAILABLE","PARTIALLY_AVAILABLE","UNAVAILABLE","UNKNOWN","STALE"]).optional(),
+  statusSource:z.string().nullable().optional(),
+  statusObservedAt:z.string().nullable().optional(),
+  statusFreshness:z.enum(["LIVE","RECENT","STATIC","STALE","UNKNOWN"]).optional(),
+  availabilitySource:z.string().nullable().optional(),
+  availabilityObservedAt:z.string().nullable().optional(),
+  availabilityFreshness:z.enum(["LIVE","RECENT","STATIC","STALE","UNKNOWN"]).optional(),
+  manualOverride:z.boolean().optional(),
+  provenance:z.array(z.object({provider:z.string(),sourceUrl:z.string().nullable(),lastSeenAt:z.string().nullable(),sourceUpdatedAt:z.string().nullable()})).optional(),
   connectors: z.array(stationConnectorSchema),
   fastestPowerKw: powerKwSchema.optional(),
   distanceKm: z.number().nonnegative().optional(),
@@ -64,7 +75,7 @@ export const mapStationSchema = z.object({
 
 // Station Detail (full comprehensive detail page view)
 export const stationDetailSchema = stationSummarySchema.extend({
-  ocmId: z.number().int().optional(),
+  ocmId: z.number().int().nullable().optional(),
   operator: stationOperatorSchema,
   address: z.string(),
   city: z.object({ name: z.string(), slug: z.string() }),
@@ -72,7 +83,16 @@ export const stationDetailSchema = stationSummarySchema.extend({
   district: z.string().nullable().optional().default(""),
   pincode: z.string(),
   status: stationOperationalStatusSchema.or(chargerStatusSchema),
-  operationalStatus: chargerStatusSchema.optional(),
+  operationalStatus: z.enum(["OPERATIONAL","NON_OPERATIONAL","TEMPORARILY_UNAVAILABLE","UNKNOWN","DECOMMISSIONED"]).or(chargerStatusSchema).optional(),
+  availability:z.enum(["AVAILABLE","PARTIALLY_AVAILABLE","UNAVAILABLE","UNKNOWN","STALE"]).optional(),
+  statusSource:z.string().nullable().optional(),
+  statusObservedAt:z.string().nullable().optional(),
+  statusFreshness:z.enum(["LIVE","RECENT","STATIC","STALE","UNKNOWN"]).optional(),
+  availabilitySource:z.string().nullable().optional(),
+  availabilityObservedAt:z.string().nullable().optional(),
+  availabilityFreshness:z.enum(["LIVE","RECENT","STATIC","STALE","UNKNOWN"]).optional(),
+  manualOverride:z.boolean().optional(),
+  provenance:z.array(z.object({provider:z.string(),sourceUrl:z.string().nullable(),lastSeenAt:z.string().nullable(),sourceUpdatedAt:z.string().nullable()})).optional(),
   usageType: z.string().nullable().optional().default("Public"),
   dataProvider: z.string(),
   dataLicense: z.string().nullable().optional().default(""),
@@ -92,7 +112,7 @@ export const stationSlugParamSchema = z.object({
     .string()
     .trim()
     .min(1, "Station identifier is required.")
-    .max(128, "Station identifier is too long.")
+    .max(1024, "Station identifier is too long.")
     .regex(/^[a-zA-Z0-9_-]+$/, "Station slug must contain only alphanumeric characters, dashes, or underscores."),
 });
 export const stationSlugSchema = stationSlugParamSchema;

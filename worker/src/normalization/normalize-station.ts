@@ -14,7 +14,7 @@ export function normalizeConnectorType(rawTitle?: string | null): string {
   }
   if (
     lower.includes("type 2") ||
-    lower.includes("type-2") ||
+    lower.includes("type-2") || lower.includes("type-ii") ||
     lower.includes("mennekes") ||
     lower.includes("iec 62196-2")
   ) {
@@ -233,6 +233,10 @@ export function normalizeOpenChargeMapStation(input: unknown): ProviderStation |
 
   return {
     externalId: String(data.ID),
+    sourceType:"OPEN_CHARGE_MAP",
+    sourceUrl:`https://openchargemap.org/site/poi/details/${data.ID}`,
+    sourceUpdatedAt:lastVerifiedAt,
+    sourceObservedAt:lastVerifiedAt,
     ocmId: data.ID,
     name: address.Title?.trim() ?? null,
     latitude: address.Latitude,

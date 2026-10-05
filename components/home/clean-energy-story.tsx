@@ -64,7 +64,7 @@ export function CleanEnergyStory() {
             <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="rounded-2xl bg-white border border-emerald-100 p-4 shadow-xs">
                 <div className="text-2xl sm:text-3xl font-black text-[var(--color-primary)]">
-                  480+
+                  Provider data
                 </div>
                 <div className="text-xs font-bold text-[var(--color-dark-green)] mt-1">
                   Verified Fast Hubs

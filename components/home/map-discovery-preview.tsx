@@ -54,15 +54,15 @@ export function MapDiscoveryPreview() {
           <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-950/80 px-3.5 py-1 text-xs font-bold text-emerald-300 border border-emerald-800/80 mb-4">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>LIVE GEOGRAPHIC NETWORK</span>
+              <span>CHARGING LOCATION DIRECTORY</span>
             </div>
 
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-              Explore India&apos;s EV charging network in real-time.
+              Explore provider-reported EV charging locations across India.
             </h2>
 
             <p className="mt-4 text-sm sm:text-base text-emerald-100/80 leading-relaxed">
-              From city centers to intercity expressways, explore over 400+ verified charging stations with live status, connector compatibility, and exact pincode navigation.
+              From city centers to intercity expressways, explore provider-reported charging locations with connector information and source timestamps.
             </p>
 
             {/* Quick Regional Hotspots */}
@@ -71,7 +71,7 @@ export function MapDiscoveryPreview() {
                 href="/search?q=delhi&view=map"
                 className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 hover:bg-emerald-800/80 hover:text-white transition-colors"
               >
-                Delhi NCR (120+)
+                Delhi NCR
               </Link>
               <Link
                 href="/search?q=mumbai&view=map"

@@ -201,10 +201,10 @@ export default async function CityPage({ params }: CityPageProps) {
               </p>
             </div>
             <Link
-              href={routeUrls.map({ lat: cityData.city.latitude, lng: cityData.city.longitude })}
+              href={routeUrls.map({ lat: cityData.city.latitude ?? undefined, lng: cityData.city.longitude ?? undefined })}
               className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[var(--color-secondary-green)] hover:underline"
             >
-              <span>Open in Live Map</span>
+              <span>Open in Map</span>
               <span>→</span>
             </Link>
           </div>
@@ -214,7 +214,7 @@ export default async function CityPage({ params }: CityPageProps) {
               stations={stationsInCity}
               initialCenter={
                 cityData.city.latitude && cityData.city.longitude
-                  ? { lat: cityData.city.latitude, lng: cityData.city.longitude }
+                  ? { lat: cityData.city.latitude ?? undefined, lng: cityData.city.longitude ?? undefined }
                   : { lat: 28.6139, lng: 77.209 }
               }
               initialZoom={11}
@@ -247,7 +247,7 @@ export default async function CityPage({ params }: CityPageProps) {
                   ⚡
                 </div>
                 <h3 className="text-sm font-bold text-[var(--color-dark-green)]">{op.name}</h3>
-                <span className="text-xs text-[var(--color-muted)]">Verified Operator</span>
+                <span className="text-xs text-[var(--color-muted)]">Charging Operator</span>
               </div>
             ))}
           </div>

@@ -10,6 +10,8 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     "**/.next/**",
+    "**/.next-*/**",
+    ".next-*/**",
     "out/**",
     "build/**",
     "dist/**",
@@ -20,6 +22,8 @@ const eslintConfig = defineConfig([
     "qa-tests/**",
     "playwright-report/**",
     "test-results/**",
+    "research/ev-india/evidence/**",
+    ".ingestion/**",
     "lib/mock/**",
     "**/lib/mock/**",
   ]),

@@ -363,6 +363,7 @@ describe("Worker Ingestion Pipeline", () => {
       const result = await ingestStations({
         provider: mockProvider,
         db: mockDb as unknown as ReturnType<typeof getDb>,
+        useTransaction: false,
         skipRawArchive: true,
       });
 
@@ -411,6 +412,7 @@ describe("Worker Ingestion Pipeline", () => {
       const result = await ingestStations({
         provider: mockProvider,
         db: mockDb as unknown as ReturnType<typeof getDb>,
+        useTransaction: false,
         skipRawArchive: true,
       });
 
@@ -471,6 +473,7 @@ describe("Worker Ingestion Pipeline", () => {
       const run1 = await ingestStations({
         provider: mockProvider,
         db: mockDb as unknown as ReturnType<typeof getDb>,
+        useTransaction: false,
         skipRawArchive: true,
       });
 
@@ -482,15 +485,17 @@ describe("Worker Ingestion Pipeline", () => {
       const run2 = await ingestStations({
         provider: mockProvider,
         db: mockDb as unknown as ReturnType<typeof getDb>,
+        useTransaction: false,
         skipRawArchive: true,
       });
 
       expect(run2.inserted).toBe(0);
-      expect(run2.updated).toBe(1);
+      expect(run2.updated).toBe(0);
+      expect(run2.unchanged).toBe(1);
       expect(mockDb._state.stations.size).toBe(1); // Exact same 1 station
     });
 
-    it("resolves spatial proximity duplicates within 25 meters", async () => {
+    it("keeps nearby same-network stations separate when corroborating identity is absent", async () => {
       const mockDb = createMockDatabase();
       // Candidate 1
       const stationA = {
@@ -539,13 +544,14 @@ describe("Worker Ingestion Pipeline", () => {
       const result = await ingestStations({
         provider: mockProvider,
         db: mockDb as unknown as ReturnType<typeof getDb>,
+        useTransaction: false,
         skipRawArchive: true,
       });
 
-      expect(result.duplicates).toBe(1); // Detected as proximity duplicate
-      expect(result.updated).toBe(1);
-      expect(result.inserted).toBe(0);
-      expect(mockDb._state.stations.size).toBe(1); // Kept existing station
+      expect(result.duplicates).toBe(0);
+      expect(result.updated).toBe(0);
+      expect(result.inserted).toBe(1);
+      expect(mockDb._state.stations.size).toBe(2);
     });
   });
 
@@ -595,6 +601,7 @@ describe("Worker Ingestion Pipeline", () => {
             status: "Operational",
             usageType: "Public",
             dataProvider: "Test",
+            sourceType: "OTHER_LICENSED_PROVIDER",
             dataLicense: null,
             ocmUrl: null,
             lastVerifiedAt: null,
@@ -609,6 +616,7 @@ describe("Worker Ingestion Pipeline", () => {
       const result = await ingestStations({
         provider: adapter,
         db: mockDb as unknown as ReturnType<typeof getDb>,
+        useTransaction: false,
         archivalService,
       });
 
@@ -687,6 +695,7 @@ describe("Worker Ingestion Pipeline", () => {
       const result: IngestionRunResult = await ingestStations({
         provider: mockProvider,
         db: mockDb as unknown as ReturnType<typeof getDb>,
+        useTransaction: false,
         skipRawArchive: true,
       });
 
@@ -768,7 +777,7 @@ describe("Worker Ingestion Pipeline", () => {
         ingestStations({
           provider: failingProvider,
           db: mockDb as unknown as ReturnType<typeof getDb>,
-          useTransaction: true,
+        useTransaction: true,
           skipRawArchive: true,
         }),
       ).rejects.toThrow("Simulated fatal database crash in transaction");

@@ -1,0 +1,4 @@
+# Install with crontab -e on the deployed worker host. Replace /srv/fastcharger with its actual checkout.
+# PostgreSQL, OCM and optional storage credentials belong in protected server environment/.env, never this file.
+# Scheduler wakes every 15 minutes; DB provider intervals gate weekly metadata and any authorized live-status feed.
+*/15 * * * * cd /srv/fastcharger && /usr/bin/env node node_modules/tsx/dist/cli.mjs worker/src/jobs/scheduled-run.ts >> .ingestion/scheduler.log 2>&1

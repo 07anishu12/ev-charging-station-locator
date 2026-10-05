@@ -69,7 +69,7 @@ export function CityStationBrowser({
             Charging Stations in {cityName}
           </h2>
           <p className="text-xs sm:text-sm text-[var(--color-muted)]">
-            Verified public EV chargers with real-time speed, connector, and operator specifications
+            Provider-reported EV chargers with connector, power, and operator details
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -138,7 +138,7 @@ export function CityStationBrowser({
           </button>
         ) : totalStations > 0 ? (
           <div className="text-xs font-semibold text-[var(--color-secondary-green)] bg-[var(--color-light-green)] px-4 py-2 rounded-full border border-[var(--color-primary)]/20">
-            ✓ All {totalStations} verified stations loaded in {cityName}
+            ✓ All {totalStations} reported stations loaded in {cityName}
           </div>
         ) : null}
 

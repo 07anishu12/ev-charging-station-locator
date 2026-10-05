@@ -14,7 +14,7 @@ export function StationAboutCard({ station, className = "" }: StationAboutCardPr
       </h2>
 
       <p className="text-xs sm:text-sm text-[var(--color-muted)] leading-relaxed mb-6">
-        {station.name} is a verified public EV charging station located at {station.address} ({station.city.name}, {station.state.name}) operated by {station.operator.name}. Equipped with {station.fastestPowerKw} kW rapid charging power and multiple connector guns for Indian four-wheelers.
+        {station.name} is a provider-reported EV charging station located at {station.address} ({station.city.name}, {station.state.name}) operated by {station.operator.name}. Connector and power information reflect available source reports.
       </p>
 
       {/* Metadata Rows matching Screen 3 */}
@@ -38,7 +38,7 @@ export function StationAboutCard({ station, className = "" }: StationAboutCardPr
             </svg>
             <span className="font-medium">Usage Type</span>
           </div>
-          <span className="font-bold text-[var(--color-dark-green)]">Public Charging Hub</span>
+          <span className="font-bold text-[var(--color-dark-green)]">{station.usageType || "Unknown"}</span>
         </div>
 
         {/* Address */}
@@ -65,7 +65,7 @@ export function StationAboutCard({ station, className = "" }: StationAboutCardPr
             <span className="font-medium">Amenities</span>
           </div>
           <span className="font-semibold text-right text-[var(--color-secondary-green)]">
-            Restroom • Food • Shopping • 24/7 Security
+            Not verified
           </span>
         </div>
       </div>

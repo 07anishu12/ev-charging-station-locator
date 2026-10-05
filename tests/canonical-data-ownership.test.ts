@@ -55,18 +55,20 @@ describe("PostgreSQL/PostGIS Canonical Data Ownership", () => {
       expect(slug1).toBe(slug2);
     });
 
-    it("detects cross-provider proximity duplicates within 25 meters when operators match", () => {
+    it("detects cross-provider proximity duplicates within 25 meters when name, address and operator all match", () => {
       const stationA = {
         latitude: 12.9715987,
         longitude: 77.5945662,
-        name: "Statiq Charging Hub",
+        name: "Statiq Charging Station MG Road",
+        address:"Synthetic MG Road address",
         operatorSlug: "statiq",
       };
 
       const stationB = {
         latitude: 12.9716201, // ~3.5 meters away
         longitude: 77.5945801,
-        name: "Statiq EV Station MG Road",
+        name: "Statiq Charging Station MG Road",
+        address:"Synthetic MG Road address",
         operatorSlug: "statiq",
       };
 

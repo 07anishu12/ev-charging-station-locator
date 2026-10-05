@@ -16,11 +16,11 @@ async function main() {
   }
 
   // Import after environment variables are loaded
-  const { ingestStations } = await import("@/services/ingestion/ingest-stations");
-  const { closeDb } = await import("@/lib/db/client");
+  const { ingestStations } = await import("@fastcharger/worker");
+  const { closeDb } = await import("@fastcharger/database");
 
   try {
-    const result = await ingestStations();
+    const result = await ingestStations({useTransaction:true,fullSnapshot:true});
 
     console.log("FastCharger India Sync\n");
     console.log(`Source: ${result.source}`);
@@ -44,7 +44,7 @@ async function main() {
       error instanceof Error ? error.message : String(error),
     );
     try {
-      const { closeDb } = await import("@/lib/db/client");
+      const { closeDb } = await import("@fastcharger/database");
       await closeDb();
     } catch {
       // Ignore cleanup error on fatal exit

@@ -152,7 +152,7 @@ describe("Nearby Station Data Path & Integration Verification (Incident INC-2026
   });
 
   // 9. production client does not silently target localhost
-  it("9. production browser client throws configuration error if NEXT_PUBLIC_API_URL is missing", () => {
+  it("9. production browser client uses the same-origin backend proxy if NEXT_PUBLIC_API_URL is missing", () => {
     (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     delete process.env.NEXT_PUBLIC_API_URL;
 
@@ -161,9 +161,7 @@ describe("Nearby Station Data Path & Integration Verification (Incident INC-2026
     (globalThis as unknown as { window: unknown }).window = {};
 
     try {
-      expect(() => getBaseUrl()).toThrowError(
-        /Configuration Error: NEXT_PUBLIC_API_URL is required in production environment/,
-      );
+      expect(getBaseUrl()).toBe("");
     } finally {
       (globalThis as unknown as { window: unknown }).window = originalWindow;
     }

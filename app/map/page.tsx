@@ -78,6 +78,7 @@ function MapPageContent() {
   const [allRawStations, setAllRawStations] = useState<Station[]>([]);
   const [isLoadingStations, setIsLoadingStations] = useState(true);
   const [stationError, setStationError] = useState<string | null>(null);
+  const [retryEpoch,setRetryEpoch]=useState(0);
 
   // 1. Initial location request if page was loaded with ?nearby=true
   useEffect(() => {
@@ -157,6 +158,9 @@ function MapPageContent() {
             latitude: userLocation.lat,
             longitude: userLocation.lng,
             radiusKm: NEARBY_DISCOVERY_RADIUS_KM,
+            operator: filters.operatorSlug,
+            minPowerKw: filters.minPowerKw,
+            connectorType: filters.connectorType,
             pageSize: 100,
           });
           if (isMounted) {
@@ -173,6 +177,9 @@ function MapPageContent() {
           const res = await apiClient.getStations({
             pageSize: 100,
             operator: filters.operatorSlug,
+            search: searchQuery.trim() || undefined,
+            minPowerKw: filters.minPowerKw,
+            connectorType: filters.connectorType,
             status: filters.operationalOnly ? "Operational" : undefined,
           });
           if (isMounted) {
@@ -201,7 +208,7 @@ function MapPageContent() {
     return () => {
       isMounted = false;
     };
-  }, [locationMode, userLocation, filters.operatorSlug, filters.operationalOnly]);
+  }, [locationMode, userLocation, filters.operatorSlug, filters.operationalOnly, filters.minPowerKw, filters.connectorType, searchQuery, retryEpoch]);
 
   // 3. Compute ONE canonical filtered station array
   const stations = useMemo(() => {
@@ -299,8 +306,8 @@ function MapPageContent() {
     if (matchedCity) {
       setCameraTrigger({
         type: "city",
-        lat: matchedCity.latitude,
-        lng: matchedCity.longitude,
+        lat: matchedCity.latitude ?? undefined,
+        lng: matchedCity.longitude ?? undefined,
         zoom: 12,
         timestamp: Date.now(),
       });
@@ -385,7 +392,7 @@ function MapPageContent() {
                   type="button"
                   onClick={() => {
                     setStationError(null);
-                    setFilters((prev) => ({ ...prev }));
+                    setRetryEpoch((prev) => prev+1);
                   }}
                   className="px-2.5 py-1 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 text-xs transition-colors shrink-0 cursor-pointer"
                 >
@@ -396,13 +403,13 @@ function MapPageContent() {
           )}
 
           {/* No nearby stations notice */}
-          {filters.nearby && locationStatus === "granted" && !stationError && stations.length === 0 && (
+          {filters.nearby && locationStatus === "granted" && !stationError && !isLoadingStations && stations.length === 0 && (
             <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs text-emerald-900">
               <p className="font-semibold mb-1">
                 No stations found within {NEARBY_DISCOVERY_RADIUS_KM} km of your detected location.
               </p>
               <p className="text-[11px] text-emerald-800 mb-2.5">
-                Our fast-charging database currently covers 8 primary metropolitan EV corridors.
+                Source coverage varies by region. Try a wider search or another location.
               </p>
               <div className="flex items-center gap-2 flex-wrap">
                 <button
@@ -445,8 +452,8 @@ function MapPageContent() {
             <StationList
               stations={stations}
               isLoading={isLocating || isLoadingStations}
-              emptyTitle="No charging stations match the selected filters"
-              emptyDescription="Try clearing one or more filters or expanding your search."
+              emptyTitle={stationError ? "Charging data unavailable" : "No charging stations match the selected filters"}
+              emptyDescription={stationError ? "Retry when the data service is reachable." : "Try clearing one or more filters or expanding your search."}
               selectedStationId={activeSelectedStation?.id}
               onSelectStation={(s) => {
                 setSelectedStation(s);

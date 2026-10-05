@@ -16,35 +16,28 @@ import { routeUrls } from "@/lib/utils/url";
 export const metadata: Metadata = {
   title: "EV Charging Stations Across India | FastCharger",
   description:
-    "Explore public electric vehicle charging infrastructure across 28 states and union territories in India. Locate verified fast DC chargers, highway corridors, and operator coverage.",
+    "Explore public electric vehicle charging infrastructure across states and union territories in India. Locate verified fast DC chargers, highway corridors, and operator coverage.",
   alternates: {
     canonical: absoluteUrl("/india"),
   },
   openGraph: {
     title: "EV Charging Stations Across India | FastCharger",
     description:
-      "Explore public electric vehicle charging infrastructure across 28 states and union territories in India.",
+      "Explore public electric vehicle charging infrastructure across states and union territories in India.",
     url: absoluteUrl("/india"),
   },
 };
 
 export default async function IndiaPage() {
-  const [citiesData, stationsData] = await Promise.all([
+  const [citiesData, stationsData, canonicalStats] = await Promise.all([
     apiClient.getCities({ pageSize: 50 }),
     apiClient.getStations({ pageSize: 8 }),
+    apiClient.getStatistics(),
   ]);
 
+  if(citiesData.status === "error" || stationsData.status === "error") throw new Error("Charging data service is unavailable");
   const allCities = citiesData.items;
-  const stateStationMap = new Map<string, { stationCount: number; cityCount: number }>();
-  for (const c of allCities) {
-    if (c.stateSlug) {
-      const existing = stateStationMap.get(c.stateSlug) || { stationCount: 0, cityCount: 0 };
-      existing.stationCount += c.stationCount;
-      existing.cityCount += 1;
-      stateStationMap.set(c.stateSlug, existing);
-    }
-  }
-
+  const stateStationMap = new Map(canonicalStats.states.map(st=>[st.slug,st]));
   const allStates = CANONICAL_STATES.map((s) => {
     const agg = stateStationMap.get(s.slug) || { stationCount: 0, cityCount: 0 };
     return {
@@ -61,15 +54,7 @@ export default async function IndiaPage() {
 
   const popularCities = allCities.slice(0, 8);
   const sampleStations = stationsData.items;
-  const uniqueOperatorsCount = new Set(
-    sampleStations.map((s) => s.operator?.slug || s.operator?.id).filter(Boolean),
-  ).size;
-  const stats = {
-    totalStations: stationsData.pagination?.total ?? sampleStations.length,
-    totalCities: citiesData.pagination?.total ?? allCities.length,
-    totalStates: allStates.filter((s) => s.stationCount > 0).length || allStates.length,
-    totalOperators: uniqueOperatorsCount,
-  };
+  const stats={...canonicalStats,totalStates:canonicalStats.states.filter(s=>s.stationCount>0).length};
 
   const breadcrumbsSchema = buildBreadcrumbSchema([{ name: "India", path: "/india" }]);
   const collectionSchema = buildCollectionPageSchema({
@@ -91,7 +76,7 @@ export default async function IndiaPage() {
             EV Charging Across India
           </h1>
           <p className="mt-3 text-sm sm:text-base text-[var(--color-muted)] max-w-3xl">
-            Explore public electric vehicle charging infrastructure across 28 states and union territories. Locate highway fast chargers, metropolitan networks, and verified operator points.
+            Explore public electric vehicle charging infrastructure across states and union territories. Locate highway fast chargers, metropolitan networks, and provider-reported locations.
           </p>
         </div>
 

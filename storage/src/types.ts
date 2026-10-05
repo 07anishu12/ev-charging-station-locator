@@ -14,7 +14,7 @@
  * - PostgreSQL stores metadata; large raw payloads live in Object Storage.
  */
 
-export type StorageProviderType = "s3" | "r2" | "minio" | "memory";
+export type StorageProviderType = "s3" | "r2" | "minio" | "memory" | "local";
 
 export interface StorageConfig {
   provider?: StorageProviderType;

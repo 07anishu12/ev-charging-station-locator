@@ -16,6 +16,9 @@
  * run ID, provider, started, completed, received, validated, rejected, inserted, updated, duplicates, errors
  */
 
+import { randomUUID } from "node:crypto";
+import { findSpatialIdentity, provenanceFor, recordOperationalObservation, resolveGeography, stationFingerprint } from "./reconciliation";
+import { validIndiaCoordinates } from "../providers/research";
 import { sql } from "drizzle-orm";
 import {
   auditStationQuality,
@@ -47,7 +50,7 @@ import {
   type ChargingDataProvider,
   type ProviderStation,
 } from "@fastcharger/shared";
-import { getRawProviderArchivalService, RawProviderArchivalService } from "@fastcharger/storage";
+import { getRawProviderArchivalService, RawProviderArchivalService, LocalObjectStorageClient } from "@fastcharger/storage";
 import { getCacheInvalidator, type CacheInvalidator } from "../cache";
 import { createChargingDataProvider, type ProviderAdapter } from "../providers";
 
@@ -61,6 +64,7 @@ export interface IngestStationsOptions {
   useTransaction?: boolean;
   skipRawArchive?: boolean;
   runId?: string;
+  fullSnapshot?: boolean;
 }
 
 export interface IngestionRunResult {
@@ -75,6 +79,10 @@ export interface IngestionRunResult {
   inserted: number;
   updated: number;
   duplicates: number;
+  unchanged: number;
+  missing: number;
+  statusUpdates: number;
+  statusChanges?: number;
   errors: number;
 
   // Backwards-Compatible SyncResult
@@ -133,10 +141,10 @@ export function isFatalTransactionError(error: unknown): boolean {
 
 export async function ingestStations(options: IngestStationsOptions = {}): Promise<IngestionRunResult> {
   const started = new Date();
-  const runId = options.runId ?? `ingest-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const runId = options.runId ?? randomUUID();
   const db = options.db ?? getDb();
   const provider = options.provider ?? createChargingDataProvider();
-  const archivalService = options.archivalService ?? getRawProviderArchivalService();
+  const archivalService = options.archivalService ?? (process.env.STORAGE_PROVIDER ? getRawProviderArchivalService() : new RawProviderArchivalService(new LocalObjectStorageClient()));
   const cacheInvalidator = options.cacheInvalidator ?? getCacheInvalidator();
   const eventStore = getEventStore();
 
@@ -153,6 +161,13 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
   let updated = 0;
   let duplicates = 0;
   let errors = 0;
+  let unchanged = 0;
+  let missing = 0;
+  let statusUpdates = 0;
+  let statusChanges = 0;
+  let completeSnapshot = false;
+  const acquisitionMetadata:Record<string,unknown>={};
+  let cacheInvalidation:{success:boolean;skipped?:boolean;error?:string}|undefined;
   let totalConnectorsCount = 0;
   let totalIssuesCount = 0;
   let archivedObjectKey: string | null = null;
@@ -179,12 +194,11 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
         recordsFailed: 0,
         errorCount: 0,
         details: { runId },
+        fullSnapshot: options.fullSnapshot ?? false,
       })
       .returning();
     if (initialLog) syncLogId = initialLog.id;
-  } catch {
-    // If syncLogs table is mocked without returning, keep runId
-  }
+  } catch (error) { throw error; }
 
   // Record Ingestion Started Event (MongoDB Event Layer)
   try {
@@ -221,6 +235,11 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
       });
       rawPayloadItems = Array.isArray(rawResult.data) ? rawResult.data : [];
       received = rawPayloadItems.length;
+      const metadata=rawResult.metadata??{};
+      for(const key of ['countryCode','pageSize','fullSnapshot','httpStatus','rawPdfArchive','rawPdfChecksumSha256','rawPdfSizeBytes','sourceUrl','extractionErrors']) {
+        if(metadata[key]!==undefined)acquisitionMetadata[key]=metadata[key];
+      }
+      completeSnapshot = options.fullSnapshot === true && rawResult.metadata?.fullSnapshot === true;
 
       // Normalize each raw item into ProviderStation candidate
       for (const rawItem of rawPayloadItems) {
@@ -230,7 +249,9 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
         } else {
           // Pre-validation error on raw structure
           rejected++;
+          completeSnapshot=false;
           totalIssuesCount++;
+          await db.insert(dataQualityIssues).values({issueType:"invalid_provider_record",severity:"error",description:"Provider record could not be normalized",details:{runId,provider:providerName,raw:rawItem}});
         }
       }
     } else {
@@ -274,6 +295,8 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
             metadata: {
               recordCount: received,
               runId,
+              retrievedAt: started.toISOString(),
+              acquisition:acquisitionMetadata,
             },
           })
           .onConflictDoUpdate({
@@ -283,16 +306,12 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
               checksumSha256: archiveMeta.checksumSha256,
               updatedAt: new Date(),
             },
-          })
-          .catch(() => {
-            // Non-fatal if mock DB doesn't support object_metadata
           });
-      } catch (archiveError) {
-        console.warn(
-          `[WARN] Raw payload archival skipped or encountered error: ${
-            archiveError instanceof Error ? archiveError.message : String(archiveError)
-          }`,
-        );
+      } catch {
+        const fallback=await new RawProviderArchivalService(new LocalObjectStorageClient()).archiveRawPayload({provider:providerName,jobId:runId,payload:JSON.stringify(rawPayloadItems)});
+        archivedObjectKey=fallback.objectKey;
+        await db.insert(objectMetadata).values({...fallback,metadata:{recordCount:received,runId,fallback:true,reason:"Object storage unavailable; payload retained in durable local staging"}}).onConflictDoUpdate({target:objectMetadata.objectKey,set:{updatedAt:new Date()}});
+        console.warn("[WARN] Object storage unavailable; raw input archived to local staging.");
       }
     }
 
@@ -318,9 +337,11 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
           externalId: stations.externalId,
           slug: stations.slug,
           name: stations.name,
+          address: stations.address,
           latitude: stations.latitude,
           longitude: stations.longitude,
           operatorId: stations.operatorId,
+          researchCanonicalId: stations.researchCanonicalId,
         })
         .from(stations),
       db
@@ -328,11 +349,14 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
           stationId: stationProviderMappings.stationId,
           providerName: stationProviderMappings.providerName,
           providerStationId: stationProviderMappings.providerStationId,
+          payloadHash: stationProviderMappings.payloadHash,
         })
         .from(stationProviderMappings)
         .catch(() => []), // Gracefully handle mocks where mappings table is not populated
     ]);
 
+    const fingerprintMap = new Map(existingMappings.map(m=>[`${m.providerName}:${m.providerStationId}`,m.payloadHash]));
+    const researchMap = new Map(existingStations.filter(st=>st.researchCanonicalId).map(st=>[st.researchCanonicalId!,{id:st.id,slug:st.slug}]));
     const stateMap = new Map<string, string>();
     for (const s of existingStates) {
       stateMap.set(s.slug.toLowerCase(), s.id);
@@ -375,6 +399,7 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
       id: string;
       slug: string;
       name: string;
+      address?:string|null;
       latitude: number;
       longitude: number;
       operatorSlug?: string;
@@ -392,6 +417,7 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
         id: st.id,
         slug: st.slug,
         name: st.name,
+        address:st.address,
         latitude: st.latitude,
         longitude: st.longitude,
         operatorSlug: st.operatorId ? operatorIdToSlugMap.get(st.operatorId) : undefined,
@@ -406,9 +432,16 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
 
     // Execution Core: Support optional transactional execution
     const processBatch = async (trx: typeof db) => {
+      if (typeof trx.execute === "function") await trx.execute(sql`SELECT pg_advisory_xact_lock(117117)`);
+      const seenProviderKeys=new Set<string>();
       for (const station of candidateStations) {
         try {
-          const providerStationKey = String(station.ocmId ?? station.externalId ?? "");
+          const identities = station.provenance ?? [{provider:providerName,id:station.externalId,type:station.sourceType??"OTHER_LICENSED_PROVIDER"}];
+          const providerStationKey = String(station.externalId ?? "");
+          const key = `${identities[0]?.provider}:${identities[0]?.id}`;
+          if(seenProviderKeys.has(key)) {duplicates++;rejected++;completeSnapshot=false;
+            await trx.insert(dataQualityIssues).values({issueType:"duplicate_provider_record",severity:"warning",description:"Repeated identity in provider snapshot",details:{runId,key}});continue;}
+          seenProviderKeys.add(key);
 
           // =====================================================================
           // STAGE 3: VALIDATION
@@ -426,11 +459,15 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
           });
 
           // Check for FATAL validation issues (Invalid Coordinates, Completely Missing ID)
-          const fatalCoords = !isValidCoordinate(station.latitude, station.longitude);
+          const fatalCoords = !validIndiaCoordinates(station.latitude, station.longitude);
           const fatalId = !providerStationKey;
 
           if (fatalCoords || fatalId) {
             rejected++;
+            if(fatalId)completeSnapshot=false;
+            else for(const identity of identities) {
+              await trx.update(stationProviderMappings).set({lastSeenAt:started,ingestionRunId:syncLogId,missingFromSnapshot:false}).where(sql`${stationProviderMappings.providerName}=${identity.provider} AND ${stationProviderMappings.providerStationId}=${identity.id}`);
+            }
 
             const fatalType = fatalCoords
               ? DATA_QUALITY_ISSUE_TYPES.INVALID_COORDINATES
@@ -446,7 +483,8 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
               details: {
                 latitude: station.latitude,
                 longitude: station.longitude,
-                externalId: station.externalId,
+                externalId: providerName === "open-charge-map" ? station.externalId : `${providerName}:${station.externalId}`,
+                researchCanonicalId: station.researchCanonicalId,
               },
             });
             totalIssuesCount++;
@@ -470,18 +508,6 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
 
             // Individual record failure isolated; continue to next record
             continue;
-          }
-
-          // Record non-fatal warnings
-          for (const issue of qualityIssues) {
-            await trx.insert(dataQualityIssues).values({
-              ocmId: station.ocmId,
-              issueType: issue.issueType,
-              severity: issue.severity,
-              description: issue.description,
-              details: issue.details,
-            });
-            totalIssuesCount++;
           }
 
           validated++;
@@ -552,26 +578,9 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
             if (!stateId) stateId = stateMap.get("delhi") ?? null;
           }
 
-          // Fallback 4: Spatial resolution within 25km of canonical cities
-          if (!cityId && station.latitude && station.longitude) {
-            for (const cc of CANONICAL_CITIES) {
-              if (cc.defaultCoordinates) {
-                const distKm = Math.hypot(
-                  (station.latitude - cc.defaultCoordinates.latitude) * 111,
-                  (station.longitude - cc.defaultCoordinates.longitude) * 111 * Math.cos((station.latitude * Math.PI) / 180),
-                );
-                if (distKm <= 25) {
-                  cityId = cityMap.get(cc.canonicalSlug) ?? null;
-                  if (cityId) {
-                    matchedCitySlug = cc.canonicalSlug;
-                    if (!stateId) {
-                      stateId = stateMap.get(cc.stateSlug) ?? null;
-                    }
-                    break;
-                  }
-                }
-              }
-            }
+          if(typeof trx.execute === "function") {
+            const geo=await resolveGeography(trx,station);
+            stateId=geo.stateId;cityId=geo.cityId;
           }
 
           if (matchedCitySlug) {
@@ -618,6 +627,20 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
           let resolvedStationId: string | null = null;
           let resolvedStationSlug: string | null = null;
 
+          const mappedIds=new Set(identities.map(m=>providerMappingMap.get(`${m.provider}:${m.id}`)).filter(Boolean));
+          if(mappedIds.size>1) {
+            rejected++;completeSnapshot=false;
+            await trx.insert(dataQualityIssues).values({issueType:"conflicting_provider_identity",severity:"error",description:"Source identities point to different canonical stations",details:{runId,identities}});
+            continue;
+          }
+          if(mappedIds.size===1) {
+            resolvedStationId=Array.from(mappedIds)[0]!;
+            resolvedStationSlug=stationIdMap.get(resolvedStationId)?.slug??null;
+          }
+          if(!resolvedStationId && station.researchCanonicalId && researchMap.has(station.researchCanonicalId)) {
+            const match=researchMap.get(station.researchCanonicalId)!;
+            resolvedStationId=match.id;resolvedStationSlug=match.slug;
+          }
           // Tier 1: Upstream Provider Identity Mapping
           const mappingKey = `${providerName}:${providerStationKey}`;
           if (providerMappingMap.has(mappingKey)) {
@@ -632,26 +655,36 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
             resolvedStationId = match.id;
             resolvedStationSlug = match.slug;
           }
-          if (!resolvedStationId && station.externalId && stationExternalIdMap.has(station.externalId)) {
+          if (!resolvedStationId && providerName === "open-charge-map" && station.externalId && stationExternalIdMap.has(station.externalId)) {
             const match = stationExternalIdMap.get(station.externalId)!;
             resolvedStationId = match.id;
             resolvedStationSlug = match.slug;
           }
 
           // Tier 3: 25-Meter Spatial Proximity Resolution
-          if (!resolvedStationId) {
+          if (!resolvedStationId && typeof trx.execute === "function") {
+            const spatial=await findSpatialIdentity(trx,station,operatorId);
+            if(spatial.match) {resolvedStationId=String(spatial.match.id);resolvedStationSlug=String(spatial.match.slug);duplicates++;}
+            else if(spatial.candidates.length) {
+              await trx.insert(dataQualityIssues).values({issueType:"possible_duplicate",severity:"warning",description:"Nearby records require review; no automatic proximity-only merge",details:{runId,provider:providerName,providerStationKey,candidates:spatial.candidates.map(c=>c.id)}});
+              totalIssuesCount++;
+            }
+          }
+          if (!resolvedStationId && typeof trx.execute !== "function") {
             for (const candidate of proximityIndex) {
               const isDupe = isProximityDuplicate(
                 {
                   latitude: station.latitude,
                   longitude: station.longitude,
                   name: station.name,
+                  address:station.address,
                   operatorSlug,
                 },
                 {
                   latitude: candidate.latitude,
                   longitude: candidate.longitude,
                   name: candidate.name,
+                  address:candidate.address,
                   operatorSlug: candidate.operatorSlug,
                 },
                 25, // 25-meter physical site threshold
@@ -686,6 +719,8 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
           // =====================================================================
           let persistedStationId: string;
 
+          const fingerprint=stationFingerprint(station);
+          const isUnchanged=isExisting && identities.every(m=>fingerprintMap.get(`${m.provider}:${m.id}`)===fingerprint);
           if (isExisting && resolvedStationId) {
             // Update existing station
             await trx
@@ -706,20 +741,24 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
                 dataLicense: station.dataLicense ?? sql`${stations.dataLicense}`,
                 ocmUrl: station.ocmUrl ?? sql`${stations.ocmUrl}`,
                 lastVerifiedAt: station.lastVerifiedAt ?? sql`${stations.lastVerifiedAt}`,
+                lastSeenAt: station.sourceLastSeenAt ?? started,
+                lastProviderUpdateAt: station.sourceUpdatedAt ?? sql`${stations.lastProviderUpdateAt}`,
                 lastSyncedAt: new Date(),
-                updatedAt: new Date(),
+                lifecycleState: sql`CASE WHEN ${stations.lifecycleState} = 'DECOMMISSIONED' THEN 'DECOMMISSIONED' ELSE 'ACTIVE' END`,
+                updatedAt: isUnchanged ? sql`${stations.updatedAt}` : new Date(),
               })
               .where(sql`${stations.id} = ${resolvedStationId}`);
 
             persistedStationId = resolvedStationId;
-            updated++;
+            if(isUnchanged) unchanged++; else updated++;
           } else {
             // Insert new station
             const [newStation] = await trx
               .insert(stations)
               .values({
                 ocmId: station.ocmId,
-                externalId: station.externalId,
+                externalId: providerName === "open-charge-map" ? station.externalId : `${providerName}:${station.externalId}`,
+                researchCanonicalId:station.researchCanonicalId,
                 name: station.name || "EV Charging Station",
                 slug: finalSlug,
                 operatorId,
@@ -738,6 +777,8 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
                 dataLicense: station.dataLicense,
                 ocmUrl: station.ocmUrl,
                 lastVerifiedAt: station.lastVerifiedAt,
+                lastSeenAt: station.sourceLastSeenAt ?? started,
+                lastProviderUpdateAt: station.sourceUpdatedAt,
                 lastSyncedAt: new Date(),
                 updatedAt: new Date(),
               })
@@ -769,38 +810,43 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
             if (station.ocmId) stationOcmMap.set(station.ocmId, { id: newStation.id, slug: finalSlug });
           }
 
-          // Upsert Station Provider Mapping
-          if (providerStationKey) {
-            await trx
-              .insert(stationProviderMappings)
-              .values({
-                stationId: persistedStationId,
-                providerName,
-                providerStationId: providerStationKey,
-                rawData: station,
-                lastSyncedAt: new Date(),
-              })
-              .onConflictDoUpdate({
-                target: [stationProviderMappings.providerName, stationProviderMappings.providerStationId],
-                set: {
-                  stationId: persistedStationId,
-                  rawData: station,
-                  lastSyncedAt: new Date(),
-                  updatedAt: new Date(),
-                },
-              })
-              .catch(() => {});
-            providerMappingMap.set(mappingKey, persistedStationId);
+          for(const issue of qualityIssues) {
+            await trx.insert(dataQualityIssues).values({stationId:persistedStationId,ocmId:station.ocmId,issueType:issue.issueType,severity:issue.severity,description:issue.description,details:{...issue.details,runId,provider:station.dataProvider,providerStationKey}});
+            totalIssuesCount++;
+          }
+          // Persist every provider identity; a failed mapping aborts the transaction.
+          for(const identity of provenanceFor(station,providerName)) {
+            const mappingValues={stationId:persistedStationId,providerName:identity.provider,providerStationId:identity.id,
+              sourceType:identity.type,sourceUrl:identity.url,sourceUpdatedAt:identity.updatedAt,
+              lastSeenAt:identity.lastSeenAt??started,lastSyncedAt:started,ingestionRunId:syncLogId,
+              missingFromSnapshot:false,payloadHash:fingerprint,rawData:{station,evidence:identity.evidence}};
+            await trx.insert(stationProviderMappings).values(mappingValues).onConflictDoUpdate({
+              target:[stationProviderMappings.providerName,stationProviderMappings.providerStationId],set:{...mappingValues,updatedAt:started}});
+            providerMappingMap.set(`${identity.provider}:${identity.id}`,persistedStationId);
+            fingerprintMap.set(`${identity.provider}:${identity.id}`,fingerprint);
+          }
+          if(station.researchCanonicalId) researchMap.set(station.researchCanonicalId,{id:persistedStationId,slug:finalSlug});
+          if(typeof trx.execute === "function") {
+            await recordOperationalObservation(trx,station,persistedStationId,providerName,syncLogId,started);
+            statusUpdates++;
           }
 
           // Upsert Connectors
-          for (const conn of station.connectors) {
+          for(const conn of station.connectors) {
+            if(conn.powerKw!==null && (!Number.isFinite(conn.powerKw)||conn.powerKw<0||conn.powerKw>=1000000)) {
+              await trx.insert(dataQualityIssues).values({stationId:persistedStationId,issueType:"malformed_connector",severity:"warning",description:"Provider power exceeds the database numeric range; preserve evidence and leave power unknown",details:{runId,provider:providerName,powerKw:conn.powerKw,connectorId:conn.providerConnectorId??conn.ocmConnectionId}});
+              conn.powerKw=null;totalIssuesCount++;
+            }
+          }
+          for (const [connectorIndex,conn] of station.connectors.entries()) {
             if (conn.ocmConnectionId !== null && conn.ocmConnectionId !== undefined) {
               await trx
                 .insert(connectors)
                 .values({
                   stationId: persistedStationId,
                   ocmConnectionId: conn.ocmConnectionId,
+                  providerName:conn.sourceProvider??providerName,
+                  providerConnectorId:conn.providerConnectorId??String(conn.ocmConnectionId),
                   connectionType: conn.type,
                   normalizedType: conn.normalizedType,
                   level: conn.level,
@@ -815,6 +861,8 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
                   target: connectors.ocmConnectionId,
                   set: {
                     stationId: persistedStationId,
+                    providerName:conn.sourceProvider??providerName,
+                    providerConnectorId:conn.providerConnectorId??String(conn.ocmConnectionId),
                     connectionType: conn.type,
                     normalizedType: conn.normalizedType,
                     level: conn.level,
@@ -827,7 +875,9 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
                   },
                 });
             } else {
+              const connectorIdentity={providerName:conn.sourceProvider??providerName,providerConnectorId:conn.providerConnectorId??`${providerStationKey}:${connectorIndex}`};
               await trx.insert(connectors).values({
+                ...connectorIdentity,
                 stationId: persistedStationId,
                 connectionType: conn.type,
                 normalizedType: conn.normalizedType,
@@ -837,13 +887,13 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
                 amps: conn.amps,
                 status: conn.status,
                 quantity: conn.quantity,
-              });
+              }).onConflictDoUpdate({target:[connectors.stationId,connectors.providerName,connectors.providerConnectorId],set:{connectionType:conn.type,normalizedType:conn.normalizedType,powerKw:conn.powerKw!==null?String(conn.powerKw):null,quantity:conn.quantity,updatedAt:started}});
             }
             totalConnectorsCount++;
           }
         } catch (recordError) {
           // If running inside transaction and the error is fatal, rethrow to trigger rollback
-          if (options.useTransaction && isFatalTransactionError(recordError)) {
+          if (options.useTransaction !== false) {
             throw recordError;
           }
 
@@ -864,10 +914,31 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
           } catch {}
         }
       }
+      // Only an explicitly complete, error-free provider snapshot can mark missing identities.
+      if(completeSnapshot && !errors && received>0 && typeof trx.execute === "function") {
+        const result=await trx.execute(sql`UPDATE station_provider_mappings SET missing_from_snapshot=true
+          WHERE provider_name=${providerName} AND ingestion_run_id IS DISTINCT FROM ${syncLogId} AND NOT missing_from_snapshot RETURNING station_id`);
+        missing=result.rowCount??0;
+        await trx.execute(sql`UPDATE stations s SET lifecycle_state='MISSING_FROM_SOURCE'
+          WHERE lifecycle_state<>'DECOMMISSIONED' AND EXISTS(SELECT 1 FROM station_provider_mappings m WHERE m.station_id=s.id)
+          AND NOT EXISTS(SELECT 1 FROM station_provider_mappings m WHERE m.station_id=s.id AND NOT m.missing_from_snapshot)`);
+      }
+      if(typeof trx.execute === "function") await trx.execute(sql`UPDATE cities c SET station_count=(SELECT count(*) FROM stations WHERE city_id=c.id)`);
+      if(typeof trx.execute === "function") {
+        const changes=await trx.execute(sql`SELECT count(*)::int n FROM
+          (SELECT DISTINCT ON(station_id,source_provider,status_kind,connector_id) * FROM status_observations WHERE ingestion_run_id=${syncLogId}
+            ORDER BY station_id,source_provider,status_kind,connector_id,received_at DESC,id) current
+          LEFT JOIN LATERAL (SELECT status FROM status_observations old WHERE old.station_id=current.station_id
+            AND old.source_provider=current.source_provider AND old.status_kind=current.status_kind
+            AND old.connector_id IS NOT DISTINCT FROM current.connector_id AND old.ingestion_run_id IS DISTINCT FROM ${syncLogId}
+            AND old.received_at<=current.received_at ORDER BY old.received_at DESC,old.id LIMIT 1) previous ON true
+          WHERE current.status<>COALESCE(previous.status,'UNKNOWN')`);
+        statusChanges=Number(changes.rows[0]?.n??0);
+      }
     };
 
-    // Execute with transaction if requested and supported
-    if (options.useTransaction && typeof (db as { transaction?: unknown }).transaction === "function") {
+    // Execute atomically in production; in-memory test drivers may opt out.
+    if (options.useTransaction !== false && typeof (db as { transaction?: unknown }).transaction === "function") {
       await (db as { transaction: (cb: (tx: typeof db) => Promise<void>) => Promise<void> }).transaction(
         async (tx) => {
           await processBatch(tx);
@@ -915,7 +986,7 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
     // STAGE 8: CACHE INVALIDATION (Redis)
     // =========================================================================
     try {
-      await cacheInvalidator.invalidate({
+      cacheInvalidation=await cacheInvalidator.invalidate({
         stationSlugs: Array.from(affectedStationSlugs),
         citySlugs: Array.from(affectedCitySlugs),
         stateSlugs: Array.from(affectedStateSlugs),
@@ -924,15 +995,7 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
       });
     } catch {
       // Cache invalidation errors are non-fatal
-    }
-
-    // Synchronize Canonical Station Counts in PostgreSQL
-    if (typeof (db as { execute?: unknown }).execute === "function") {
-      await (db as { execute: (q: unknown) => Promise<unknown> })
-        .execute(
-          sql`UPDATE cities c SET station_count = (SELECT count(distinct id) FROM stations WHERE city_id = c.id)`,
-        )
-        .catch(() => {});
+      cacheInvalidation={success:false,skipped:true,error:'Cache unavailable; PostgreSQL retained'};
     }
 
     // Update Final Sync Log in PostgreSQL
@@ -945,6 +1008,10 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
         recordsUpdated: updated,
         recordsSkipped: rejected,
         recordsFailed: errors,
+        recordsUnchanged: unchanged,
+        fullSnapshot:completeSnapshot,
+        recordsMissing: missing,
+        statusUpdates,
         errorCount: errors,
         status: errors > 0 && inserted === 0 && updated === 0 ? "failed" : "completed",
         details: {
@@ -955,10 +1022,11 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
           dataQualityIssuesCount: totalIssuesCount,
           duplicates,
           archivedObjectKey,
+          cacheInvalidation,
+          statusChanges,
         },
       })
-      .where(sql`${syncLogs.id} = ${syncLogId}`)
-      .catch(() => {});
+      .where(sql`${syncLogs.id} = ${syncLogId}`);
 
     return {
       runId,
@@ -972,6 +1040,10 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
       updated,
       duplicates,
       errors,
+      unchanged,
+      missing,
+      statusUpdates,
+      statusChanges,
       // Backwards compatibility
       syncLogId,
       source: providerName,
@@ -1038,8 +1110,7 @@ export async function ingestStations(options: IngestStationsOptions = {}): Promi
           durationSeconds,
         },
       })
-      .where(sql`${syncLogs.id} = ${syncLogId}`)
-      .catch(() => {});
+      .where(sql`${syncLogs.id} = ${syncLogId}`);
 
     throw fatalBatchError;
   }

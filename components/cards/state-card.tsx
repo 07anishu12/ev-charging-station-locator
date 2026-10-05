@@ -4,7 +4,7 @@ import type { State } from "@fastcharger/shared";
 import { routeUrls } from "@/lib/utils/url";
 
 interface StateCardProps {
-  state: State;
+  state: Pick<State,"id"|"name"|"slug"|"code"|"stationCount"|"cityCount">;
   className?: string;
 }
 

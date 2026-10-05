@@ -22,7 +22,7 @@ export function PowerBadge({ powerKw, className = "", isFast }: PowerBadgeProps)
       >
         <path d="M11.3 1.05a1 1 0 0 0-1.07.13l-7 6A1 1 0 0 0 4 9h5v9a1 1 0 0 0 1.77.65l7-8A1 1 0 0 0 17 9h-5V2a1 1 0 0 0-.7-.95Z" />
       </svg>
-      <span>{powerKw} kW{isDcFast ? " DC" : " AC"}</span>
+      <span>{powerKw > 0 ? `${powerKw} kW` : "Power unknown"}</span>
     </span>
   );
 }

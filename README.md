@@ -89,18 +89,18 @@ FastCharger strictly separates data authority:
   - Geographic coordinates (latitude, longitude)
   - Geodesic spatial distance metrics
   - Radius-based bounding and filtering (`ST_DWithin`)
-  - Sub-millisecond indexed spatial search (`stations_location_gist_idx`, `localities_location_gist_idx`)
+  - Indexed spatial search (`stations_location_gist_idx`, `localities_location_gist_idx`)
 - **Non-Authoritative Layers**:
   - Redis: transient cache only; volatile.
   - MongoDB: raw telemetry and payload archival only.
-  - Object storage: static media and photos only.
+  - Object storage: raw provider evidence and media.
   - Frontend state: ephemeral UI render cache only.
   - Provider API responses: untrusted raw external inputs.
 
 ### Station Identity & Multi-Provider De-duplication
-Repeated synchronizations across providers (OCM, Kazam, Statiq) never create duplicate stations:
+Authorized providers share canonical identity through provider mappings:
 1. **Provider Mapping Match**: Known `(provider_name, provider_station_id)` tuples resolve directly to canonical station records.
-2. **Spatial Proximity + Operator/Name Fingerprint**: Stations within a 25-meter radius sharing operator slug or name similarity are reconciled as the same physical charging site.
+2. **Spatial Proximity + Operator/Name Fingerprint**: A unique candidate within 50 meters must also match normalized name, address and operator. Other nearby records remain separate and create review issues.
 3. **Deterministic Canonical Slugs**: Generated deterministically using base name, locality/city anchor, and provider ID or coordinate grid hash.
 
 ### Data Quality & Anomaly Tracking
@@ -484,3 +484,40 @@ Each application tier is independently deployable:
 - **Worker**: Deployable as independent scheduled jobs or background containers.
 - **Database**: Managed PostgreSQL + PostGIS (AWS RDS, Supabase, Neon).
 
+
+## Charging Data Architecture
+
+Provider APIs / official downloads / audited research import
+↓ Raw Archive
+↓ Validation
+↓ Normalization
+↓ Identity Resolution
+↓ PostgreSQL/PostGIS
+↓ Backend API
+↓ Frontend
+
+The existing worker, `sync_logs` (exposed as `ingestion_runs`), object-storage abstraction, provider mappings and data-quality tables form one pipeline. Import with `npm run import:research-stations`; verify with `npm run data:verify`. See [the ingestion operations guide](docs/operations/data-ingestion.md). Research evidence remains local or in private storage, outside normal Git history.
+
+## Supported Providers
+
+| Provider | Data / status | Refresh | Credentials / access |
+|---|---|---|---|
+| Open Charge Map | Stations, operators, connectors; static operational observations | Weekly | Server-only `OCM_API_KEY`; preserve per-record attribution/license |
+| BEE official PCS publication | Published station/charger inventory; availability unknown | Weekly download | No credentials for the verified PDF; published URL configured in adapter. Future publication changes require URL review |
+| Delhi government / DTL | Research evidence import; static inventory | Admin import | Preserve original document URLs and evidence row IDs |
+| OpenStreetMap | Research evidence import; static inventory | Admin import | ODbL attribution in source evidence |
+| CPO candidates: Jio-bp, Tata Power, ChargeZone, Statiq, Zeon, Ather, Kazam, Bolt.Earth, Fortum, ChargeGrid, EESL / ChargeIndia | Capabilities unverified; no acquired live feed | Disabled | `ACCESS_REQUIRED`; obtain authorized credentials and terms before activation |
+
+No provider is integrated by circumventing authentication. BEE policy describes intended open APIs, but this implementation uses an accessible official downloadable publication because an authorized open API endpoint was not established. Source coverage is provisional and does not prove complete nationwide inventory.
+
+## Data Refresh
+
+`npm run data:scheduler:install` installs this Mac's launchd worker timer. It invokes `npm run data:scheduled` logic every 15 minutes; database provider settings gate metadata to seven days and future authorized live feeds to their own intervals. `npm run data:scheduled -- --now` exercises full ingestion immediately. The Linux cron equivalent is in `infrastructure/data-refresh.cron`. `npm run sync:status` explicitly skips sources without live capabilities. Independent provider failures preserve canonical records; capped/partial snapshots cannot retire missing stations.
+
+## Status Semantics
+
+Operational status describes a site's reported operation. Availability describes timestamped connector/station use from an authorized live feed. Freshness is evaluated at query time; stale observations cannot claim current availability. Neither OCM operational status nor BEE listing means “Available now.” Unknown availability is shown honestly. The protected `data:admin` CLI records a reason, actual OS user, previous/new status and optional expiry; manual overrides leave provider history intact.
+
+## Data Provenance
+
+Each canonical station retains source-provider mappings, source record IDs, original URLs/timestamps, first/last seen times, source classification and ingestion-run references. BEE PDF site IDs are deterministic evidence identifiers derived from the publication, not asserted official BEE IDs. Raw archives retain checksum, byte size, retrieval time and record count. API station cards expose useful provenance and status freshness; internal evidence stays server-side.

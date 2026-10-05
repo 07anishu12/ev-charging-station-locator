@@ -14,7 +14,7 @@ export interface ConnectorModel {
   id: string;
   type: string;
   normalizedType: "ccs2" | "type2" | "chademo" | "gbt" | string;
-  powerKw: number;
+  powerKw?: number;
   voltage?: number;
   amps?: number;
   status: "available" | "busy" | "unavailable" | "unknown";
@@ -74,7 +74,16 @@ export interface StationModel {
   latitude: number;
   longitude: number;
   status: "Operational" | "Not Operational" | "Unknown";
-  operationalStatus: "available" | "busy" | "unavailable" | "unknown";
+  operationalStatus: "available" | "busy" | "unavailable" | "unknown" | "OPERATIONAL" | "NON_OPERATIONAL" | "TEMPORARILY_UNAVAILABLE" | "UNKNOWN" | "DECOMMISSIONED";
+  availability?: "AVAILABLE" | "PARTIALLY_AVAILABLE" | "UNAVAILABLE" | "UNKNOWN" | "STALE";
+  statusSource?: string | null;
+  statusObservedAt?: string | null;
+  statusFreshness?: string;
+  availabilitySource?: string | null;
+  availabilityObservedAt?: string | null;
+  availabilityFreshness?: string;
+  manualOverride?: boolean;
+  provenance?: Array<{provider:string;sourceUrl:string|null;lastSeenAt:string|null;sourceUpdatedAt:string|null}>;
   usageType?: string | null;
   dataProvider: string;
   dataLicense?: string | null;

@@ -9,7 +9,7 @@ import type {
   ConnectorModel,
 } from "../domain/models";
 
-const { stations, connectors, operators, cities, states, cityAliases } = schema;
+const { stations, connectors, operators, cities, states } = schema;
 
 export interface StationListFilter {
   page: number;
@@ -131,7 +131,7 @@ export class PostgisStationRepository implements IStationRepository {
       .from(connectors)
       .where(eq(connectors.stationId, st.id));
 
-    return this.mapToStationModel(st, connectorRows);
+    return (await this.enrichStatus([this.mapToStationModel(st, connectorRows)]))[0];
   }
 
   async findList(filter: StationListFilter): Promise<PaginatedResult<StationModel>> {
@@ -145,31 +145,10 @@ export class PostgisStationRepository implements IStationRepository {
       const cityClean = filter.city.trim().toLowerCase();
       const canonical = resolveCanonicalCity(filter.city);
       const canonicalSlug = canonical?.canonicalSlug ?? cityClean;
-      const canonicalName = canonical?.canonicalName ?? filter.city;
 
-      whereConditions.push(
-        or(
-          eq(cities.slug, cityClean),
-          eq(cities.slug, canonicalSlug),
-          ilike(cities.name, filter.city),
-          ilike(cities.name, canonicalName),
-          sql`EXISTS (
-            SELECT 1 FROM ${cityAliases}
-            WHERE ${cityAliases.cityId} = ${stations.cityId}
-            AND (${eq(cityAliases.alias, cityClean)} OR ${eq(cityAliases.alias, canonicalSlug)})
-          )`,
-          and(
-            sql`${stations.cityId} IS NULL`,
-            or(
-              ilike(stations.district, `%${cityClean}%`),
-              ilike(stations.district, `%${canonicalSlug}%`),
-              ilike(stations.district, `%${canonicalName}%`),
-              canonicalSlug === "delhi" ? sql`${stations.pincode} LIKE '110%'` : sql`false`
-            )
-          )
-        ),
-      );
+      whereConditions.push(or(eq(cities.slug,cityClean),eq(cities.slug,canonicalSlug)));
     }
+
     if (filter.state) {
       const stateClean = filter.state.trim().toLowerCase();
       const canonicalState = resolveCanonicalState(filter.state);
@@ -196,7 +175,8 @@ export class PostgisStationRepository implements IStationRepository {
       );
     }
     if (filter.status) {
-      whereConditions.push(ilike(stations.status, filter.status));
+      const current=filter.status.toLowerCase()==="operational"?"OPERATIONAL":filter.status.toLowerCase()==="not operational"?"NON_OPERATIONAL":"UNKNOWN";
+      whereConditions.push(sql`EXISTS(SELECT 1 FROM station_status ss WHERE ss.station_id=${stations.id} AND ss.operational_status=${current})`);
     }
     if (filter.search) {
       const searchPattern = `%${filter.search}%`;
@@ -276,7 +256,7 @@ export class PostgisStationRepository implements IStationRepository {
     });
 
     return {
-      items,
+      items:await this.enrichStatus(items),
       pagination: {
         page,
         pageSize,
@@ -333,13 +313,8 @@ export class PostgisStationRepository implements IStationRepository {
 
     // Filter by authoritative station status
     if (filter.status) {
-      const statusClean = filter.status.toLowerCase().trim();
-      whereConditions.push(
-        or(
-          ilike(stations.status, statusClean),
-          ilike(stations.verificationStatus, statusClean),
-        )!,
-      );
+      const current=filter.status.toLowerCase()==="operational"?"OPERATIONAL":filter.status.toLowerCase()==="not operational"?"NON_OPERATIONAL":"UNKNOWN";
+      whereConditions.push(sql`EXISTS(SELECT 1 FROM station_status ss WHERE ss.station_id=${stations.id} AND ss.operational_status=${current})`);
     }
 
     const combinedWhere = and(...whereConditions);
@@ -434,7 +409,7 @@ export class PostgisStationRepository implements IStationRepository {
     });
 
     return {
-      items,
+      items:await this.enrichStatus(items),
       pagination: {
         page,
         pageSize,
@@ -442,6 +417,31 @@ export class PostgisStationRepository implements IStationRepository {
         totalPages: Math.max(1, Math.ceil(total / pageSize)),
       },
     };
+  }
+
+  private async enrichStatus<T extends StationModel>(items:T[]):Promise<T[]> {
+    if(!items.length)return items;
+    const db=getDatabase();
+    const ids=sql.join(items.map(s=>sql`${s.id}::uuid`),sql`, `);
+    const [statuses,sources,connectorStatuses]=await Promise.all([
+      db.execute(sql`SELECT * FROM station_status WHERE station_id IN (${ids})`),
+      db.execute(sql`SELECT station_id,provider_name,source_url,last_seen_at,source_updated_at FROM station_provider_mappings WHERE station_id IN (${ids})`),
+      db.execute(sql`SELECT * FROM connector_status WHERE station_id IN (${ids})`)
+    ]);
+    const iso=(x:unknown)=>x?new Date(String(x)).toISOString():null;
+    return items.map(item=> {
+      const status=statuses.rows.find(r=>r.station_id===item.id);
+      const evidence=sources.rows.filter(r=>r.station_id===item.id);
+      if(!status)return item;
+      const connectors=item.connectors.map(conn=> {
+        const observed=connectorStatuses.rows.find(r=>r.connector_id===conn.id);
+        return {...conn,status:observed?.status_freshness === 'LIVE' ? observed.availability === 'AVAILABLE' ? 'available' : observed.availability==='UNAVAILABLE' ? 'unavailable' : 'unknown' : 'unknown',availability:observed?.availability??'UNKNOWN',statusSource:observed?.status_source??null,statusObservedAt:iso(observed?.status_observed_at),statusFreshness:observed?.status_freshness??'UNKNOWN'};
+      });
+      return {...item,connectors,operationalStatus:status.operational_status,status:status.operational_status==="OPERATIONAL"?"Operational":status.operational_status==="NON_OPERATIONAL"?"Not Operational":"Unknown",
+        availability:status.availability,statusSource:status.status_source,statusObservedAt:iso(status.status_observed_at),statusFreshness:status.status_freshness,
+        availabilitySource:status.availability_source,availabilityObservedAt:iso(status.availability_observed_at),availabilityFreshness:status.availability_freshness,manualOverride:status.manual_override,
+        provenance:evidence.map(r=>({provider:String(r.provider_name),sourceUrl:r.source_url as string|null,lastSeenAt:iso(r.last_seen_at),sourceUpdatedAt:iso(r.source_updated_at)}))} as T;
+    });
   }
 
   private mapToStationModel(
@@ -460,10 +460,10 @@ export class PostgisStationRepository implements IStationRepository {
       normalizedType: (validConnectorTypes.has(c.normalizedType as string)
         ? c.normalizedType
         : "other") as ConnectorModel["normalizedType"],
-      powerKw: c.powerKw ? Number(c.powerKw) : 50,
+      powerKw: c.powerKw !== null ? Number(c.powerKw) : undefined,
       voltage: c.voltage ?? undefined,
       amps: c.amps ?? undefined,
-      status: (c.status as "available" | "busy" | "unavailable" | "unknown") || "available",
+      status: "unknown",
       quantity: c.quantity ?? 1,
     }));
 
@@ -494,16 +494,15 @@ export class PostgisStationRepository implements IStationRepository {
       longitude: Number(st.longitude),
       status: (st.status === "Operational" || st.status === "Not Operational"
         ? st.status
-        : "Operational") as "Operational" | "Not Operational" | "Unknown",
-      operationalStatus: String(st.status).toLowerCase().includes("operational")
-        ? "available"
-        : "unknown",
+        : "Unknown") as "Operational" | "Not Operational" | "Unknown",
+      operationalStatus: st.status === "Operational" ? "OPERATIONAL" : st.status === "Not Operational" ? "NON_OPERATIONAL" : "UNKNOWN",
+      availability:"UNKNOWN",
       usageType: st.usageType ?? "Public",
       dataProvider: st.dataProvider || "Open Charge Map",
-      dataLicense: st.dataLicense ?? "CC BY 4.0",
+      dataLicense: st.dataLicense ?? null,
       ocmUrl: st.ocmUrl ?? (st.ocmId ? `https://openchargemap.org/site/poi/details/${st.ocmId}` : null),
       lastUpdated: st.updatedAt ? new Date(st.updatedAt).toISOString() : "Verified",
-      fastestPowerKw: fastestKw || 50,
+      fastestPowerKw: fastestKw,
       connectors: mappedConnectors,
     };
   }

@@ -1,4 +1,6 @@
 export interface ProviderConnector {
+  providerConnectorId?: string;
+  sourceProvider?: string;
   ocmConnectionId: number | null;
   type: string;
   normalizedType: string;
@@ -11,8 +13,15 @@ export interface ProviderConnector {
 }
 
 export interface ProviderStation {
+  sourceUrl?: string | null;
+  sourceType?: string;
+  sourceUpdatedAt?: Date | null;
+  sourceObservedAt?: Date | null;
+  sourceLastSeenAt?: Date | null;
+  provenance?: Array<{ provider: string; id: string; url?: string | null; type: string; updatedAt?: Date | null; lastSeenAt?: Date | null; evidence?: unknown }>;
+  researchCanonicalId?: string;
   externalId: string;
-  ocmId: number;
+  ocmId: number | null;
   name: string | null;
   latitude: number;
   longitude: number;

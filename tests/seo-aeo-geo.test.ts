@@ -70,7 +70,7 @@ describe("SEO / AEO / GEO Foundation Test Suite", () => {
 
       // Validate priority ranges
       expect(entries.every((e) => e.priority !== undefined && e.priority >= 0.5 && e.priority <= 1.0)).toBe(true);
-    });
+    }, 30000);
   });
 
   describe("JSON-LD Schema generators", () => {

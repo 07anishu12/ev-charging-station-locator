@@ -93,6 +93,11 @@ export function auditStationQuality(input: StationQualityAuditInput): QualityIss
     });
   }
 
+  for(const [field,value] of [["pincode",input.pincode],["operator",input.operatorName],["state",input.state]] as const) {
+    if(!value && field!=="operator")issues.push({issueType:`missing_${field}`,severity:"warning",description:`Provider record has no ${field}`});
+  }
+  if(!input.connectors?.length)issues.push({issueType:"missing_connector",severity:"warning",description:"Provider has no connector specifications"});
+
   // 2. Invalid PIN code
   if (input.pincode) {
     const pinCheck = validateIndianPincode(input.pincode);

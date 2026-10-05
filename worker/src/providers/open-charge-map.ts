@@ -69,6 +69,8 @@ export class OpenChargeMapProvider implements ProviderAdapter {
       metadata: {
         countryCode: "IN",
         pageSize: allItems.length,
+        fullSnapshot: !query.latitude && !query.longitude && fetchCount === 10000 && allItems.length < fetchCount,
+        httpStatus: 200,
       },
     };
   }
@@ -171,9 +173,9 @@ export class OpenChargeMapProvider implements ProviderAdapter {
     if (maxResultsParam !== undefined) {
       url.searchParams.set("maxresults", String(maxResultsParam));
     }
-    url.searchParams.set("key", this.apiKey ?? "");
 
-    const response = await fetch(url, { headers: { accept: "application/json" }, cache: "no-store" });
+
+    const response = await fetch(url, { headers: { accept: "application/json", "X-API-Key": this.apiKey ?? "" }, cache: "no-store", signal: AbortSignal.timeout(30000) });
     if (!response.ok) {
       const err = new Error(`Open Charge Map request failed with status ${response.status}: ${response.statusText}`);
       (err as unknown as { status: number }).status = response.status;
