@@ -3,6 +3,8 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+// Missing-configuration behavior must not depend on the developer/CI database URL.
+vi.mock("@/lib/config/env", () => ({ env: { databaseUrl: null, openChargeMapApiKey: null, siteUrl: "http://localhost:3000" } }));
 
 import { parseEnvironment } from "@/lib/config/env-schema";
 import { checkDatabaseHealth, getDb } from "@/lib/db/client";

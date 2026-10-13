@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { getPorts, loadEnvironment, projectRoot } from "./runtime.mjs";
+import { getPorts, loadEnvironment, projectRoot, runCommand } from "./runtime.mjs";
 
 loadEnvironment();
 const ports = getPorts();
@@ -37,6 +37,10 @@ try {
   const html = await fetch(`http://127.0.0.1:${ports.frontend}/`).then(r => r.text());
   if (!html.includes("Recently Updated") || html.includes("Charging data unavailable")) throw new Error("Homepage did not render station data.");
   console.log(`Fresh-checkout smoke test passed: ${manifest.counts.stations} stations, backend health, frontend proxy and homepage.`);
+  if (process.argv.includes("--test")) {
+    // Live database/API consistency tests need the services to remain running.
+    await runCommand(process.execPath, [resolve(projectRoot, "node_modules/vitest/vitest.mjs"), "run"]);
+  }
 } catch (error) {
   console.error(`Fresh-checkout smoke test failed: ${error.message}`);
   process.exitCode = 1;

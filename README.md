@@ -140,6 +140,8 @@ npm test
 npm run build
 ```
 
+For the full test suite, keep the backend running: some tests compare live API results with the database. Fixture tests isolate their configuration. `node scripts/verify-checkout.mjs --test` runs the suite while its own frontend/backend are running, then stops them.
+
 The **Fresh checkout** GitHub Actions workflow uses a clean Ubuntu runner, Node 22 and PostgreSQL 16/PostGIS 3.4. It installs from the lockfile, checks dataset integrity, restores without an API key, reruns setup, starts both services, checks the API/homepage and runs code validation. See **Actions → Fresh checkout** for executed results.
 
 ## 7. Troubleshooting

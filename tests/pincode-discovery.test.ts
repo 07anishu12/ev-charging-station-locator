@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+// These assertions exercise synthetic fixtures, independent of shell database settings.
+vi.mock("@/lib/config/env", () => ({ env: { databaseUrl: null, openChargeMapApiKey: null, siteUrl: "http://localhost:3000" } }));
 
 import {
   CANONICAL_PINCODES,

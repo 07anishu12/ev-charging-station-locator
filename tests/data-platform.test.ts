@@ -4,7 +4,7 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { sql } from 'drizzle-orm';
-import { schema } from '@fastcharger/database';
+import { schema,closeDb } from '@fastcharger/database';
 import { ingestStations } from '../worker/src/ingestion/ingest-stations';
 import { parseCsv,normalizeResearchRow,validIndiaCoordinates } from '../worker/src/providers/research';
 import { OpenChargeMapProvider } from '../worker/src/providers/open-charge-map';
@@ -61,7 +61,7 @@ describe('PostgreSQL/PostGIS ingestion and status integration',()=> {
     await db.execute(sql`INSERT INTO providers(provider_id,provider_name,provider_type,enabled,provider_status,supports_station_data,supports_status_data,supports_connector_data,supports_pricing,supports_live_availability,refresh_interval_seconds,status_interval_seconds,terms_notes)
       VALUES('open-charge-map','synthetic fixture','OPEN_CHARGE_MAP',true,'READY',true,true,true,false,false,604800,300,'synthetic scratch database only')`);
   },30000);
-  afterAll(async()=>{await pool?.end();if(admin){await admin.query(`DROP DATABASE IF EXISTS "${databaseName}" WITH (FORCE)`);await admin.end();}});
+  afterAll(async()=>{await closeDb();await pool?.end();if(admin){await admin.query(`DROP DATABASE IF EXISTS "${databaseName}" WITH (FORCE)`);await admin.end();}});
   it('detects NEW, UNCHANGED, CHANGED and REMOVED_FROM_PROVIDER without deleting history',async()=> {
     data=[raw(1),raw(2)];let report=await run();expect(report.inserted).toBe(2);expect(report.duplicates).toBe(0);expect(report.statusChanges).toBe(2);
     report=await run();expect(report.inserted).toBe(0);expect(report.unchanged).toBe(2);expect(report.statusChanges).toBe(0);

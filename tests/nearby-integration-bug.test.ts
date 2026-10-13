@@ -167,7 +167,8 @@ describe("Nearby Station Data Path & Integration Verification (Incident INC-2026
     }
   });
 
-  it("9b. client uses NEXT_PUBLIC_API_URL when explicitly configured", () => {
+  it("9b. client uses the legacy public URL when no server URL is configured", () => {
+    delete process.env.API_URL;
     process.env.NEXT_PUBLIC_API_URL = "https://api.fastcharger.in";
     expect(getBaseUrl()).toBe("https://api.fastcharger.in");
   });
