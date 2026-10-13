@@ -123,11 +123,14 @@ export default async function HomePage() {
     apiClient.getCities({ pageSize: 10 }),
     apiClient.getStations({ minPowerKw: 60, pageSize: 4 }),
     apiClient.getStations({ pageSize: 4 }),
-    apiClient.getStatistics(),
+    apiClient.getStatistics().catch(() => null),
   ]);
 
-  if(citiesData.status === "error" || fastChargersData.status === "error" || recentStationsData.status === "error") {
+  if(!canonicalStats || citiesData.status === "error" || fastChargersData.status === "error" || recentStationsData.status === "error") {
     return <><SiteHeader /><main className="mx-auto max-w-3xl p-8"><h1>Charging data unavailable</h1><p role="alert">We could not reach the charging data service. Please retry shortly.</p><Link href="/">Retry</Link></main></>;
+  }
+  if (canonicalStats.totalStations === 0) {
+    return <><SiteHeader /><main className="mx-auto max-w-3xl p-8"><h1>No charging stations published yet</h1><p>Charging station listings are being prepared. Please check back soon.</p></main></>;
   }
   const allCities = citiesData.items;
   const popularCities = allCities.slice(0, 7);

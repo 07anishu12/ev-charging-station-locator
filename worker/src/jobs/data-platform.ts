@@ -13,6 +13,7 @@ import { runScheduled } from '../scheduler';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { readFile } from 'node:fs/promises';
 import { setManualStatus } from '../status';
+import { describeDataCommandError } from './diagnostics';
 
 async function main() {
   const command=process.argv[2];const db=getDb();
@@ -49,4 +50,4 @@ async function main() {
   console.log(JSON.stringify(report,null,2));
   if(Array.isArray(report)&&report.some(r=>r.status==='FAILED'))process.exitCode=1;
 }
-main().catch(()=> {console.error('Data command failed. Inspect ingestion_runs and source_errors/data_quality_issues; no credentials printed.');process.exitCode=1;}).finally(closeDb);
+main().catch(error=> {console.error(`Data command failed: ${describeDataCommandError(error)}`);process.exitCode=1;}).finally(closeDb);

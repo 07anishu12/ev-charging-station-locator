@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "node ../scripts/dev.mjs frontend",
+    "build": "npm --prefix .. run build",
+    "start": "npm --prefix .. run start",
+    "lint": "npm --prefix .. run lint"
   },
   "dependencies": {
     "@fastcharger/shared": "*",

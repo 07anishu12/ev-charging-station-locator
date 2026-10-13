@@ -115,11 +115,9 @@ export interface PincodeSearchResult {
 export type SearchResultResponse = TextSearchResult | PincodeSearchResult;
 
 export function getBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
-  }
+  // Use the same origin on every browser, including phones and other computers.
   if (typeof window !== "undefined") return "";
-  return process.env.API_URL?.replace(/\/$/, "") || "http://localhost:4000";
+  return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
 }
 
 class FrontendApiClient {

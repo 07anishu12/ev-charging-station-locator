@@ -5,8 +5,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "start": "tsx src/server.ts",
-    "dev": "tsx watch src/server.ts",
+    "start": "tsx --tsconfig ../tsconfig.json src/server.ts",
+    "dev": "node ../scripts/dev.mjs backend",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },

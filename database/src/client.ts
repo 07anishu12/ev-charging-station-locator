@@ -13,7 +13,7 @@ export function getDb(connectionString?: string): NodePgDatabase<typeof schema> 
   }
 
   if (!pool) {
-    pool = new Pool({ connectionString: url });
+    pool = new Pool({ connectionString: url, connectionTimeoutMillis: 5000 });
     dbInstance = drizzle(pool, { schema });
   }
 

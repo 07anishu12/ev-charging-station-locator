@@ -240,39 +240,46 @@ Create `.env.local` in the root workspace or target application:
 
 ## 7. Local Development
 
-### 1. Start Infrastructure (PostgreSQL + PostGIS, MongoDB & MinIO)
-```bash
-docker compose -f infrastructure/docker-compose.yml up -d
-```
+Run these from the repository root. Use Node.js 20.9 or newer (Node.js 22 LTS recommended).
 
-### 2. Install Dependencies
 ```bash
-npm install
-```
-
-### 3. Run Database Migrations
-```bash
-npm run db:migrate
-```
-
-### 4. Start Applications
-
-**Start All (Full Stack):**
-```bash
+npm ci
+npm run setup
 npm run dev
 ```
 
-**Start Backend API Only:**
+`setup` creates `.env.local` from `.env.example` only when neither `.env.local` nor `.env` exists and no `DATABASE_URL` is supplied. Existing keys and configuration are preserved. It checks PostgreSQL, applies migrations, and imports real data **only when the station table is empty**. Rerunning setup preserves existing station data.
+
+- **Docker option:** Start Docker Desktop first. Setup starts only PostgreSQL + PostGIS using the example connection URL. MongoDB, Redis and MinIO are optional for basic station discovery; they are not required to start the UI/API.
+- **Without Docker:** Set `DATABASE_URL` in `.env.local` to your running native or hosted PostgreSQL server with PostGIS installed. Setup uses that database and does not start Docker.
+- **Real data:** Set `OCM_API_KEY` (or `OPENCHARGEMAP_API_KEY`) in `.env.local`, or set `RESEARCH_STATIONS_FILE` to an existing real research CSV export. Local `research/ev-india/datasets/india-master.csv` is used when available. These research exports and database volumes are **not included in Git**, so cloning the code does not copy this Mac's station records. If setup stops with a missing-data message, configure one of these sources and rerun it. The existing `npm run sync:bee` is another real-data import option requiring Python 3, `pypdf` and Poppler's `pdftotext`.
+
+The three application commands are:
+
+| Command | Starts | Address |
+| --- | --- | --- |
+| `npm run backend` | Backend API, after checking the database/schema/data | `http://localhost:4000` |
+| `npm run frontend` | Frontend only; use a separately running backend | `http://localhost:3000` |
+| `npm run dev` | Backend, waits for database health, then frontend | `http://localhost:3000` |
+
+`npm run` by itself only lists scripts. It does not launch the application. Stop development services with Ctrl+C; the combined command stops both processes. Ports already in use cause a clear error instead of silently moving the frontend to another port. Set `BACKEND_PORT` and `FRONTEND_PORT` in `.env.local` to change ports. When changing the backend port, update an explicitly configured `API_URL` to match.
+
+The active Next.js application is the existing root `app/`, `components/` and `lib/` tree. `cd frontend && npm run dev` delegates to that same application so there are no competing startup paths; `cd backend && npm run dev` delegates to the root backend launcher. Install dependencies once at the root.
+
+Browser API requests use same-origin `/api/v1/*`, which Next.js proxies to the server-only `API_URL` (default `http://127.0.0.1:4000`). This also works when a phone or another computer opens the frontend's LAN address. `NEXT_PUBLIC_API_URL` remains a legacy fallback for configuring the proxy destination; it is no longer sent as the browser request destination. Set `API_URL` to your deployed backend when running the frontend separately. Do not put database/provider secrets in `NEXT_PUBLIC_*` variables.
+
+Readiness checks:
+
 ```bash
-cd backend && npm run dev
-# Backend API runs at http://localhost:3001/api/v1/health
+# Backend connectivity
+curl http://localhost:4000/health/db
+# Real station count, also through the frontend proxy
+curl http://localhost:3000/api/v1/statistics
 ```
 
-**Start Frontend Only:**
-```bash
-cd frontend && npm run dev
-# Frontend runs at http://localhost:3000
-```
+An API outage displays "Charging data unavailable"; an empty database displays "No charging stations published yet". Startup checks explain whether the missing piece is the database, migrations or imported records. No mock station fallback is used in this application path.
+
+Before a public India launch, host the backend and PostGIS database, run imports and the scheduled provider sync, and configure the frontend's deployed `API_URL` and `NEXT_PUBLIC_SITE_URL`. A station listing is not a live charging session: current connector availability requires authorized operator feeds, and inventory sources alone do not guarantee exhaustive coverage or current availability.
 
 ---
 
