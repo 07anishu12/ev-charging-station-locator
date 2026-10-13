@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-10-05T02:52:14.853232+00:00",
+  "scope": "Collected public evidence only; not exhaustive or field-verified",
+  "raw_bee_connector_rows": 39641,
+  "raw_delhi_rows": 891,
+  "delhi_charging_rows": 573,
+  "delhi_swapping_rows": 318,
+  "source_site_groups": {
+    "bee": 29366,
+    "delhi-ev": 559,
+    "ocm": 1979,
+    "osm": 600,
+    "dtl": 78
+  },
+  "provisional_canonical_stations": 31066,
+  "india_envelope_mappable_stations": 30948,
+  "ncr_research_box_stations": 2966,
+  "source_membership": {
+    "bee": 27961,
+    "bee+delhi-ev": 69,
+    "delhi-ev": 384,
+    "ocm": 1974,
+    "osm": 600,
+    "dtl": 78
+  },
+  "source_only": {
+    "bee": 27961,
+    "delhi-ev": 384,
+    "ocm": 1974,
+    "osm": 600,
+    "dtl": 78
+  },
+  "cross_source_or_same_source_merges": 1516,
+  "candidate_pair_classifications": {
+    "POSSIBLE_MATCH": 5737,
+    "SEPARATE": 2069,
+    "PROBABLE_MATCH": 2921,
+    "UNKNOWN": 1754,
+    "MATCHED": 8072
+  },
+  "coordinate_quarantine_records": 118,
+  "stations_with_verified_live_status": 0,
+  "stations_without_verified_live_status": 31066,
+  "address_only_discovery_records": 588,
+  "potentially_inactive_stations": null,
+  "ocm_audit": {
+    "india_records": 1979,
+    "unique_ids": 1979,
+    "ncr_bbox_records": 70,
+    "bbox_ids_absent_from_national": 0,
+    "delhi_10km_records": 22,
+    "delhi_25km_records": 57,
+    "private_records": 39,
+    "missing_country_metadata": 0,
+    "missing_state_metadata": 36,
+    "missing_or_invalid_coords": 2,
+    "inventory_not_operational": 36,
+    "records_update_older_than_365_days": 1142,
+    "missing_update_timestamp": 0,
+    "result_cap_reached": false,
+    "removed_records": "not measurable from a single snapshot"
+  }
+}

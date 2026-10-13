@@ -1,0 +1,62 @@
+{
+  "formatVersion": 1,
+  "files": [
+    {
+      "path": "research/ev-india/datasets/address-discovery-queue.csv",
+      "bytes": 119933,
+      "sha256": "96f68abaca80aeb94dc509f3a0d65f5307c072e704148957aada6b121e18137b",
+      "rows": 588
+    },
+    {
+      "path": "research/ev-india/datasets/coordinate-quarantine.csv",
+      "bytes": 94950,
+      "sha256": "392681498a273cf769d896100c58e8e75bf950def9369e1e4a7940294b76ff50",
+      "rows": 118
+    },
+    {
+      "path": "research/ev-india/datasets/delhi-ncr-master.csv",
+      "bytes": 3173101,
+      "sha256": "1a718a6148127266ae037d97ab4bf646399ef694e7372f82552b031f35670795",
+      "rows": 2966
+    },
+    {
+      "path": "research/ev-india/datasets/identity-conflicts.csv",
+      "bytes": 2090,
+      "sha256": "6f92bd417d83618aa92753a9f263ffcebaa72de98c41b1caca623b77674896f0",
+      "rows": 92
+    },
+    {
+      "path": "research/ev-india/datasets/india-master.csv",
+      "bytes": 34234369,
+      "sha256": "f61b5161cf8dd1f971d459b73ed6dbbe731150962c2eea3d0792c9c6275c2ed4",
+      "rows": 31066
+    },
+    {
+      "path": "research/ev-india/datasets/india-master.geojson",
+      "bytes": 9678938,
+      "sha256": "95ef95f8c106564276de365b7a484e8bf83b1b0e8221c2e7e4e69a8e8077b305"
+    },
+    {
+      "path": "research/ev-india/datasets/match-candidates.csv",
+      "bytes": 1778753,
+      "sha256": "a3635402073ab128351039f01fab6164b11f3d4104c4eef82b56950bc84db023",
+      "rows": 20553
+    },
+    {
+      "path": "research/ev-india/datasets/source-quality.json",
+      "bytes": 2734,
+      "sha256": "9e6ad2f3c95c1fa487212d8f94db71f040f9adf79103f488efb44b9089871327"
+    },
+    {
+      "path": "research/ev-india/datasets/station-sources.csv",
+      "bytes": 26399426,
+      "sha256": "64b24514cb4e78d236b5c6e053f147b93b9b6756e7fc180854aadbb9fe722736",
+      "rows": 32582
+    },
+    {
+      "path": "research/ev-india/datasets/summary.json",
+      "bytes": 1719,
+      "sha256": "1a77bf9ae4b7e65a4050ee188e0fd91952c7f4b3a8121a3270c5a46aabf99213"
+    }
+  ]
+}

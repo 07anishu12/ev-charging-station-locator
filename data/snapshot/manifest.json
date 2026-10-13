@@ -1,0 +1,31 @@
+{
+  "formatVersion": 1,
+  "exportedAt": "2026-10-13T03:12:07.283Z",
+  "file": "india-charging.json.gz",
+  "sha256": "006e881995b31f731080a21b9763880dae7c3594d625bc98e71966c1703cc520",
+  "bytes": 47985733,
+  "migrationJournalSha256": "adb9e7d7ad06ac00c63368c9e6230202f5195a0fdcc880ebba94ea8b095f088a",
+  "counts": {
+    "states": 36,
+    "districts": 1424,
+    "cities": 5955,
+    "city_aliases": 18,
+    "localities": 0,
+    "pincodes": 1073,
+    "operators": 241,
+    "providers": 18,
+    "stations": 30812,
+    "connectors": 34296,
+    "sync_logs": 29,
+    "station_provider_mappings": 32467,
+    "status_observations": 353686,
+    "manual_status_overrides": 0,
+    "data_quality_issues": 171184
+  },
+  "discoveryCounts": {
+    "stations": 30812,
+    "cities": 5288,
+    "operators": 239
+  },
+  "attribution": "See data/DATA_SOURCES.md and research/ev-india/datasets/station-sources.csv. Source licenses are retained; this is a dated inventory snapshot, not a live availability feed."
+}

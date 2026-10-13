@@ -94,3 +94,7 @@ research/**/datasets/
 research/**/*.xml
 *.raw.json
 *.raw.csv
+
+# Reviewed research exports are part of the reproducible dataset distribution.
+!research/ev-india/datasets/
+!research/ev-india/datasets/*

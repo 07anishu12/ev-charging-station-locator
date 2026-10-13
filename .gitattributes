@@ -1,0 +1,4 @@
+# Preserve exact dataset bytes/checksums on macOS, Linux and Windows.
+research/ev-india/datasets/* binary
+data/snapshot/*.gz binary
+database/migrations/meta/_journal.json text eol=lf

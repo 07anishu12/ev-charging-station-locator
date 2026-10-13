@@ -50,7 +50,7 @@ export async function inspectDatabase({ requireSchema = true, requireData = true
     const result = await pool.query("SELECT count(*)::int AS count FROM stations");
     const count = result.rows[0].count;
     if (requireData && count === 0) {
-      throw new Error("Database is connected but contains no charging stations. Run npm run setup with OCM_API_KEY or RESEARCH_STATIONS_FILE configured. Code installation does not include provider data.");
+      throw new Error("Database is connected but contains no charging stations. Run npm run setup to load the bundled dataset.");
     }
     return count;
   } catch (error) {

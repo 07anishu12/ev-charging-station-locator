@@ -1,0 +1,102 @@
+{
+  "bee": {
+    "reported_site_groups": 29366,
+    "coordinate_quality": 0.9960498535721583,
+    "attribute_completeness": 0.5714285714285714,
+    "missing_fields": {
+      "name": 29366,
+      "operator": 0,
+      "address": 0,
+      "city": 0,
+      "state": 0,
+      "pincode": 29366,
+      "opening_hours": 29366
+    },
+    "measured_live_status_coverage": 0,
+    "coverage": null,
+    "accuracy": null,
+    "api_reliability": null,
+    "source_score": null,
+    "reason": "coverage and field accuracy lack a validated denominator; API SLA unmeasured"
+  },
+  "delhi-ev": {
+    "reported_site_groups": 559,
+    "coordinate_quality": 1.0,
+    "attribute_completeness": 0.8571428571428571,
+    "missing_fields": {
+      "name": 559,
+      "operator": 0,
+      "address": 0,
+      "city": 0,
+      "state": 0,
+      "pincode": 0,
+      "opening_hours": 0
+    },
+    "measured_live_status_coverage": 0,
+    "coverage": null,
+    "accuracy": null,
+    "api_reliability": null,
+    "source_score": null,
+    "reason": "coverage and field accuracy lack a validated denominator; API SLA unmeasured"
+  },
+  "dtl": {
+    "reported_site_groups": 78,
+    "coordinate_quality": 1.0,
+    "attribute_completeness": 0.7142857142857143,
+    "missing_fields": {
+      "name": 0,
+      "operator": 0,
+      "address": 0,
+      "city": 0,
+      "state": 0,
+      "pincode": 78,
+      "opening_hours": 78
+    },
+    "measured_live_status_coverage": 0,
+    "coverage": null,
+    "accuracy": null,
+    "api_reliability": null,
+    "source_score": null,
+    "reason": "coverage and field accuracy lack a validated denominator; API SLA unmeasured"
+  },
+  "ocm": {
+    "reported_site_groups": 1979,
+    "coordinate_quality": 0.998989388580091,
+    "attribute_completeness": 0.7601241608315888,
+    "missing_fields": {
+      "name": 0,
+      "operator": 390,
+      "address": 0,
+      "city": 441,
+      "state": 36,
+      "pincode": 477,
+      "opening_hours": 1979
+    },
+    "measured_live_status_coverage": 0,
+    "coverage": null,
+    "accuracy": null,
+    "api_reliability": null,
+    "source_score": null,
+    "reason": "coverage and field accuracy lack a validated denominator; API SLA unmeasured"
+  },
+  "osm": {
+    "reported_site_groups": 600,
+    "coordinate_quality": 1.0,
+    "attribute_completeness": 0.13738095238095238,
+    "missing_fields": {
+      "name": 447,
+      "operator": 289,
+      "address": 566,
+      "city": 592,
+      "state": 597,
+      "pincode": 587,
+      "opening_hours": 545
+    },
+    "measured_live_status_coverage": 0,
+    "coverage": null,
+    "accuracy": null,
+    "api_reliability": null,
+    "source_score": null,
+    "reason": "coverage and field accuracy lack a validated denominator; API SLA unmeasured"
+  }
+}

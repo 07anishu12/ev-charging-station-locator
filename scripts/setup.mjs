@@ -2,6 +2,7 @@ import { access, copyFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { resolve } from "node:path";
 import { inspectDatabase, loadEnvironment, projectRoot, runCommand, runDataCommand } from "./runtime.mjs";
+import { restoreSnapshot, snapshotDirectory } from "./snapshot.mjs";
 
 async function exists(file) {
   try { await access(file); return true; } catch { return false; }
@@ -35,14 +36,17 @@ async function main() {
     if (process.env.RESEARCH_STATIONS_FILE && !await exists(file)) {
       throw new Error("RESEARCH_STATIONS_FILE does not exist. Correct its path in .env.local and rerun npm run setup.");
     }
-    if (await exists(file)) {
+    if (!process.env.RESEARCH_STATIONS_FILE && await exists(resolve(snapshotDirectory, "manifest.json"))) {
+      console.log("Loading the bundled dataset; no provider API key is needed...");
+      await restoreSnapshot();
+    } else if (await exists(file)) {
       console.log("Importing real station records from the configured research CSV...");
       await runDataCommand("import");
     } else if (process.env.OCM_API_KEY?.trim() || process.env.OPENCHARGEMAP_API_KEY?.trim()) {
       console.log("Importing India station records from Open Charge Map...");
       await runDataCommand("ocm");
     } else {
-      throw new Error("Schema is ready, but no station data is installed. Set OCM_API_KEY or RESEARCH_STATIONS_FILE in .env.local and rerun npm run setup. Research datasets are not included in Git. Alternatively run npm run sync:bee after installing Python 3, pypdf and Poppler, then rerun setup. No sample stations will be substituted.");
+      throw new Error("Schema is ready, but no station data is installed. Restore data/snapshot from Git, or set OCM_API_KEY or RESEARCH_STATIONS_FILE in .env.local and rerun npm run setup.");
     }
     count = await inspectDatabase();
   }

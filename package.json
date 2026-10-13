@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "node scripts/dev.mjs all",
     "backend": "node scripts/dev.mjs backend",
     "frontend": "node scripts/dev.mjs frontend",
     "setup": "node scripts/setup.mjs",
+    "data:export-snapshot": "node scripts/export-snapshot.mjs",
+    "data:research-manifest": "tsx scripts/research-manifest.ts",
+    "data:check-snapshot": "node -e \"import('./scripts/snapshot.mjs').then(m=>m.readSnapshot()).then(({manifest})=>console.log(manifest.counts)).catch(()=>{console.error('Bundled snapshot verification failed');process.exitCode=1})\"",
     "db:up": "docker compose -f infrastructure/docker-compose.yml up -d --wait postgres",
     "build": "next build",
     "start": "next start",

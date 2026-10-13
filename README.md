@@ -1,530 +1,165 @@
-# FastCharger
+# FastCharger — EV charging station discovery for India
 
-FastCharger is an India-wide EV charging discovery platform with a decoupled, high-performance architecture built for reliability, scalability, and technical SEO.
+Search charging stations by city, state, PIN code or nearby coordinates. The project includes a Next.js frontend, standalone Hono backend, PostgreSQL/PostGIS schema, ingestion workers and a versioned real-data snapshot.
 
-> Find your next charging stop across India with real-time station availability, technical connector specifications, and verified geographical data.
+**A clone includes the code and station datasets. No provider API key is needed to load the bundled snapshot.** Node.js and a PostgreSQL/PostGIS server are still required; setup installs the data into that server.
 
----
+## 1. Quick start
 
-## 1. Architectural Boundaries
-
-FastCharger enforces strict boundaries between presentation, business operations, canonical persistence, and background ingestion:
-
-```text
-┌────────────────────────────────────────────────────────┐
-│                      FRONTEND                          │
-│  (Next.js App Router, React 19, Tailwind CSS 4, SSR)   │
-└───────────────────────────┬────────────────────────────┘
-                            │ HTTP REST / JSON
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                      BACKEND                           │
-│     (Node.js, Hono API, Zod Validation, Drizzle ORM)   │
-└───────────────────────────┬────────────────────────────┘
-                            │ SQL / PostGIS
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                     DATABASE                           │
-│        (PostgreSQL 16 + PostGIS Spatial Engine)        │
-└───────────────────────────▲────────────────────────────┘
-                            │ SQL / Ingestion writes
-┌───────────────────────────┴────────────────────────────┐
-│                      WORKER                            │
-│  (Provider Ingestion, Normalization, Scheduled Jobs)   │
-└────────────────────────────────────────────────────────┘
-```
-
-### Core Invariants:
-- **`frontend → HTTP → backend → database`**: The frontend communicates with the backend purely via HTTP. The frontend contains zero database drivers (`pg`, `drizzle-orm`) and zero database connection pools.
-- **Frontend Independence**: The frontend builds and renders without requiring `DATABASE_URL`.
-- **Worker Isolation**: Ingestion and synchronization workers persist canonical records directly to the database without UI dependencies.
-- **Shared Contracts**: `@fastcharger/shared` defines type contracts, Zod schemas, and client wrappers without database or framework couplings.
-
----
-
-## 2. Directory Layout & Package Responsibilities
-
-```text
-fastcharger/
-├── frontend/             # Next.js 16 presentation, SSR/SSG pages, maps, SEO
-├── backend/              # Standalone Node.js + Hono HTTP REST API (/api/v1/)
-├── worker/               # Background data ingestion, sync jobs, and normalization
-├── database/             # PostgreSQL + PostGIS schema, Drizzle ORM, migrations
-├── storage/              # S3-compatible object storage abstraction (S3/R2/MinIO)
-├── shared/               # Shared domain types, Zod contracts, and API client
-├── infrastructure/       # Docker Compose setup for PostgreSQL, MongoDB & MinIO
-├── docs/                 # Architectural specifications and migration documentation
-├── package.json          # Root workspace configuration and scripts
-├── tsconfig.base.json    # Base TypeScript configuration
-└── README.md             # Project documentation
-```
-
-### Workspace Breakdown:
-- **`frontend/` (`@fastcharger/frontend`)**: Next.js App Router, React 19, Tailwind CSS 4, Leaflet map client, mobile-responsive UI, metadata, and JSON-LD structured data. Connects to backend via `NEXT_PUBLIC_API_URL`.
-- **`backend/` (`@fastcharger/backend`)**: High-performance HTTP server running on Hono. Handles request validation, spatial PostGIS queries (`ST_DWithin`, `ST_Distance`), city/pincode filtering, and standardized REST envelopes.
-- **`worker/` (`@fastcharger/worker`)**: Provider ingestion (Open Charge Map), normalization pipelines, and scheduled sync jobs.
-- **`database/` (`@fastcharger/database`)**: PostGIS geospatial schemas, Drizzle migrations, connection pool lifecycle, and health checks.
-- **`storage/` (`@fastcharger/storage`)**: S3-compatible object storage abstraction supporting AWS S3, Cloudflare R2, MinIO, and hermetic in-memory test drivers.
-- **`shared/` (`@fastcharger/shared`)**: Canonical TypeScript interfaces, validation schemas, HTTP client (`FastChargerApiClient`), and geographic reference catalogs.
-- **`infrastructure/`**: Local development Docker configuration for PostgreSQL, MongoDB, and MinIO.
-- **`docs/`**: Detailed architectural documentation (`docs/architecture.md`), database specifications (`docs/database.md`), and status tracking (`docs/migration-status.md`).
-
----
-
-## 3. Authoritative Source of Truth: PostgreSQL + PostGIS
-
-FastCharger strictly separates data authority:
-
-> **POSTGRESQL = canonical business data**  
-> **POSTGIS = canonical geographic intelligence**
-
-- **PostgreSQL** is authoritative for:
-  - `states`, `districts`, `cities`, `localities`, `pincodes`, `city_aliases`
-  - `operators`, `stations`, `connectors`
-  - `station status`, `verification_status`
-  - Upstream provider cross-references (`station_provider_mappings`)
-  - Verification state & data quality audit trail (`data_quality_issues`)
-  - Synchronisation logs (`sync_logs`) and immutable timestamps
-- **PostGIS** (`geography(Point, 4326)`) is authoritative for:
-  - Geographic coordinates (latitude, longitude)
-  - Geodesic spatial distance metrics
-  - Radius-based bounding and filtering (`ST_DWithin`)
-  - Indexed spatial search (`stations_location_gist_idx`, `localities_location_gist_idx`)
-- **Non-Authoritative Layers**:
-  - Redis: transient cache only; volatile.
-  - MongoDB: raw telemetry and payload archival only.
-  - Object storage: raw provider evidence and media.
-  - Frontend state: ephemeral UI render cache only.
-  - Provider API responses: untrusted raw external inputs.
-
-### Station Identity & Multi-Provider De-duplication
-Authorized providers share canonical identity through provider mappings:
-1. **Provider Mapping Match**: Known `(provider_name, provider_station_id)` tuples resolve directly to canonical station records.
-2. **Spatial Proximity + Operator/Name Fingerprint**: A unique candidate within 50 meters must also match normalized name, address and operator. Other nearby records remain separate and create review issues.
-3. **Deterministic Canonical Slugs**: Generated deterministically using base name, locality/city anchor, and provider ID or coordinate grid hash.
-
-### Data Quality & Anomaly Tracking
-Invalid provider data is never silently dropped. Anomalies are recorded in `data_quality_issues`:
-- `invalid_coordinates`: Coordinates outside standard boundaries or Null Island `(0,0)`.
-- `invalid_pincode`: Malformed non-6-digit PIN codes.
-- `missing_city` & `ambiguous_city`: Unresolved or conflicting city assignments.
-- `duplicate_provider_record`: Repeated upstream provider records.
-- `malformed_connector`: Missing connector type or invalid negative power rating.
-- `invalid_status`: Unrecognized operational states.
-
----
-
-## 4. Flexible Operational & Event Layer: MongoDB
-
-FastCharger introduces MongoDB **strictly for flexible document and operational event workloads**:
-
-> **POSTGRESQL = canonical business data**  
-> **MONGODB = flexible events/documents**  
-> **REDIS = cache/temporary acceleration**  
-> **OBJECT STORAGE = large files/raw payloads**  
-
-### Strict Boundary Rules:
-- **MongoDB MAY store**:
-  - `ingestion_events`: Sync run lifecycle, batch checkpoints, and provider ingestion metrics.
-  - `provider_processing_events`: Raw provider payload transformations, normalization transitions, and rate-limiting notifications.
-  - `audit_events`: Administrative modifications, security events, and configuration change records.
-  - `data_quality_events`: Historical anomaly event log (coordinate anomalies, PIN code mismatches, connector errors) for trend analysis.
-  - `search_analytics_events`: High-volume query telemetry, search filters, zero-result queries, and latency profiling.
-  - `operational_events`: Circuit breaker state changes, system health checks, cache drops, and worker job heartbeats.
-- **MongoDB MUST NOT store**:
-  - Canonical charging stations
-  - Canonical cities or districts
-  - Canonical pincodes or localities
-  - Canonical connectors
-  - Canonical geographic hierarchy
-- **PostgreSQL truth is NEVER duplicated into MongoDB.**
-
-### Deterministic Event Structure:
-Every operational event adheres strictly to the canonical event envelope:
-```typescript
-interface BaseEvent<TPayload> {
-  eventId: string;          // UUID v4 or deterministic event hash
-  eventType: string;        // e.g. "search.query_executed", "ingestion.batch_processed"
-  timestamp: Date;          // ISO Date
-  source: string;           // System emitting event (e.g. "fastcharger-backend")
-  correlationId: string;    // Request or job correlation ID for distributed tracing
-  entityId?: string | null; // Optional business entity ID reference
-  payload: TPayload;        // Flexible document payload
-  version: number;          // Schema version (>= 1)
-  expiresAt?: Date;         // Optional explicit TTL target
-}
-```
-
-### High-Volume Retention Policy (TTL Indexes):
-High-volume operational events expire automatically via database-side TTL indexes (`expireAfterSeconds` on `timestamp`):
-- `operational_events`: **14 days** (1,209,600s) — System health, circuit breakers, cache drops.
-- `search_analytics_events`: **30 days** (2,592,000s) — Query telemetry, zero-result analysis.
-- `provider_processing_events`: **30 days** (2,592,000s) — Upstream payload diffs, normalization transitions.
-- `ingestion_events`: **90 days** (7,776,000s) — Batch progress, sync lifecycle telemetry.
-- `data_quality_events`: **180 days** (15,552,000s) — Upstream provider anomaly decay analysis.
-- `audit_events`: **365 days** (31,536,000s) — Security, configuration changes, migrations.
-
-### Failure Isolation & Fallback Policy:
-- **MongoDB failure NEVER breaks core station discovery or transactional flows.**
-- If MongoDB becomes unavailable (offline, network split, timeout):
-  1. PostgreSQL-backed APIs continue serving 100% of user traffic without errors or performance penalties.
-  2. The event store triggers an explicit `BUFFER_AND_LOG` fallback policy, appending events to an in-memory ring buffer while logging diagnostic warnings.
-  3. Analytics or logging failures never turn into user-facing 500 outages.
-
----
-
-## 5. Object Storage Abstraction (S3 / R2 / MinIO)
-
-FastCharger introduces an S3-compatible Object Storage abstraction for large/raw artifacts:
-
-> **POSTGRESQL = canonical business data**  
-> **POSTGIS = canonical geographic intelligence**  
-> **MONGODB = flexible events/documents**  
-> **REDIS = cache/temporary acceleration**  
-> **OBJECT STORAGE = files/raw artifacts**  
-
-### Supported Conceptual Implementations:
-- **AWS S3**: Production object storage in AWS environments (`ap-south-1`).
-- **Cloudflare R2**: Zero-egress global object storage with custom endpoint integration.
-- **MinIO**: Local S3-compatible Docker service for hermetic development and offline CI.
-- **Memory**: Ephemeral in-memory test driver for fast unit testing.
-
-### Core Use Cases:
-- **Raw Provider Responses**: High-fidelity archival of vendor API responses (Open Charge Map, Kazam, Statiq).
-- **Provider Dumps**: Large JSON and CSV station dataset snapshots.
-- **Large JSON Payloads**: Intermediate normalization manifests and reconciliation trees.
-- **CSV & GeoJSON Exports**: User-requested or scheduled bulk export files.
-- **Ingestion Audit Reports**: Per-sync summary reports and anomaly logs.
-- **Future Station Media**: User-uploaded station photos and verification proofs.
-
-### Database Division of Responsibility:
-- **PostgreSQL stores metadata** via the `object_metadata` table:
-  `object_key`, `bucket`, `content_type`, `size_bytes`, `checksum_sha256`, `source`, `provider`, `job_id`, `created_at`, and retention parameters.
-- **Large raw files are NEVER stored directly in relational table rows.**
-
-### Uniform Abstraction API:
-Applications interact with storage purely through the domain abstraction interface, completely insulated from AWS SDK semantics:
-- `putObject(input)`: Uploads buffer or string, computes SHA-256 checksum, sets MIME type and metadata tags.
-- `getObject(input)`: Downloads object body as Buffer, validates length and checksum, returns metadata.
-- `headObject(input)`: Checks existence, content type, length, and metadata without downloading payload body.
-- `deleteObject(input)`: Deletes object from bucket.
-- `createSignedUrl(input)`: Generates time-limited presigned URLs for controlled GET or PUT operations.
-
-### Security & Access Control:
-- **Private by Default**: Storage buckets are strictly private; public read/write access is disabled.
-- **Zero Frontend Credential Exposure**: Storage credentials (`accessKeyId`, `secretAccessKey`) are never exposed to the frontend.
-- **Controlled Signed URLs**: When client download is required, the backend or worker issues short-lived presigned URLs (default 15 minutes).
-- **Worker Archival Ownership**: The worker package owns raw vendor payload archival (`RawProviderArchivalService`).
-
----
-
-## 6. Environment Variables
-
-Create `.env.local` in the root workspace or target application:
-
-| Variable | Target | Purpose | Example |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | Backend / Database / Worker | PostgreSQL connection string with PostGIS | `postgresql://postgres:postgres@localhost:5432/fastcharger` |
-| `MONGODB_URI` | Database / Backend / Worker | MongoDB connection URI for operational events | `mongodb://admin:password@localhost:27017/fastcharger_events?authSource=admin` |
-| `STORAGE_PROVIDER` | Storage / Worker / Backend | Object storage implementation (`s3`, `r2`, `minio`, `memory`) | `minio` |
-| `STORAGE_ENDPOINT` | Storage / Worker / Backend | Endpoint URL for MinIO or Cloudflare R2 | `http://localhost:9000` |
-| `STORAGE_DEFAULT_BUCKET` | Storage / Worker / Backend | Default target bucket for object storage | `fastcharger-raw` |
-| `STORAGE_ACCESS_KEY` | Storage / Worker / Backend | Storage access key ID | `minioadmin` |
-| `STORAGE_SECRET_KEY` | Storage / Worker / Backend | Storage secret access key | `minioadmin` |
-| `NEXT_PUBLIC_API_URL` | Frontend | URL of backend API for client & SSR fetch (Next.js rewrites proxy `/api/v1/*`) | `http://localhost:4000` |
-| `NEXT_PUBLIC_SITE_URL` | Frontend | Canonical frontend site URL | `http://localhost:3000` |
-| `PORT` | Backend | Port for standalone backend API | `4000` |
-| `OCM_API_KEY` / `OPENCHARGEMAP_API_KEY` | Worker | API key for Open Charge Map provider ingestion | (Required for live OCM API fetch) |
-
----
-
-## 7. Local Development
-
-Run these from the repository root. Use Node.js 20.9 or newer (Node.js 22 LTS recommended).
+Install Git and **Node.js 22 or newer**, including npm. For the easiest database setup, install and start Docker Desktop (or Docker Engine with Compose on Linux).
 
 ```bash
+git clone https://github.com/07anishu12/ev-charging-station-locator.git
+cd ev-charging-station-locator
 npm ci
 npm run setup
 npm run dev
 ```
 
-`setup` creates `.env.local` from `.env.example` only when neither `.env.local` nor `.env` exists and no `DATABASE_URL` is supplied. Existing keys and configuration are preserved. It checks PostgreSQL, applies migrations, and imports real data **only when the station table is empty**. Rerunning setup preserves existing station data.
+Open **http://localhost:3000**. The backend runs at **http://localhost:4000**.
 
-- **Docker option:** Start Docker Desktop first. Setup starts only PostgreSQL + PostGIS using the example connection URL. MongoDB, Redis and MinIO are optional for basic station discovery; they are not required to start the UI/API.
-- **Without Docker:** Set `DATABASE_URL` in `.env.local` to your running native or hosted PostgreSQL server with PostGIS installed. Setup uses that database and does not start Docker.
-- **Real data:** Set `OCM_API_KEY` (or `OPENCHARGEMAP_API_KEY`) in `.env.local`, or set `RESEARCH_STATIONS_FILE` to an existing real research CSV export. Local `research/ev-india/datasets/india-master.csv` is used when available. These research exports and database volumes are **not included in Git**, so cloning the code does not copy this Mac's station records. If setup stops with a missing-data message, configure one of these sources and rerun it. The existing `npm run sync:bee` is another real-data import option requiring Python 3, `pypdf` and Poppler's `pdftotext`.
+Setup creates `.env.local` from `.env.example` if no environment file or supplied `DATABASE_URL` exists. It starts the documented local PostgreSQL/PostGIS Docker service when needed, applies migrations, verifies dataset checksums and imports the full snapshot into an empty database. Existing configuration, keys and populated station databases are preserved.
 
-The three application commands are:
+The frontend and backend run as Node processes. Only PostgreSQL/PostGIS needs Docker for this path. MongoDB, Redis and MinIO are optional for basic discovery.
+
+Cloning, installing dependencies and the first Docker image download need internet access. Snapshot loading does not contact provider APIs. Map tiles need internet access.
+
+### Without Docker
+
+Use a native or hosted PostgreSQL server with PostGIS installed. After cloning and `npm ci`, create a root `.env.local` using `.env.example` as the template. Set `DATABASE_URL` to an empty database on your server, then run `npm run setup` and `npm run dev`.
+
+The database user needs permission to apply migrations and enable PostGIS. If your provider manages extensions separately, enable PostGIS through the provider first. A custom connection URL uses that database without starting Docker.
+
+## 2. Your three application commands
+
+Run commands from the repository root:
 
 | Command | Starts | Address |
 | --- | --- | --- |
-| `npm run backend` | Backend API, after checking the database/schema/data | `http://localhost:4000` |
-| `npm run frontend` | Frontend only; use a separately running backend | `http://localhost:3000` |
-| `npm run dev` | Backend, waits for database health, then frontend | `http://localhost:3000` |
+| `npm run backend` | Backend API after checking database/schema/data | `http://localhost:4000/health/db` |
+| `npm run frontend` | Frontend; start the backend separately | `http://localhost:3000` |
+| `npm run dev` | Backend, waits for readiness, then frontend | `http://localhost:3000` |
 
-`npm run` by itself only lists scripts. It does not launch the application. Stop development services with Ctrl+C; the combined command stops both processes. Ports already in use cause a clear error instead of silently moving the frontend to another port. Set `BACKEND_PORT` and `FRONTEND_PORT` in `.env.local` to change ports. When changing the backend port, update an explicitly configured `API_URL` to match.
+Use `backend` and `frontend` in separate terminals, or `dev` in one terminal. Ctrl+C stops the processes started by that command. `npm run` alone lists scripts and does not launch the application.
 
-The active Next.js application is the existing root `app/`, `components/` and `lib/` tree. `cd frontend && npm run dev` delegates to that same application so there are no competing startup paths; `cd backend && npm run dev` delegates to the root backend launcher. Install dependencies once at the root.
+Browser requests use the frontend's `/api/v1/*` proxy. To open the app from another device, use this computer's LAN address on port 3000 and allow access through your firewall. Requests do not point at each visitor's own `localhost`.
 
-Browser API requests use same-origin `/api/v1/*`, which Next.js proxies to the server-only `API_URL` (default `http://127.0.0.1:4000`). This also works when a phone or another computer opens the frontend's LAN address. `NEXT_PUBLIC_API_URL` remains a legacy fallback for configuring the proxy destination; it is no longer sent as the browser request destination. Set `API_URL` to your deployed backend when running the frontend separately. Do not put database/provider secrets in `NEXT_PUBLIC_*` variables.
+## 3. What GitHub includes
 
-Readiness checks:
+| Included | Location |
+| --- | --- |
+| Active frontend, styles and components | Root `app/`, `components/`, `lib/` |
+| Backend routes, validation, services and repositories | `backend/src/` |
+| Database schema and migrations | `database/` |
+| Ingestion, normalization, reconciliation and refresh jobs | `worker/` |
+| Shared contracts, types and geographic references | `shared/` |
+| Ready-to-load canonical dataset | `data/snapshot/india-charging.json.gz` |
+| Snapshot counts, date, checksum and migration version | `data/snapshot/manifest.json` |
+| All ten research exports and record-level attribution | `research/ev-india/datasets/` |
+| Research file inventory, checksums and CSV row counts | `data/research-manifest.json` |
+| Run/setup/verification scripts and dependency lockfile | `scripts/`, `package.json`, `package-lock.json` |
+
+Research exports include India master CSV and GeoJSON, Delhi/NCR master, station sources, summary, source quality, match candidates, coordinate quarantine, identity conflicts and address discovery queue. Rejected/unresolved records remain in the research exports; the canonical snapshot contains discoverable stations after ingestion and reconciliation.
+
+The snapshot exported on **13 October 2026** contains:
+
+| Dataset | Records |
+| --- | ---: |
+| Discoverable stations | 30,812 |
+| Connectors | 34,296 |
+| States / union territories | 36 |
+| Stored cities | 5,955 |
+| Cities with stations | 5,288 |
+| Stored operators | 241 |
+| Operators referenced by stations | 239 |
+| PIN codes | 1,073 |
+| Provider mappings | 32,467 |
+
+Districts, city aliases, provider configuration, ingestion history, status observations and quality records are also included. Exact counts for all restored tables are in the manifest. Migrations recreate PostgreSQL views such as `station_status`.
+
+**Private environment files/API keys, installed dependencies, local database volumes, build output, logs, raw downloaded provider webpages and temporary ingestion archives are excluded.** They are not required to use the distributed dataset. `npm ci` recreates dependencies; migrations recreate the schema; setup loads the snapshot.
+
+## 4. Your API key and future refreshes
+
+The owner's API key stays in the owner's private `.env.local` or deployment secret store. It is not committed, embedded in the frontend, or distributed to people cloning this repository. The bundled snapshot works without it.
+
+For a live Open Charge Map refresh, privately configure an authorized `OCM_API_KEY` (or `OPENCHARGEMAP_API_KEY`) and run:
 
 ```bash
-# Backend connectivity
+npm run sync:ocm
+```
+
+This refreshes the OCM source, not every provider. The adapter caps each request at 10,000 results; a successful bounded request alone does not prove complete India coverage. The research grid collector can audit saturated cells.
+
+| Command | Purpose / prerequisite |
+| --- | --- |
+| `npm run sync:bee` | BEE source import; needs Python 3, `pypdf` and Poppler's `pdftotext` |
+| `npm run import:research-stations` | Import the bundled research CSV or configured `RESEARCH_STATIONS_FILE` |
+| `npm run data:scheduled` | Run scheduled provider work once; authorization and due intervals apply |
+| `npm run sync:providers -- --now` | Force the existing scheduled provider refresh path |
+| `npm run data:export-snapshot` | Maintainer: export a consistent snapshot locally; does not push it |
+| `npm run data:check-snapshot` | Verify snapshot, schema version and research export checksums |
+
+Snapshot restoration is transactional and requires empty canonical tables. It never overwrites an existing installation. Setup skips importing when stations already exist. An explicit `RESEARCH_STATIONS_FILE` selects a research import instead of the snapshot. Use ingestion commands to update existing data.
+
+To distribute a new dataset release: refresh authorized sources, review quality, export the snapshot, update research files and their manifest, validate on a fresh database, then commit the dataset changes. A Git pull downloads dataset files; it does not automatically overwrite someone's populated database.
+
+## 5. Configuration
+
+Use the root `.env.local`; do not commit it.
+
+| Variable | Default / purpose |
+| --- | --- |
+| `DATABASE_URL` | Docker example: `postgresql://postgres:postgres@127.0.0.1:5432/fastcharger` |
+| `API_URL` | Server-only backend destination; example `http://127.0.0.1:4000` |
+| `NEXT_PUBLIC_SITE_URL` | Frontend canonical URL; example `http://localhost:3000` |
+| `BACKEND_PORT` / `FRONTEND_PORT` | Default 4000 / 3000; update explicit `API_URL` when changing backend port |
+| `OCM_API_KEY` / `OPENCHARGEMAP_API_KEY` | Optional private key for future OCM refresh |
+| `RESEARCH_STATIONS_FILE` | Optional alternate real research CSV |
+
+`NEXT_PUBLIC_API_URL` remains a legacy proxy destination fallback. Prefer server-only `API_URL`. Never put database/provider secrets in `NEXT_PUBLIC_*` variables.
+
+The `frontend/` package's run/build scripts delegate to the active root Next.js application. `backend/` dev delegates to the root launcher. Install dependencies once at the root.
+
+## 6. Verification
+
+With the app running:
+
+```bash
 curl http://localhost:4000/health/db
-# Real station count, also through the frontend proxy
 curl http://localhost:3000/api/v1/statistics
+curl "http://localhost:3000/api/v1/stations?pageSize=2"
 ```
 
-An API outage displays "Charging data unavailable"; an empty database displays "No charging stations published yet". Startup checks explain whether the missing piece is the database, migrations or imported records. No mock station fallback is used in this application path.
-
-Before a public India launch, host the backend and PostGIS database, run imports and the scheduled provider sync, and configure the frontend's deployed `API_URL` and `NEXT_PUBLIC_SITE_URL`. A station listing is not a live charging session: current connector availability requires authorized operator feeds, and inventory sources alone do not guarantee exhaustive coverage or current availability.
-
----
-
----
-
-## 6. Durable Worker Ingestion System (`@fastcharger/worker`)
-
-FastCharger provides a production-grade, independent background ingestion pipeline designed for resilience, idempotency, and complete failure isolation:
-
-```text
-Provider Adapter (OCM, Kazam, Statiq)
-       │
-       ▼
-1. Raw Archival ────────► Object Storage (S3/R2/MinIO) & PostgreSQL object_metadata
-       │
-       ▼
-2. Validation ──────────► Strict coordinate & ID check (records error to data_quality_issues)
-       │                  [Fatal records isolated; batch continues]
-       ▼
-3. Normalization ───────► Canonical plug types (ccs2, type2, chademo, gbt, wall) & status
-       │
-       ▼
-4. Identity Resolution ─► Multi-tier resolution:
-       │                  - Upstream provider mapping (station_provider_mappings)
-       │                  - 25m spatial proximity deduplication (isProximityDuplicate)
-       │                  - Stable deterministic slug (generateDeterministicStationSlug)
-       ▼
-5. PostgreSQL/PostGIS ──► Authoritative persistence, spatial point indexing, upsert semantics
-       │
-       ▼
-6. Operational Events ──► MongoEventStore (INGESTION_STARTED, INGESTION_COMPLETED, anomalies)
-       │                  [Failure-isolated via BUFFER_AND_LOG]
-       ▼
-7. Cache Invalidation ──► Invalidate affected Redis keys (stations, cities, pincodes)
-```
-
-### Worker Responsibilities:
-- **Independent Ingestion Engine**: Orchestrates upstream vendor synchronization completely decoupled from frontend rendering and backend request serving.
-- **Authoritative Data Ingestion**: PostGIS + PostgreSQL is the sole authoritative destination for all stations, connectors, operators, and spatial points.
-- **Zero Data Loss**: Anomalies, malformed records, and upstream provider discrepancies are persisted in `data_quality_issues` and logged to MongoDB events rather than silently discarded.
-
-### Provider Adapter Boundary (`worker/src/providers/`):
-- All vendor-specific query parameters, API keys, HTTP headers, and URL routes are strictly encapsulated inside provider adapters implementing `ProviderAdapter`.
-- New vendors (Kazam, Statiq, ChargePoint) can be added without modifying the core 8-stage pipeline.
-- **Bounded Exponential Backoff Retries**: Transient failures (HTTP 429 Too Many Requests, HTTP 5xx Server Errors, socket timeouts, network resets) are retried with exponential backoff and jitter (up to 3 retries). Permanent failures (400, 401, 403, 404, unparseable payload) fail fast immediately.
-
-### Validation & Malformed Record Isolation:
-- Validates coordinates, 6-digit Indian PIN codes, connector types, operational statuses, and provider identifiers.
-- **Batch Resilience**: A fatal validation error on a single record (e.g. invalid latitude/longitude or missing upstream identifier) is isolated, logged as an anomaly, and increments `rejected` without aborting the remaining batch.
-- Non-fatal warnings (e.g. 5-digit PIN code, missing operator name) create audit records in `data_quality_issues` while allowing the station record to persist.
-
-### Identity Resolution & Idempotency:
-- **Deterministic Multi-Tier Resolution**:
-  1. `station_provider_mappings` check on `(provider_name, provider_station_id)` resolves existing station ID.
-  2. Direct OCM ID / External ID lookup.
-  3. **25-Meter Spatial Proximity Deduplication**: Stations within 25m sharing operator slug or high name similarity are resolved as the same physical charging site, incrementing `duplicates` and updating provider mappings.
-  4. **Deterministic Canonical Slugs**: Generated via `generateDeterministicStationSlug()` ensuring URI stability across sync runs.
-- **Idempotency Guarantee**: Running the same sync payload repeatedly produces `inserted: 0, updated: N` with zero duplicate stations created.
-
-### Raw Archival & Cache Invalidation:
-- **Raw Archival**: Unmodified raw payloads are archived to object storage via `RawProviderArchivalService` and indexed in PostgreSQL's `object_metadata` table.
-- **Cache Invalidation**: On successful PostgreSQL persistence, affected Redis cache keys (`stations:all`, `stations:nearby:*`, `city:{slug}`, `state:{slug}`, `pincode:{code}`, `station:{slug}`) are invalidated.
-- **Failure Isolation**: If Redis or MongoDB or Object Storage is temporarily unavailable, the core PostgreSQL station ingestion completes successfully without crashing.
-
-### Observability Metrics Contract:
-Every ingestion run produces a comprehensive observability report with exact metrics:
-```typescript
-interface IngestionRunResult {
-  runId: string;        // Unique job run identifier (UUID)
-  provider: string;     // Provider identifier (e.g. "open-charge-map")
-  started: Date;        // Job start timestamp
-  completed: Date;      // Job completion timestamp
-  received: number;     // Raw records received from provider
-  validated: number;    // Records passing validation
-  rejected: number;     // Malformed records rejected and isolated
-  inserted: number;     // New stations inserted into PostgreSQL
-  updated: number;      // Existing stations updated
-  duplicates: number;   // Spatial proximity / multi-provider duplicates resolved
-  errors: number;       // Unexpected record-level processing errors
-  archivedObjectKey?: string | null; // S3/R2/MinIO raw dump location
-}
-```
-
-### Ingestion Commands & Local Execution:
-```bash
-# 1. Local Pipeline Dry Run (Runs complete 8-stage pipeline with mock data, no API key required)
-npm run sync:dry-run
-
-# 2. Open Charge Map India Synchronization (Requires OPENCHARGEMAP_API_KEY and DATABASE_URL)
-npm run sync:india
-
-# 3. Dry-run mode for India sync (Tests connectivity and processes first 10 records)
-npx tsx worker/src/jobs/sync-india.ts --dry-run
-```
-
----
-
-## 7. API Architecture & Versioned Contracts (v1)
-
-FastCharger enforces strict, versioned API contracts between frontend and backend to guarantee independent deployment.
-
-- **Current Version**: `v1` (`/api/v1/`)
-- **Contract Location**: `shared/contracts/`
-- **Schema Engine**: TypeScript + Zod
-
-### Response Envelope
-```json
-{
-  "data": { ... }
-}
-```
-
-### Error Envelope
-```json
-{
-  "error": {
-    "code": "STATION_NOT_FOUND",
-    "message": "Station not found",
-    "details": { ... }
-  }
-}
-```
-
-### Endpoint Inventory
-
-**Current (v1 Implemented):**
-- `GET /health` & `GET /health/db`: Process and PostGIS health checks
-- `GET /api/v1/stations`: Paginated stations with city, state, connector, and power filters
-- `GET /api/v1/stations/:slug`: Comprehensive station details
-- `GET /api/v1/stations/nearby`: PostGIS spatial distance search (`latitude`, `longitude`, `radiusKm`)
-- `GET /api/v1/cities`: Paginated catalog of indexed cities
-- `GET /api/v1/cities/:slug`: City station catalog and operator breakdown
-- `GET /api/v1/pincodes/:pincode`: 6-digit postal code location and nearby charging hubs
-- `GET /api/v1/search`: Unified search across stations, cities, operators, and PIN codes
-
-### Backward Compatibility Policy
-- **Allowed within v1**: Adding optional response fields, adding optional query parameters, introducing new endpoints under `/api/v1/`.
-- **Breaking (Requires `/api/v2/`)**: Removing fields, renaming fields, altering types/units, modifying error/pagination envelope shapes.
-
----
-
-## 8. Verification & Testing
-
-The repository includes comprehensive unit, integration, spatial, storage, and worker pipeline tests:
+The distributed snapshot should report 30,812 stations. With the app stopped, `node scripts/verify-checkout.mjs` starts both services, verifies health, API counts and the homepage, then stops them.
 
 ```bash
-# Run complete test suite (21 test files, 229 tests)
-npm test
-
-# Run worker ingestion pipeline tests (12 dedicated tests)
-npx vitest run tests/worker-ingestion.test.ts
-
-# Run canonical database ownership tests
-npx vitest run tests/canonical-data-ownership.test.ts
-
-# Run object storage abstraction tests
-npx vitest run tests/object-storage.test.ts
-
-# Run MongoDB event store tests
-npx vitest run tests/mongodb-event-store.test.ts
-
-# Run API contract test suite
-npx vitest run tests/contracts.test.ts
-
-# Run backend API integration tests
-npx vitest run backend/tests/api.integration.test.ts
-
-# Run frontend build verification (with DATABASE_URL unset)
-DATABASE_URL="" npm run build
-
-# Run lint checks
+npm run typecheck
 npm run lint
+npm test
+npm run build
 ```
 
----
+The **Fresh checkout** GitHub Actions workflow uses a clean Ubuntu runner, Node 22 and PostgreSQL 16/PostGIS 3.4. It installs from the lockfile, checks dataset integrity, restores without an API key, reruns setup, starts both services, checks the API/homepage and runs code validation. See **Actions → Fresh checkout** for executed results.
 
-## 9. Migration Status
+## 7. Troubleshooting
 
-- **Prompt 1 (Physical Application Boundaries)**: **IMPLEMENTED**  
-  Restructured into `frontend/`, `backend/`, `worker/`, `database/`, `shared/`, `infrastructure/`, `docs/`.
-- **Prompt 2 (Backend Extraction)**: **IMPLEMENTED**  
-  Standalone Hono HTTP server running at `/api/v1/` with PostGIS queries and full test suite.
-- **Prompt 3 (Frontend Decoupling)**: **IMPLEMENTED**  
-  Frontend converted to pure presentation consuming HTTP API; zero database dependencies.
-- **Prompt 4 (Release Verification & Stabilization)**: **IMPLEMENTED**  
-  Typecheck, test suites, offline build verification, and clean architecture boundaries established.
-- **Prompt 5 (API Contract System)**: **COMPLETE**  
-  Versioned `/api/v1/` contract system established under `shared/contracts/`, shared API client upgraded with validation, backward compatibility policy formalized, and 18 dedicated contract tests added.
-- **Prompt 6 — COMPLETE**: **COMPLETE**  
-  **PostgreSQL + PostGIS established as canonical authoritative source of truth**. Added canonical tables for `districts`, `localities`, and `station_provider_mappings`. Added `verification_status` to `stations`. Implemented deterministic multi-attribute station identity and de-duplication resolution (`database/src/identity.ts`). Formalized comprehensive anomaly tracking in `data_quality_issues` (`database/src/quality.ts`). Created migration `0003_canonical_postgis_entities.sql` with verified rollback procedures. 18 test suites and 181 tests passing.
-- **Prompt 7 — COMPLETE**: **COMPLETE**  
-  **Introduced MongoDB strictly for flexible document & operational event workloads**. Configured deterministic event envelope (`BaseEvent`), dedicated collections (`ingestion_events`, `provider_processing_events`, `data_quality_events`, `search_analytics_events`, `operational_events`, `audit_events`), comprehensive index specifications (`eventId` unique, compound `timestamp`+`eventType`, `correlationId`, sparse `entityId`), database-side TTL retention policies (14 to 365 days), and non-disruptive failure isolation with `BUFFER_AND_LOG` fallback. Verified 19 test suites and 199 tests passing.
-- **Prompt 8 — COMPLETE**: **COMPLETE**  
-  **Introduced S3-Compatible Object Storage Abstraction** (`@fastcharger/storage`). Supports AWS S3, Cloudflare R2, MinIO, and hermetic in-memory test drivers. Decoupled application code from AWS SDK semantics via uniform `putObject()`, `getObject()`, `headObject()`, `deleteObject()`, and `createSignedUrl()` interfaces. Enforced private-by-default buckets, short-lived signed URLs, and worker raw provider archival (`RawProviderArchivalService`). Added PostgreSQL `object_metadata` entity and migration `0004_object_metadata.sql`. Verified 20 test suites and 217 tests passing.
-- **Prompt 9 — COMPLETE**: **COMPLETE**  
-  **Established Production-Grade Durable Worker Ingestion System** (`@fastcharger/worker`). Implemented 8-stage pipeline: Provider → Raw Archive (S3/R2/MinIO & PostgreSQL `object_metadata`) → Validation (fatal coordinate/ID isolation without breaking batch) → Normalization (canonical plug types & status) → Identity Resolution (provider mappings, 25m spatial proximity deduplication, deterministic slugs) → PostgreSQL/PostGIS persistence (upsert semantics, transactions) → Events (MongoDB operational logging) → Cache Invalidation (affected Redis keys). Added provider adapter boundary with bounded exponential backoff retries for transient 429/5xx errors, dry-run CLI execution (`npm run sync:dry-run`), and complete observability metrics (`runId`, `provider`, `started`, `completed`, `received`, `validated`, `rejected`, `inserted`, `updated`, `duplicates`, `errors`). Verified 21 test suites and 229 tests passing.
-- **Prompt 10 — Delhi discrepancy resolved**: **COMPLETE**  
-  **Resolved geographic station count discrepancy incident** where Delhi displayed approximately 12–13 stations on maps despite 60–70 stations existing in source and database records. Executed forensic pipeline trace across all stages (Provider → Raw Payload → Ingestion Normalization → Deduplication → PostgreSQL → PostGIS → Backend Repository → API → Frontend Map). Identified and fixed compound root causes: (1) unseeded city aliases and missing canonical resolution during worker ingestion causing `city_id = NULL` on 26 Delhi stations; (2) missing `operatorSlug` in proximity indexing causing false deduplication merges of co-located stations; (3) strict SQL filter `cities.slug = 'delhi'` omitting unlinked/aliased stations; (4) spatial 10km radius circle excluding peripheral metropolitan EV clusters (Aerocity, Saket, Dwarka, Rohini); and (5) frontend city page passing `pageSize: 20` directly to Leaflet `<MapView>`, in which only 12–13 stations fell inside the default viewport (with 12 fast chargers >= 50kW). Implemented generic, non-special-cased fixes across ingestion, database seeds, repository queries, spatial boundaries, and frontend map rendering (verified across Delhi, Bengaluru, Mumbai, Kolkata, Chennai). Created forensic incident report in `docs/incidents/delhi-station-count-discrepancy.md` and added comprehensive regression suite in `tests/delhi-station-discrepancy.test.ts`. 22 test suites and 237 tests passing.
-- **Prompt 11 — PostGIS Nearby Station Search**: **COMPLETE**  
-  **Implemented production-grade `GET /api/v1/stations/nearby` powered entirely by PostgreSQL + PostGIS**. Geographic filtering executes at the storage engine level using `ST_DWithin` on the GiST spatial index `stations_location_gist_idx` (`geography(Point, 4326)`), with geodesic distances computed via `ROUND((ST_Distance(location, target) / 1000.0)::numeric, 2)` for deterministic `distanceKm`. Replaced in-memory Haversine scanning with SQL-level pagination (`LIMIT pageSize OFFSET offset`) and `count(distinct stations.id)`. Enforced strict coordinate validation (-90 to +90 lat, -180 to +180 lng) and a safe maximum radius defense (500 km cap). Added multi-attribute filtering for connector types, operators, minimum power (`minPowerKw`), authoritative station statuses (`status`), and dynamic sorting (`distance`, `power`, `name`, `updatedAt`). Created architectural decision record in `docs/adr/0003-postgis-nearby-spatial-search.md` and added 20 dedicated integration and contract tests in `tests/nearby-spatial-search.test.ts`. 23 test suites and 257 tests passing.
+| Symptom | Action |
+| --- | --- |
+| Docker socket unavailable | Start Docker Desktop/Engine, or configure a native/hosted PostGIS database |
+| Cannot connect to PostgreSQL | Check database process, port, credentials and `DATABASE_URL` |
+| PostGIS unavailable / extension error | Enable/install PostGIS, or use the supplied PostGIS Docker image |
+| Schema missing | Run `npm run setup` |
+| No station records | Run setup and confirm `data/snapshot/` was downloaded |
+| Snapshot integrity check failed | Restore data/manifest files from the same Git revision; do not bypass checks |
+| Port occupied | Stop the existing app or change ports and the matching `API_URL` |
+| Charging data unavailable | Start the backend or use `npm run dev`; check `/health/db` |
+| Restore detects populated canonical tables | Use an empty database for snapshot restore or research import for existing data |
 
----
+## 8. Work completed and work remaining
 
-## 10. Independent Deployment
+**Completed:** separate and combined commands; database/data readiness diagnostics; same-origin API routing; transactional snapshot export/restore; versioned datasets with attribution/checksums; clean-checkout verification; controlled behavior during API outages.
 
-Each application tier is independently deployable:
-- **Frontend**: Deployable to edge/serverless runtimes (Vercel, Cloudflare Pages, Netlify) with only `NEXT_PUBLIC_API_URL`. Does not require VPC peering or database credentials.
-- **Backend API**: Deployable to container platforms (AWS ECS, Fly.io, Railway, Google Cloud Run) inside a private VPC with `DATABASE_URL`.
-- **Worker**: Deployable as independent scheduled jobs or background containers.
-- **Database**: Managed PostgreSQL + PostGIS (AWS RDS, Supabase, Neon).
+**Public launch still requires:** frontend/backend hosting, a production PostGIS database, HTTPS and private environment configuration, authorized scheduled refreshes, source-license/data-quality review, health monitoring and backups. Operator feeds are required for live availability. The snapshot is a dated inventory; it does not guarantee every charger in India is listed or available now.
 
-
-## Charging Data Architecture
-
-Provider APIs / official downloads / audited research import
-↓ Raw Archive
-↓ Validation
-↓ Normalization
-↓ Identity Resolution
-↓ PostgreSQL/PostGIS
-↓ Backend API
-↓ Frontend
-
-The existing worker, `sync_logs` (exposed as `ingestion_runs`), object-storage abstraction, provider mappings and data-quality tables form one pipeline. Import with `npm run import:research-stations`; verify with `npm run data:verify`. See [the ingestion operations guide](docs/operations/data-ingestion.md). Research evidence remains local or in private storage, outside normal Git history.
-
-## Supported Providers
-
-| Provider | Data / status | Refresh | Credentials / access |
-|---|---|---|---|
-| Open Charge Map | Stations, operators, connectors; static operational observations | Weekly | Server-only `OCM_API_KEY`; preserve per-record attribution/license |
-| BEE official PCS publication | Published station/charger inventory; availability unknown | Weekly download | No credentials for the verified PDF; published URL configured in adapter. Future publication changes require URL review |
-| Delhi government / DTL | Research evidence import; static inventory | Admin import | Preserve original document URLs and evidence row IDs |
-| OpenStreetMap | Research evidence import; static inventory | Admin import | ODbL attribution in source evidence |
-| CPO candidates: Jio-bp, Tata Power, ChargeZone, Statiq, Zeon, Ather, Kazam, Bolt.Earth, Fortum, ChargeGrid, EESL / ChargeIndia | Capabilities unverified; no acquired live feed | Disabled | `ACCESS_REQUIRED`; obtain authorized credentials and terms before activation |
-
-No provider is integrated by circumventing authentication. BEE policy describes intended open APIs, but this implementation uses an accessible official downloadable publication because an authorized open API endpoint was not established. Source coverage is provisional and does not prove complete nationwide inventory.
-
-## Data Refresh
-
-`npm run data:scheduler:install` installs this Mac's launchd worker timer. It invokes `npm run data:scheduled` logic every 15 minutes; database provider settings gate metadata to seven days and future authorized live feeds to their own intervals. `npm run data:scheduled -- --now` exercises full ingestion immediately. The Linux cron equivalent is in `infrastructure/data-refresh.cron`. `npm run sync:status` explicitly skips sources without live capabilities. Independent provider failures preserve canonical records; capped/partial snapshots cannot retire missing stations.
-
-## Status Semantics
-
-Operational status describes a site's reported operation. Availability describes timestamped connector/station use from an authorized live feed. Freshness is evaluated at query time; stale observations cannot claim current availability. Neither OCM operational status nor BEE listing means “Available now.” Unknown availability is shown honestly. The protected `data:admin` CLI records a reason, actual OS user, previous/new status and optional expiry; manual overrides leave provider history intact.
-
-## Data Provenance
-
-Each canonical station retains source-provider mappings, source record IDs, original URLs/timestamps, first/last seen times, source classification and ingestion-run references. BEE PDF site IDs are deterministic evidence identifiers derived from the publication, not asserted official BEE IDs. Raw archives retain checksum, byte size, retrieval time and record count. API station cards expose useful provenance and status freshness; internal evidence stays server-side.
+See [data/DATA_SOURCES.md](data/DATA_SOURCES.md) for attribution and license limitations, and `docs/` for schema/architecture notes.
